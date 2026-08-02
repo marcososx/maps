@@ -1,0 +1,17 @@
+{"type":"FeatureCollection", "features": [
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.90564,-27.09408]},"properties":{"nome":"Ponte Arquiteta Andrea Patrícia Volkmann - C2"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.90709,-27.09362]},"properties":{"nome":"Ponte Arquiteta Andrea Patrícia Volkmann - C1"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.90347,-27.09461]},"properties":{"nome":"Rodovia Antônio Heil - C2"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.91528,-27.10407]},"properties":{"nome":"Avenida Primeiro de Maio - C2"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.92033,-27.09311]},"properties":{"nome":"Rua Daniel Imohf - C1"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.91941,-27.09345]},"properties":{"nome":"Rua João Bauer - C1"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.86849,-27.04239]},"properties":{"nome":"Rodovia Antônio Heil - LM"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.89648,-27.06905]},"properties":{"nome":"Rodovia Ivo Silveira - BA"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.89398,-27.04568]},"properties":{"nome":"Rua Bertoldo Todt - BA"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.90732,-27.06101]},"properties":{"nome":"Rua José Reis e Silva"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.93434,-27.07573]},"properties":{"nome":"Rua São Leopoldo - SP"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.87927,-27.06469]},"properties":{"nome":"Rodovia Antônio Heil - LI"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.96119,-27.14558]},"properties":{"nome":"Rua Luiz Moreli - DJ"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.95435,-27.16015]},"properties":{"nome":"Rua José Dubiela"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[-48.91543,-27.08458]},"properties":{"nome":"Rua Felipe Schimidt - SL"}}
+]}

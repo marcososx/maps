@@ -1,0 +1,10 @@
+{
+  // Site estático do mapa (Brusque Discover) servido por um Worker de assets.
+  // Publica SÓ a pasta ./site (index.html + geojsons) — o pipeline (fontes-defesacivil/)
+  // e os workers de dados NÃO vão pro site público.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-maps",
+  "compatibility_date": "2025-07-01",
+  "assets": { "directory": "./site" },
+  "observability": { "enabled": true }
+}

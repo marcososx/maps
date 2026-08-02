@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brusque — Mapa de Camadas</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root{ --bg:#0B0E14; --panel:#151921; --border:#232D3F; --info:#00B0FF;
+         --ok:#00E676; --rural:#C9A15A; --txt:#cfd8e3; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--txt);
+             font-family:Inter,system-ui,sans-serif; }
+  #map{ position:absolute; inset:0; }
+  /* HUD */
+  .hud{ position:absolute; z-index:2; background:rgba(21,25,33,.85);
+        border:1px solid var(--border); border-radius:10px; backdrop-filter:blur(6px); }
+  #title{ top:14px; left:14px; padding:10px 14px; }
+  #title h1{ margin:0; font-size:14px; letter-spacing:.3px; }
+  #title p{ margin:4px 0 0; font-size:11px; color:#8a97a8;
+            font-family:'JetBrains Mono',ui-monospace,monospace; }
+  #legend{ bottom:14px; left:14px; padding:10px 12px; font-size:11px; line-height:1.7; }
+  #legend .row{ display:flex; align-items:center; gap:8px; }
+  #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
+  /* hint (hover) — placeholder, refinar depois */
+  #hint{ position:absolute; z-index:3; pointer-events:none; display:none;
+         padding:6px 10px; font-size:12px; background:rgba(11,14,20,.92);
+         border:1px solid #faee0a; border-radius:8px; transform:translate(12px,12px);
+         white-space:nowrap; }
+  #hint .k{ color:#8a97a8; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+  /* slider de níveis de alagamento (aparece ao escolher um nível) */
+  #nivelbar{ position:absolute; z-index:4; right:14px; top:64px;
+        display:none; flex-direction:column; align-items:center; gap:8px; padding:12px 10px;
+        background:rgba(21,25,33,.9); border:1px solid var(--border); border-radius:12px;
+        backdrop-filter:blur(6px); }
+  #nivelbar #nivellbl{ font:700 13px Inter,system-ui; color:#eaf6ff; min-width:38px; text-align:center; }
+  #nivelbar .nb-cap{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; text-align:center; }
+  /* range vertical: menor embaixo, maior em cima (direction:rtl inverte o eixo) */
+  #nivelrange{ writing-mode:vertical-lr; direction:rtl; width:10px; height:190px;
+        accent-color:#e12f2f; cursor:pointer; }
+  /* chips de camadas (header flutuante) */
+  #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex; }
+  .chip{ display:inline-flex; align-items:center; gap:8px;
+         font:600 12px/1 Inter,system-ui; color:#8a97a8; cursor:pointer;
+         background:rgba(21,25,33,.85); border:1px solid var(--border);
+         padding:9px 14px; backdrop-filter:blur(6px); border-radius:10px; }
+  .cbx{ width:14px; height:14px; border-radius:3px; border:1.5px solid #6b7686;
+        display:inline-flex; align-items:center; justify-content:center; flex:none;
+        font-size:11px; line-height:1; color:#04121c; }
+  .chip .caret{ width:15px; height:15px; opacity:.75; margin-left:-1px; }
+  /* dropdown "Mapa" */
+  .chip-menu{ position:fixed; z-index:6; min-width:150px; padding:6px; display:none;
+        background:rgba(21,25,33,.96); border:1px solid var(--border); border-radius:10px;
+        backdrop-filter:blur(6px); }
+  .chip-menu.open{ display:block; }
+  .chip-menu .item{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px;
+        cursor:pointer; font:600 12px Inter,system-ui; color:#8a97a8; }
+  .chip-menu .item:hover{ background:rgba(255,255,255,.05); }
+  .chip-menu .item.on{ color:#eaf6ff; }
+  .chip-menu .combo-item{ justify-content:space-between; gap:12px; cursor:default; }
+  .chip-menu select.combo{ background:#0B0E14; color:#cfd8e3; border:1px solid var(--border);
+        border-radius:6px; font:600 12px Inter,system-ui; padding:4px 6px; cursor:pointer; }
+  .chip:not(:first-child){ border-top-left-radius:0; border-bottom-left-radius:0; margin-left:-1px; }
+  .chip:not(:last-child){ border-top-right-radius:0; border-bottom-right-radius:0; }
+  .chip.on{ color:#eaf6ff; }  /* cor de destaque é setada inline por chip (cor da camada) */
+  /* botão de localização = primeiro chip (ação, não toggle) */
+  #locate{ padding-left:12px; padding-right:12px; border-color:#3a4b63; }
+  #locate:hover{ border-color:var(--info); background:rgba(0,176,255,.10); }
+  #locate svg{ width:16px; height:16px; display:block; }
+  /* ponto "eu estou aqui" (estilo iOS) */
+  .me-dot{ position:relative; width:16px; height:16px; border-radius:50%; background:#2a7fff;
+           border:2.5px solid #fff; box-shadow:0 0 0 2px rgba(42,127,255,.35), 0 1px 4px rgba(0,0,0,.5); }
+  .me-dot::after{ content:''; position:absolute; inset:-7px; border-radius:50%;
+           border:2px solid rgba(42,127,255,.55); animation:mepulse 2s ease-out infinite; }
+  @keyframes mepulse{ 0%{transform:scale(.5);opacity:.8} 100%{transform:scale(1.7);opacity:0} }
+  /* toast (mensagens de validação) */
+  #toast{ position:absolute; left:50%; bottom:72px; transform:translateX(-50%); z-index:4;
+          max-width:82%; text-align:center; padding:11px 16px; font-size:13px; line-height:1.35;
+          background:rgba(11,14,20,.94); border:1px solid var(--border); border-radius:12px;
+          color:#eaf2ff; display:none; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="chips">
+  <button id="locate" class="chip" title="Minha localização" aria-label="Minha localização">
+    <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11" fill="#2a7fff" stroke="#eaf2ff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+<div id="toast"></div>
+<div id="hint"></div>
+<div id="nivelbar">
+  <span id="nivellbl">10 m</span>
+  <input id="nivelrange" type="range" min="7" max="15" step="1" value="10">
+  <span class="nb-cap">nível do rio</span>
+</div>
+
+<script>
+const COLORS = { bairro:'#faee0a', zona_rural:'#00E676', reserva:'#faee0a', municipio:'#faee0a' };
+
+const map = new maplibregl.Map({
+  container:'map',
+  // Estilo base = só um fundo sólido dark. Sem tiles externos (contorno puro).
+  style:{ version:8, sources:{}, glyphs:'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+          layers:[{ id:'bg', type:'background', paint:{'background-color':'#0B0E14'} }] },
+  center:[-48.905,-27.11], zoom:11, maxZoom: 17, attributionControl:false
+});
+
+map.on('load', async () => {
+  // ── Satélite (Esri World Imagery) — POR BAIXO de tudo; ligado pelo chip ──────
+  map.addSource('satelite', { type:'raster', tileSize:256, maxzoom: 17,
+    tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    attribution:'Esri, Maxar, Earthstar Geographics' });
+  map.addLayer({ id:'satelite', type:'raster', source:'satelite', layout:{ visibility:'none' } });
+  // (trânsito futuro entra aqui também, como raster)
+
+  // ── Estradas (rede viária OSM recortada em Brusque) — por baixo dos vetores; chip "Estradas" ──
+  const estradas = await (await fetch('./brusque_estradas.geojson')).json();
+  map.addSource('estradas', { data:estradas, type:'geojson' });
+  map.addLayer({ id:'estradas-linha', type:'line', source:'estradas',
+    layout:{ visibility:'none', 'line-join':'round', 'line-cap':'round' },
+    paint:{ 'line-color':'#cbb287', 'line-opacity':0.85,
+      'line-width':['interpolate',['linear'],['zoom'],
+        11,['match',['get','classe'],'primary',1.4,'secondary',1.1,'tertiary',0.9, 0.35],
+        14,['match',['get','classe'],'primary',3,'secondary',2.3,'tertiary',1.8, 0.9],
+        17,['match',['get','classe'],'primary',6,'secondary',5,'tertiary',4, 2.2]] } });
+  // nomes das ruas (só a partir de zoom ~13.5; colisão do MapLibre evita poluir)
+  map.addLayer({ id:'estradas-label', type:'symbol', source:'estradas', minzoom:13.5,
+    layout:{ visibility:'none', 'symbol-placement':'line', 'text-field':['get','nome'],
+             'text-font':['Open Sans Regular'], 'text-size':11, 'symbol-spacing':260, 'text-max-angle':40 },
+    paint:{ 'text-color':'#e9dcc0', 'text-halo-color':'#0B0E14', 'text-halo-width':1.5 } });
+
+  const data = await (await fetch('./brusque_camadas.geojson')).json();
+  map.addSource('brusque', { data, type:'geojson', promoteId:'nome' });
+
+  // Fill invisível: captura o hover em toda a área (verde na zona rural, amarelo claro no resto)
+  map.addLayer({ id:'fill', type:'fill', source:'brusque',
+    paint:{ 'fill-color':['match',['get','camada'],
+              'zona_rural',COLORS.zona_rural, COLORS.bairro],
+            'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.14,0] } });
+
+  // Bairros + Chácara Edith (tratada como bairro) — fronteiras amarelas
+  map.addLayer({ id:'bairro-linha', type:'line', source:'brusque', filter:['==','camada','bairro'],
+    paint:{ 'line-color':COLORS.bairro,
+            'line-width':['case',['boolean',['feature-state','hover'],false],2.2,1.1] } });
+  map.addLayer({ id:'reserva-linha', type:'line', source:'brusque', filter:['==','camada','reserva'],
+    paint:{ 'line-color':COLORS.reserva,
+            'line-width':['case',['boolean',['feature-state','hover'],false],2.2,1.1] } });
+
+  // Zona rural — contorno verde por cima (marca onde a cidade vira rural) + hover verde interno
+  map.addLayer({ id:'zona-linha', type:'line', source:'brusque', filter:['==','camada','zona_rural'],
+    paint:{ 'line-color':COLORS.bairro, 'line-opacity':0.95,
+            'line-width':['case',['boolean',['feature-state','hover'],false],2.6,1.8] } });
+
+  // Contorno do município de Brusque — amarelo, por cima de tudo
+  const muni = await (await fetch('./brusque_municipio.geojson')).json();
+  map.addSource('municipio', { data:muni, type:'geojson' });
+  map.addLayer({ id:'municipio-linha', type:'line', source:'municipio',
+    paint:{ 'line-color':COLORS.municipio, 'line-width':2.2 } });
+
+  // ── Trânsito (TomTom via SEU Worker de cache; usuário NÃO fala com a TomTom) ──
+  // Acima dos bairros, abaixo do rio e dos nomes. Desligado por padrão (chip).
+  map.addSource('trafego', { type:'raster', tileSize:256, minzoom:9, maxzoom:18,
+    bounds:[-49.25,-27.35,-48.55,-26.90],   // só Brusque + cidades limite (economiza requisições)
+    tiles:['https://brusque-trafego.marcososx.workers.dev/traffic/{z}/{x}/{y}.png?style=relative'] });
+  map.addLayer({ id:'trafego', type:'raster', source:'trafego',
+    layout:{ visibility:'none' }, paint:{ 'raster-opacity':0.85 } });
+
+  // ── Rio Itajaí-Mirim (camada SOBREPOSTA — não altera os bairros; chip "Rio") ──
+  const rio = await (await fetch('./brusque_rio.geojson')).json();
+  map.addSource('rio', { data:rio, type:'geojson' });
+  // faixa com largura real (~40m): fininha na cidade, ganha corpo ao dar zoom
+  map.addLayer({ id:'rio-banda', type:'fill', source:'rio', filter:['==','$type','Polygon'],
+    paint:{ 'fill-color':'#00B0FF', 'fill-opacity':0.55 } });
+  // linha central: garante visibilidade quando afastado
+  map.addLayer({ id:'rio-linha', type:'line', source:'rio', filter:['==','$type','LineString'],
+    layout:{ 'line-join':'round','line-cap':'round' },
+    paint:{ 'line-color':'#00B0FF',
+            'line-width':['interpolate',['linear'],['zoom'],10,1,13,2,16,3], 'line-opacity':0.9 } });
+  // nome seguindo o curso do rio (~3x), estilo mapa
+  map.addLayer({ id:'rio-label', type:'symbol', source:'rio', filter:['==','$type','LineString'],
+    layout:{ 'symbol-placement':'line', 'symbol-spacing':320, 'text-field':'Rio Itajaí-Mirim',
+             'text-font':['Open Sans Italic'], 'text-size':13, 'text-letter-spacing':0.04,
+             'text-max-angle':40 },
+    paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.6 } });
+
+  // ── Cidades vizinhas (contorno + nome; clique não faz nada — temperatura no futuro) ──
+  const viz = await (await fetch('./brusque_vizinhas.geojson')).json();
+  map.addSource('vizinhas', { data:viz, type:'geojson' });
+  map.addLayer({ id:'vizinhas-linha', type:'line', source:'vizinhas',
+    paint:{ 'line-color':'#9aa7b8', 'line-width':1.2, 'line-dasharray':[2,2], 'line-opacity':0.65 } });
+  map.addLayer({ id:'vizinhas-label', type:'symbol', source:'vizinhas',
+    layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':14,
+             'text-transform':'uppercase', 'text-letter-spacing':0.12 },
+    paint:{ 'text-color':'#aab6c5', 'text-halo-color':'#04121c', 'text-halo-width':1.6 } });
+
+  // ── Pontes do Rio Itajaí-Mirim (dentro do dropdown "Rio") ───────────────────
+  const pontes = await (await fetch('./brusque_pontes.geojson')).json();
+  map.addSource('pontes', { data:pontes, type:'geojson' });
+  map.addLayer({ id:'pontes-pt', type:'circle', source:'pontes', layout:{ visibility:'none' },
+    paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,3,16,6],
+            'circle-color':'#00B0FF', 'circle-stroke-color':'#eaf6ff', 'circle-stroke-width':1.5 } });
+  map.addLayer({ id:'pontes-label', type:'symbol', source:'pontes', minzoom:13,
+    layout:{ visibility:'none', 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
+             'text-size':11, 'text-offset':[0,1.1], 'text-anchor':'top', 'text-optional':true },
+    paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.4 } });
+  // clique na ponte → popup com os dados coletados (apelido, ano, comprimento…)
+  map.on('click','pontes-pt',(e)=>{
+    const p=e.features[0].properties; const L=['<b>'+p.nome+'</b>'];
+    if(p.apelido) L.push('<span style="color:#8a97a8">'+p.apelido+'</span>');
+    const linha2=[]; if(p.ano)linha2.push(p.ano);
+    if(p.comprimento_m)linha2.push(p.comprimento_m+' m'+(p.largura_m?' × '+p.largura_m+' m':''));
+    if(linha2.length)L.push(linha2.join(' · '));
+    if(p.liga)L.push('<span style="font-size:10px;color:#8a97a8">liga '+p.liga+'</span>');
+    if(p.obs)L.push('<span style="font-size:10px;color:#8a97a8">'+p.obs+'</span>');
+    new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
+  });
+  map.on('mouseenter','pontes-pt',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','pontes-pt',()=>map.getCanvas().style.cursor='');
+
+  // ── Carregamento SOB DEMANDA das camadas pesadas (performance) ───────────────
+  // Cada builder só busca o GeoJSON e adiciona as layers na 1ª vez que o chip liga.
+  const _built = {};
+  const BUILDERS = {
+    // Níveis de alagamento (Carta Enchente 7m–15m). UMA cota por vez (combo no
+    // dropdown Rio). Escala de cor suave (baixa) → grave (alta).
+    niveis: async () => {
+      const d = await (await fetch('./brusque_niveis_alagamento.geojson')).json();
+      map.addSource('niveis', { data:d, type:'geojson' });
+      // 7m aqua suave → 15m vermelho grave
+      const escala = ['interpolate',['linear'],['get','nivel'],
+        7,'#a6e3f0', 8,'#74c7e3', 9,'#46a6d6', 10,'#2f83c4', 11,'#3160b0',
+        12,'#5a44a8', 13,'#8b3d92', 14,'#bd3a63', 15,'#e12f2f'];
+      map.addLayer({ id:'niveis-fill', type:'fill', source:'niveis',
+        filter:['==',['get','nivel'],-1],   // começa sem cota selecionada
+        paint:{ 'fill-opacity':0.5, 'fill-color':escala } }, 'municipio-linha');
+      map.addLayer({ id:'niveis-linha', type:'line', source:'niveis',
+        filter:['==',['get','nivel'],-1],
+        paint:{ 'line-color':escala, 'line-width':0.9, 'line-opacity':0.75 } }, 'municipio-linha');
+      return ['niveis-fill','niveis-linha'];
+    },
+    // Setores de risco — só adiciona a FONTE uma vez; as layers são criadas por
+    // categoria pelos builders 'sr_*' (ver bloco SETORES mais abaixo).
+    setores: async () => {
+      const d = await (await fetch('./brusque_setores_risco.geojson')).json();
+      map.addSource('setores', { data:d, type:'geojson', promoteId:'setor' });
+      return [];
+    },
+    // Rotas seguras de enchente — hierarquia por cor (6 níveis, cor vinda do KML)
+    rotas: async () => {
+      const d = await (await fetch('./brusque_rotas_seguras.geojson')).json();
+      map.addSource('rotas', { data:d, type:'geojson' });
+      map.addLayer({ id:'rotas-linha', type:'line', source:'rotas',
+        layout:{ 'line-join':'round','line-cap':'round' },
+        paint:{ 'line-color':['get','cor'],
+          'line-width':['interpolate',['linear'],['zoom'],11,1.6,14,3,17,5], 'line-opacity':0.95 } });
+      const pl = await (await fetch('./brusque_rotas_placas.geojson')).json();
+      map.addSource('rotas-placas', { data:pl, type:'geojson' });
+      map.addLayer({ id:'rotas-placas-pt', type:'circle', source:'rotas-placas', minzoom:13,
+        paint:{ 'circle-radius':4,'circle-color':'#faee0a','circle-stroke-color':'#04121c','circle-stroke-width':1.2 } });
+      return ['rotas-linha','rotas-placas-pt'];
+    },
+    // Cotas de cheia (2011 + 2023) — pontos com o valor da cota. Exibição PROVISÓRIA.
+    cotas: async () => {
+      const d = await (await fetch('./brusque_cotas.geojson')).json();
+      map.addSource('cotas', { data:d, type:'geojson' });
+      map.addLayer({ id:'cotas-pt', type:'circle', source:'cotas', minzoom:12,
+        paint:{ 'circle-radius':3, 'circle-color':['match',['get','ano'],2023,'#00E676','#00B0FF'],
+                'circle-stroke-color':'#04121c','circle-stroke-width':1 } });
+      // hover → hint com o nome da rua + a cota (substitui o label sempre-visível)
+      map.on('mousemove','cotas-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties;
+        hint.style.display='block'; hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        hint.innerHTML='<div class="k">Cota'+(p.ano?' '+p.ano:'')+'</div>'+(p.rua||p.bairro||'—')
+          +(p.cota!=null&&p.cota!==''?'<div style="font-size:11px;color:#00B0FF;margin-top:3px">Esta rua começa a alagar quando o rio atingir '+p.cota+' m</div>':'');
+      });
+      map.on('mouseleave','cotas-pt',()=>{ map.getCanvas().style.cursor=''; hint.style.display='none'; });
+      return ['cotas-pt'];
+    },
+    // Tempo real — estações fixas (CEMADEN por bairro + CMID experimentais) + dados
+    // ao vivo do worker. Também alimenta o hint dos bairros (window._RT).
+    tempo_real: async () => {
+      const est = await (await fetch('./brusque_estacoes.geojson')).json();
+      map.addSource('estacoes', { data:est, type:'geojson' });
+      map.addLayer({ id:'estacoes-pt', type:'circle', source:'estacoes',
+        paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,4,16,7],
+          'circle-color':['match',['get','fonte'],'CEMADEN','#00E5FF','CMID','#FFCA28','#8a97a8'],
+          'circle-stroke-color':'#04121c','circle-stroke-width':1.5 } });
+      map.addLayer({ id:'estacoes-label', type:'symbol', source:'estacoes', minzoom:12.5,
+        layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
+                 'text-offset':[0,1.2], 'text-anchor':'top', 'text-optional':true },
+        paint:{ 'text-color':'#d4f0ff','text-halo-color':'#04121c','text-halo-width':1.3 } });
+      fetchRealtime();  // dispara (não bloqueia o toggle da camada)
+      // clique na estação → popup com dados ao vivo
+      map.on('mousemove','estacoes-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties; const rt=(window._RT||{})[normNome(p.nome)];
+        hint.style.display='block'; hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        let h='<div class="k">'+p.fonte+'</div>'+p.nome;
+        if(rt){ const b=[];
+          if(rt.chuva_24h!=null)b.push('☔ '+rt.chuva_24h+' mm/24h');
+          if(rt.nivel!=null)b.push('🌊 '+rt.nivel+' m');
+          if(rt.temp!=null)b.push(rt.temp+'°C');
+          if(b.length)h+='<div style="font-size:11px;color:#00E5FF;margin-top:3px">'+b.join(' · ')+'</div>';
+          if(rt.coleta)h+='<div style="font-size:10px;color:#8a97a8">coletado '+rt.coleta+'</div>';
+        } else h+='<div style="font-size:10px;color:#8a97a8">sem dado ao vivo</div>';
+        hint.innerHTML=h;
+      });
+      map.on('mouseleave','estacoes-pt',()=>{ map.getCanvas().style.cursor=''; hint.style.display='none'; });
+      return ['estacoes-pt','estacoes-label'];
+    },
+  };
+  // ── Tempo real: busca do worker (CORS + cache); alimenta hint e popups ───────
+  // TODO(deploy): publicar worker-realtime e conferir esta URL (ver worker-realtime/README).
+  const REALTIME_URL = 'https://brusque-realtime.marcososx.workers.dev/estacoes.json';
+  const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  let _rtLoaded = false;
+  async function fetchRealtime(){
+    if(_rtLoaded) return; _rtLoaded = true;
+    try{
+      const d = await (await fetch(REALTIME_URL)).json();
+      window._RT = {}; (d.estacoes||[]).forEach(e => window._RT[normNome(e.nome)] = e);
+      window._RIO = d.rio || null;
+    }catch(err){ _rtLoaded = false; /* worker ainda não publicado — silencioso */ }
+  }
+  let _hovSetor = null;
+  const ensureBuilt = async (key) => { if(!_built[key]) _built[key] = await BUILDERS[key](); return _built[key]; };
+  // Níveis de alagamento: mostra UMA cota por vez (combo). '' = nenhuma.
+  async function selectNivel(v){
+    await ensureBuilt('niveis');
+    const n = v ? parseInt(v,10) : -1;
+    map.setFilter('niveis-fill', ['==',['get','nivel'],n]);
+    map.setFilter('niveis-linha', ['==',['get','nivel'],n]);
+    // sincroniza a UI: combo do dropdown + slider fixo (aparece só com nível escolhido)
+    if (window._nivelSel && window._nivelSel.value !== (v||'')) window._nivelSel.value = v||'';
+    const bar=document.getElementById('nivelbar'), sl=document.getElementById('nivelrange'), lb=document.getElementById('nivellbl');
+    if (v) { if(sl) sl.value=v; if(lb) lb.textContent=v+' m'; if(bar) bar.style.display='flex'; }
+    else if (bar) bar.style.display='none';
+  }
+
+  // ── Setores de risco: 1 par de layers por CATEGORIA (filtrado), togglado no
+  //    dropdown "Setores de risco". Usa o nome exato de cada categoria como rótulo.
+  const SETORES_CATS = [
+    ['Deslizamento','#FF5252'],
+    ['Enxurrada (Alagamento)','#3949AB'],
+    ['Inundação Gradual (Enchente)','#29B6F6'],
+    ['Setor 2011','#9E9E9E'],
+  ];
+  const SETORES = SETORES_CATS.map(([cat,cor]) => {
+    const slug = 'setores-' + cat.replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+    BUILDERS['sr_'+slug] = async () => {
+      await ensureBuilt('setores');                 // adiciona a fonte 1x
+      map.addLayer({ id:slug+'-fill', type:'fill', source:'setores', filter:['==',['get','risco'],cat],
+        paint:{ 'fill-color':cor, 'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.55,0.32] } });
+      map.addLayer({ id:slug+'-linha', type:'line', source:'setores', filter:['==',['get','risco'],cat],
+        paint:{ 'line-color':cor, 'line-width':1.2 } });
+      map.on('mousemove', slug+'-fill', (e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const f=e.features[0]; if(_hovSetor!==null) map.setFeatureState({source:'setores',id:_hovSetor},{hover:false});
+        _hovSetor=f.id; map.setFeatureState({source:'setores',id:_hovSetor},{hover:true});
+        const p=f.properties; hint.style.display='block'; hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        hint.innerHTML='<div class="k">'+(p.risco||'Setor de risco')+'</div>'+(p.bairro||p.setor||'')
+          +(p.ruas?'<div style="font-size:10px;color:#8a97a8">'+p.ruas+'</div>':'')
+          +(p.n_pessoas?'<div style="font-size:10px;color:#8a97a8">≈ '+p.n_pessoas+' pessoas</div>':'');
+      });
+      map.on('mouseleave', slug+'-fill', ()=>{ map.getCanvas().style.cursor='';
+        if(_hovSetor!==null) map.setFeatureState({source:'setores',id:_hovSetor},{hover:false}); _hovSetor=null; hint.style.display='none'; });
+      return [slug+'-fill', slug+'-linha'];
+    };
+    return { id:'sr_'+slug, label:cat, on:false, color:cor, build:'sr_'+slug };
+  });
+
+  // ── Barra de chips (camadas p/ usuário comum) ───────────────────────────────
+  const applyVis = (L) => (L.layers || []).forEach(id => map.getLayer(id) &&
+    map.setLayoutProperty(id, 'visibility', L.on ? 'visible' : 'none'));
+  const paintCbx = (cbx, on, color) => {
+    cbx.textContent = on ? '✓' : '';
+    cbx.style.background  = on ? color : 'transparent';
+    cbx.style.borderColor = on ? color : '#6b7686';
+  };
+
+  const LAYERS = [
+    { id:'bairros', label:'Bairros', on:true, color:'#faee0a', layers:['fill','bairro-linha','reserva-linha','zona-linha'] },
+    // camadas de risco — carregadas sob demanda (build:key)
+    { id:'tempo_real', label:'Tempo real', on:false, color:'#00E5FF', build:'tempo_real' },
+    { id:'limites', label:'Limites', on:true, color:'#9aa7b8', layers:['vizinhas-linha','vizinhas-label'] },
+  ];
+  const RIO = [   // dropdown "Rio Itajaí Mirim"
+    { id:'rio', label:'Rio Itajaí Mirim', on:true, color:'#00B0FF', layers:['rio-banda','rio-linha','rio-label'] },
+    // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
+    // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
+    { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
+      onToggle: async (on) => {
+        if (on) { await ensureBuilt('niveis'); selectNivel(document.getElementById('nivelrange').value || '10'); }
+        else selectNivel('');
+      } },
+    { id:'rotas', label:'Rotas seguras', on:false, color:'#0F9D58', build:'rotas' },
+    { id:'pontes', label:'Pontes', on:false, color:'#00B0FF', layers:['pontes-pt','pontes-label'] },
+    { id:'cotas', label:'Cotas', on:false, color:'#00B0FF', build:'cotas' },
+  ];
+  const MAPA = [   // dropdown "Mapa"
+    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'] },
+    { id:'estradas', label:'Estradas', on:false, color:'#cbb287', layers:['estradas-linha','estradas-label'] },
+    { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', layers:['trafego'] },
+  ];
+  const chipbar = document.getElementById('chips');
+
+  // chips simples (toggle) — suportam camada lazy (L.build): busca o GeoJSON na 1ª vez
+  LAYERS.forEach(L => {
+    const btn = document.createElement('button'); btn.className = 'chip';
+    const cbx = document.createElement('span'); cbx.className = 'cbx';
+    const lbl = document.createElement('span'); lbl.textContent = L.label;
+    btn.append(cbx, lbl);
+    const paint = () => {
+      btn.classList.toggle('on', L.on);
+      btn.style.borderColor = L.on ? L.color : '';
+      btn.style.background  = L.on ? L.color + '2e' : '';
+      btn.style.boxShadow   = L.on ? 'inset 0 -2px 0 0 ' + L.color : '';
+      paintCbx(cbx, L.on, L.color); applyVis(L);
+    };
+    paint();
+    btn.onclick = async () => {
+      L.on = !L.on;
+      if (L.on && L.build && !L.layers) {              // 1ª ativação → carrega sob demanda
+        btn.style.opacity = '.55'; cbx.textContent = '…';
+        try { L.layers = await ensureBuilt(L.build); }
+        finally { btn.style.opacity = ''; }
+      }
+      paint();
+    };
+    chipbar.appendChild(btn);
+  });
+
+  // grupo dropdown genérico (usado por "Rio Itajaí Mirim" e "Mapa")
+  const makeDropdown = (label, arr, accent) => {
+    const gbtn = document.createElement('button'); gbtn.className = 'chip';
+    gbtn.innerHTML = '<span>'+label+'</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    const menu = document.createElement('div'); menu.className = 'chip-menu';
+    const refresh = () => {
+      const any = arr.some(m => m.on);
+      gbtn.classList.toggle('on', any);
+      gbtn.style.borderColor = any ? accent : '';
+      gbtn.style.boxShadow   = any ? 'inset 0 -2px 0 0 ' + accent : '';
+    };
+    arr.forEach(M => {
+      // item COMBO (select) — ex.: Níveis de alagamento (uma cota por vez)
+      if (M.combo) {
+        const item = document.createElement('div'); item.className = 'item combo-item';
+        const it = document.createElement('span'); it.textContent = M.label;
+        const sel = document.createElement('select'); sel.className = 'combo';
+        M.combo.forEach(o => { const op=document.createElement('option'); op.value=o.value; op.textContent=o.label; sel.appendChild(op); });
+        sel.onclick = e => e.stopPropagation();
+        sel.onchange = async (e) => {
+          e.stopPropagation(); sel.disabled = true;
+          try { await M.onChange(sel.value); } finally { sel.disabled = false; }
+          M.on = sel.value !== ''; item.classList.toggle('on', M.on); refresh();
+        };
+        window._nivelSel = sel;   // ref p/ o slider fixo sincronizar
+        item.append(it, sel); menu.appendChild(item); return;
+      }
+      const item = document.createElement('div'); item.className = 'item';
+      const cbx = document.createElement('span'); cbx.className = 'cbx';
+      const it = document.createElement('span'); it.textContent = M.label;
+      item.append(cbx, it);
+      const paint = () => { item.classList.toggle('on', M.on); paintCbx(cbx, M.on, M.color); applyVis(M); refresh(); };
+      paint();
+      item.onclick = async (e) => {
+        e.stopPropagation(); M.on = !M.on;
+        if (M.on && M.build && !M.layers) { cbx.textContent='…'; try{ M.layers = await ensureBuilt(M.build);}finally{} }
+        if (M.onToggle) await M.onToggle(M.on);
+        paint();
+      };
+      menu.appendChild(item);
+    });
+    gbtn.onclick = (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.chip-menu.open').forEach(m => m !== menu && m.classList.remove('open'));
+      const open = menu.classList.toggle('open');
+      if (open) { const r = gbtn.getBoundingClientRect();
+        menu.style.top = (r.bottom + 6) + 'px';
+        menu.style.left = (r.left + r.width / 2 - menu.offsetWidth / 2) + 'px'; }
+    };
+    chipbar.appendChild(gbtn);
+    document.body.appendChild(menu);
+    refresh();
+  };
+  document.addEventListener('click', () => document.querySelectorAll('.chip-menu.open').forEach(m => m.classList.remove('open')));
+  makeDropdown('Rio Itajaí Mirim', RIO, '#00B0FF');
+  makeDropdown('Setores de risco', SETORES, '#FF5252');
+  makeDropdown('Mapa', MAPA, '#cfd8e3');
+  // slider fixo dos níveis: arrastar navega pelas cotas do rio (sincroniza com o combo)
+  document.getElementById('nivelrange').oninput = (e) => selectNivel(e.target.value);
+
+  // Abre focado em Brusque (home)
+  const home = new maplibregl.LngLatBounds();
+  const eachHome = c => Array.isArray(c[0]) ? c.forEach(eachHome) : home.extend(c);
+  data.features.forEach(f => eachHome(f.geometry.coordinates));
+  map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:0 });  // top maior: livra a barra de chips
+
+  // Zoom-out não passa dos limites das cidades vizinhas
+  // trava a navegação em Brusque + cidades-limite (não deixa panorâmica/zoom-out puxar recursos à toa)
+  map.setMaxBounds([[-49.25,-27.35],[-48.55,-26.90]]);
+
+  // Clique num bairro (só quando visível) → enquadra; clicar de novo / dar zoom no scroll → volta
+  let focused = false;
+  const goHome = () => { focused = false; map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:600 }); };
+  map.on('click', 'fill', (e) => {
+    if (e.features[0].properties.camada === 'zona_rural') return;   // enquadrar só bairros
+    if (focused) { goHome(); return; }
+    const bb = new maplibregl.LngLatBounds();
+    const ea = c => Array.isArray(c[0]) ? c.forEach(ea) : bb.extend(c);
+    ea(e.features[0].geometry.coordinates);
+    focused = true;
+    map.fitBounds(bb, { padding:60, maxZoom:14, duration:600 });
+  });
+  map.on('wheel', () => { if (focused) goHome(); });   // scroll do mouse volta à visão
+
+  // ── Minha localização (validada por região) ─────────────────────────────────
+  const muniGeom = muni.features[0].geometry;
+  const ringHas = (ring, x, y) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  };
+  const polyHas = (poly, x, y) => ringHas(poly[0], x, y) && !poly.slice(1).some(h => ringHas(h, x, y));
+  const geomHas = (g, x, y) => g.type === 'Polygon' ? polyHas(g.coordinates, x, y)
+    : g.type === 'MultiPolygon' ? g.coordinates.some(p => polyHas(p, x, y)) : false;
+
+  const toast = document.getElementById('toast');
+  const showToast = (msg) => { toast.textContent = msg; toast.style.display = 'block';
+    clearTimeout(toast._t); toast._t = setTimeout(() => toast.style.display = 'none', 7000); };
+  let meMarker = null;
+  const placeMe = (lng, lat, minZoom) => {
+    if (meMarker) meMarker.remove();
+    const el = document.createElement('div'); el.className = 'me-dot';
+    meMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+    map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), minZoom), duration: 800 });
+  };
+  const locateResult = (lng, lat) => {
+    if (geomHas(muniGeom, lng, lat)) {                       // dentro de Brusque
+      placeMe(lng, lat, 13);
+      // se caiu dentro de um bairro, enquadra o bairro (mesma prática do clique)
+      const bf = data.features.find(f => (f.properties.camada==='bairro'||f.properties.camada==='reserva') && geomHas(f.geometry, lng, lat));
+      if (bf) {
+        const bb = new maplibregl.LngLatBounds();
+        const ea = c => Array.isArray(c[0]) ? c.forEach(ea) : bb.extend(c);
+        ea(bf.geometry.coordinates); focused = true;
+        map.fitBounds(bb, { padding:60, maxZoom:14, duration:800 });
+      }
+    } else if (viz.features.some(f => geomHas(f.geometry, lng, lat))) {  // cidade vizinha
+      placeMe(lng, lat, 12);
+      showToast('Você está do lado de Brusque e consegue acompanhar seu local pelo mapa na visão Satélite');
+    } else {                                                 // fora da região
+      if (meMarker) { meMarker.remove(); meMarker = null; }
+      showToast('Você está fora da região de Brusque. Não será possível mostrar sua localização no mapa');
+    }
+  };
+  window._locateResult = locateResult;  // p/ teste com coordenadas simuladas
+  document.getElementById('locate').onclick = () => {
+    if (!navigator.geolocation) { showToast('Geolocalização não suportada neste navegador'); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => locateResult(p.coords.longitude, p.coords.latitude),
+      () => showToast('Não foi possível obter sua localização (permissão negada ou indisponível)'),
+      { enableHighAccuracy: true, timeout: 10000 });
+  };
+
+  // ── Hover / hint ────────────────────────────────────────────────────────────
+  const hint = document.getElementById('hint');
+  let hovered = null;
+  map.on('mousemove','fill', (e) => {
+    map.getCanvas().style.cursor = 'pointer';
+    const f = e.features[0];
+    if (hovered !== null) map.setFeatureState({source:'brusque', id:hovered}, {hover:false});
+    hovered = f.id;
+    map.setFeatureState({source:'brusque', id:hovered}, {hover:true});
+    const nome = f.properties.nome, cam = f.properties.camada.replace('_',' ');
+    hint.style.display = 'block';
+    hint.style.left = e.point.x + 'px';
+    hint.style.top  = e.point.y + 'px';
+    let extra = '';
+    const rt = (window._RT || {})[normNome(nome)];   // estação CEMADEN nesse bairro?
+    if (rt) {
+      const bits = [];
+      if (rt.chuva_24h != null) bits.push('☔ '+rt.chuva_24h+' mm/24h');
+      if (rt.nivel != null) bits.push('🌊 '+rt.nivel+' m');
+      if (rt.coleta) bits.push('<span style="opacity:.7">'+rt.coleta+'</span>');
+      if (bits.length) extra = '<div style="font-size:10px;color:#00E5FF;margin-top:3px">'+bits.join(' · ')+'</div>';
+    }
+    hint.innerHTML = '<div class="k">'+cam+'</div>'+nome+extra;
+  });
+  map.on('mouseleave','fill', () => {
+    map.getCanvas().style.cursor = '';
+    if (hovered !== null) map.setFeatureState({source:'brusque', id:hovered}, {hover:false});
+    hovered = null; hint.style.display = 'none';
+  });
+});
+</script>
+</body>
+</html>

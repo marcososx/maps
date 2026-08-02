@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+*.log
+.DS_Store
+.venv*/
+fontes-defesacivil/kml/
+fontes-defesacivil/raw/
+fontes-defesacivil/out/
+fontes-defesacivil/.venv-niveis/
