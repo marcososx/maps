@@ -15,10 +15,26 @@
   /* HUD */
   .hud{ position:absolute; z-index:2; background:rgba(21,25,33,.85);
         border:1px solid var(--border); border-radius:10px; backdrop-filter:blur(6px); }
-  #title{ top:14px; left:14px; padding:10px 14px; }
-  #title h1{ margin:0; font-size:14px; letter-spacing:.3px; }
-  #title p{ margin:4px 0 0; font-size:11px; color:#8a97a8;
-            font-family:'JetBrains Mono',ui-monospace,monospace; }
+  /* Clima no mapa (sem card/fundo). Dois modos: "mapa" = vetorial, ancorado no
+     centro de Brusque e escalando com o zoom; "canto" = compacto no topo-esquerdo
+     quando há qualquer camada ligada. */
+  #wx-corner{ position:absolute; top:12px; left:12px; z-index:2; pointer-events:none; display:none; }
+  #title{ z-index:2; width:max-content; text-align:center; pointer-events:none;
+          display:flex; flex-direction:column; align-items:center; transform-origin:center center;
+          opacity:0; transition:opacity .24s ease; }
+  #title #wx-city{ font:700 30px Inter,system-ui; letter-spacing:.5px; color:#eaf6ff;
+          text-shadow:0 2px 12px rgba(0,0,0,.85); }
+  #title #wx-cond{ margin-top:6px; font-size:18px; color:#dbe7f5;
+          text-shadow:0 2px 10px rgba(0,0,0,.8); }
+  #title #wx-cond .ic{ font-size:22px; vertical-align:-2px; }
+  #title #wx-temp{ margin-top:2px; font:700 72px/1 Inter,system-ui; color:#fff;
+          text-shadow:0 3px 16px rgba(0,0,0,.9); }
+  /* modo canto: compacto, alinhado à esquerda, sem escala de zoom */
+  #title.corner{ transform:none!important; align-items:flex-start; text-align:left; }
+  #title.corner #wx-city{ font-size:15px; text-shadow:0 1px 4px rgba(0,0,0,.9); }
+  #title.corner #wx-cond{ margin-top:1px; font-size:12px; }
+  #title.corner #wx-cond .ic{ font-size:14px; }
+  #title.corner #wx-temp{ margin-top:0; font-size:22px; text-shadow:0 1px 6px rgba(0,0,0,.9); }
   #legend{ bottom:14px; left:14px; padding:10px 12px; font-size:11px; line-height:1.7; }
   #legend .row{ display:flex; align-items:center; gap:8px; }
   #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
@@ -28,38 +44,62 @@
          border:1px solid #faee0a; border-radius:8px; transform:translate(12px,12px);
          white-space:nowrap; }
   #hint .k{ color:#8a97a8; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+  #hint.rt-card{ white-space:normal; width:264px; padding:0; }
+  #hint.rt-card .k{ font-size:11px; }
+  /* hint de pontes — borda/layout iguais ao hint padrão; card interno com título + infos */
+  #hint-ponte{ position:absolute; z-index:3; pointer-events:none; display:none;
+         min-width:180px; max-width:240px; padding:10px 12px; font-size:12px;
+         background:rgba(11,14,20,.94); border:1px solid #faee0a; border-radius:8px;
+         transform:translate(12px,12px); box-shadow:0 6px 20px rgba(0,0,0,.45);
+         line-height:1.4; }
+  #hint-ponte .hp-row{ margin-top:6px; }
+  #hint-ponte .hp-row:first-child{ margin-top:0; }
+  #hint-ponte .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
+  #hint-ponte .hp-lbl::after{ content:':'; }
+  #hint-ponte .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
+  #hint-ponte .hp-val.sub{ color:#eaf6ff; font-weight:400; }
+  #hint-ponte .hp-val.info{ color:#00B0FF; }
   /* slider de níveis de alagamento (aparece ao escolher um nível) */
   #nivelbar{ position:absolute; z-index:4; right:14px; top:64px;
-        display:none; flex-direction:column; align-items:center; gap:8px; padding:12px 10px;
+        display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 10px;
         background:rgba(21,25,33,.9); border:1px solid var(--border); border-radius:12px;
-        backdrop-filter:blur(6px); }
+        backdrop-filter:blur(6px);
+        opacity:0; visibility:hidden; transform:translateY(-6px); pointer-events:none;
+        transition:opacity .36s ease, transform .36s ease, visibility .36s; }
+  #nivelbar.show{ opacity:1; visibility:visible; transform:none; pointer-events:auto; }
   #nivelbar #nivellbl{ font:700 13px Inter,system-ui; color:#eaf6ff; min-width:38px; text-align:center; }
   #nivelbar .nb-cap{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; text-align:center; }
   /* range vertical: menor embaixo, maior em cima (direction:rtl inverte o eixo) */
   #nivelrange{ writing-mode:vertical-lr; direction:rtl; width:10px; height:190px;
         accent-color:#e12f2f; cursor:pointer; }
   /* chips de camadas (header flutuante) */
-  #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex; }
+  #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex;
+          filter:drop-shadow(0 8px 20px rgba(0,0,0,.45)); }
   .chip{ display:inline-flex; align-items:center; gap:8px;
-         font:600 12px/1 Inter,system-ui; color:#8a97a8; cursor:pointer;
-         background:rgba(21,25,33,.85); border:1px solid var(--border);
-         padding:9px 14px; backdrop-filter:blur(6px); border-radius:10px; }
-  .cbx{ width:14px; height:14px; border-radius:3px; border:1.5px solid #6b7686;
+         font:600 12px/1 Inter,system-ui; letter-spacing:.2px; color:#8a97a8; cursor:pointer;
+         background:rgba(23,28,38,.72); border:1px solid rgba(255,255,255,.10);
+         padding:10px 15px; backdrop-filter:blur(10px) saturate(1.2); border-radius:12px;
+         transition:background .24s ease, border-color .24s ease, color .24s ease, box-shadow .24s ease; }
+  .chip:hover{ color:#cfd8e3; border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.8); }
+  .cbx{ width:15px; height:15px; border-radius:5px; border:1.5px solid #5a6678;
         display:inline-flex; align-items:center; justify-content:center; flex:none;
-        font-size:11px; line-height:1; color:#04121c; }
-  .chip .caret{ width:15px; height:15px; opacity:.75; margin-left:-1px; }
-  /* dropdown "Mapa" */
-  .chip-menu{ position:fixed; z-index:6; min-width:150px; padding:6px; display:none;
-        background:rgba(21,25,33,.96); border:1px solid var(--border); border-radius:10px;
-        backdrop-filter:blur(6px); }
-  .chip-menu.open{ display:block; }
-  .chip-menu .item{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px;
-        cursor:pointer; font:600 12px Inter,system-ui; color:#8a97a8; }
-  .chip-menu .item:hover{ background:rgba(255,255,255,.05); }
+        font-size:11px; line-height:1; color:#04121c;
+        transition:background .24s ease, border-color .24s ease; }
+  .chip .caret{ width:15px; height:15px; opacity:.7; margin-left:-1px; transition:transform .24s ease, opacity .24s ease; }
+  /* dropdown */
+  .chip-menu{ position:fixed; z-index:6; min-width:158px; padding:7px; display:none;
+        background:rgba(20,25,34,.92); border:1px solid rgba(255,255,255,.10); border-radius:14px;
+        backdrop-filter:blur(16px) saturate(1.3);
+        box-shadow:0 14px 34px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.25); transform-origin:top center; }
+  .chip-menu.open{ display:block; animation:menuIn .2s ease; }
+  @keyframes menuIn{ from{ opacity:0; transform:translateY(-6px) scale(.97) } to{ opacity:1; transform:none } }
+  .chip-menu .item{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px;
+        cursor:pointer; font:600 12px Inter,system-ui; color:#8a97a8; transition:background .18s ease, color .18s ease; }
+  .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:#cfd8e3; }
   .chip-menu .item.on{ color:#eaf6ff; }
   .chip-menu .combo-item{ justify-content:space-between; gap:12px; cursor:default; }
-  .chip-menu select.combo{ background:#0B0E14; color:#cfd8e3; border:1px solid var(--border);
-        border-radius:6px; font:600 12px Inter,system-ui; padding:4px 6px; cursor:pointer; }
+  .chip-menu select.combo{ background:#0B0E14; color:#cfd8e3; border:1px solid rgba(255,255,255,.12);
+        border-radius:8px; font:600 12px Inter,system-ui; padding:4px 6px; cursor:pointer; }
   .chip:not(:first-child){ border-top-left-radius:0; border-bottom-left-radius:0; margin-left:-1px; }
   .chip:not(:last-child){ border-top-right-radius:0; border-bottom-right-radius:0; }
   .chip.on{ color:#eaf6ff; }  /* cor de destaque é setada inline por chip (cor da camada) */
@@ -83,6 +123,13 @@
 <body>
 <div id="map"></div>
 
+<!-- Selo "Brusque + clima" — aparece só quando NENHUMA camada está ligada -->
+<div id="title" style="display:none">
+  <div id="wx-city">Brusque</div>
+  <div id="wx-cond"><span id="wx-icon" class="ic">·</span> <span id="wx-info">carregando…</span></div>
+  <div id="wx-temp">--°</div>
+</div>
+
 <div id="chips">
   <button id="locate" class="chip" title="Minha localização" aria-label="Minha localização">
     <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11" fill="#2a7fff" stroke="#eaf2ff" stroke-width="1.4" stroke-linejoin="round"/></svg>
@@ -90,6 +137,7 @@
 </div>
 <div id="toast"></div>
 <div id="hint"></div>
+<div id="hint-ponte"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="1" value="10">
@@ -205,19 +253,34 @@ map.on('load', async () => {
     layout:{ visibility:'none', 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
              'text-size':11, 'text-offset':[0,1.1], 'text-anchor':'top', 'text-optional':true },
     paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.4 } });
-  // clique na ponte → popup com os dados coletados (apelido, ano, comprimento…)
+  // clique na ponte → popup com os dados coletados (nome oficial/popular, comprimento, vão…)
   map.on('click','pontes-pt',(e)=>{
-    const p=e.features[0].properties; const L=['<b>'+p.nome+'</b>'];
-    if(p.apelido) L.push('<span style="color:#8a97a8">'+p.apelido+'</span>');
-    const linha2=[]; if(p.ano)linha2.push(p.ano);
-    if(p.comprimento_m)linha2.push(p.comprimento_m+' m'+(p.largura_m?' × '+p.largura_m+' m':''));
+    const p=e.features[0].properties; const L=['<b>'+(p.nome_oficial||p.nome)+'</b>'];
+    if(p.nome_popular) L.push('<span style="color:#8a97a8">'+p.nome_popular+'</span>');
+    const linha2=[];
+    if(p.comprimento_m)linha2.push(p.comprimento_m+' m');
+    if(p.vao_livre_m)linha2.push('vão livre '+p.vao_livre_m+' m');
     if(linha2.length)L.push(linha2.join(' · '));
-    if(p.liga)L.push('<span style="font-size:10px;color:#8a97a8">liga '+p.liga+'</span>');
-    if(p.obs)L.push('<span style="font-size:10px;color:#8a97a8">'+p.obs+'</span>');
+    if(p.bairros_conexao)L.push('<span style="font-size:10px;color:#8a97a8">liga '+p.bairros_conexao.join(' ↔ ')+'</span>');
     new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
   });
   map.on('mouseenter','pontes-pt',()=>map.getCanvas().style.cursor='pointer');
-  map.on('mouseleave','pontes-pt',()=>map.getCanvas().style.cursor='');
+  map.on('mousemove','pontes-pt',(e)=>{
+    const p=e.features[0].properties;
+    const hp=document.getElementById('hint-ponte');
+    hp.style.display='block'; hp.style.left=e.point.x+'px'; hp.style.top=e.point.y+'px';
+    const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
+      +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+    let h='';
+    if(p.nome_oficial||p.nome) h+=row('Nome', p.nome_oficial||p.nome);
+    if(p.nome_popular) h+=row('Nome popular', p.nome_popular, 'sub');
+    if(p.comprimento_m!=null) h+=row('Comprimento', p.comprimento_m+' m', 'info');
+    if(p.vao_livre_m!=null) h+=row('Vão livre', p.vao_livre_m+' m', 'info');
+    if(p.bairros_conexao) h+=row('Liga', p.bairros_conexao.join(' ↔ '), 'sub');
+    hp.innerHTML=h;
+  });
+  map.on('mouseleave','pontes-pt',()=>{ map.getCanvas().style.cursor='';
+    document.getElementById('hint-ponte').style.display='none'; });
 
   // ── Carregamento SOB DEMANDA das camadas pesadas (performance) ───────────────
   // Cada builder só busca o GeoJSON e adiciona as layers na 1ª vez que o chip liga.
@@ -297,18 +360,28 @@ map.on('load', async () => {
       map.on('mousemove','estacoes-pt',(e)=>{
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties; const rt=(window._RT||{})[normNome(p.nome)];
-        hint.style.display='block'; hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
-        let h='<div class="k">'+p.fonte+'</div>'+p.nome;
-        if(rt){ const b=[];
-          if(rt.chuva_24h!=null)b.push('☔ '+rt.chuva_24h+' mm/24h');
-          if(rt.nivel!=null)b.push('🌊 '+rt.nivel+' m');
-          if(rt.temp!=null)b.push(rt.temp+'°C');
-          if(b.length)h+='<div style="font-size:11px;color:#00E5FF;margin-top:3px">'+b.join(' · ')+'</div>';
-          if(rt.coleta)h+='<div style="font-size:10px;color:#8a97a8">coletado '+rt.coleta+'</div>';
-        } else h+='<div style="font-size:10px;color:#8a97a8">sem dado ao vivo</div>';
-        hint.innerHTML=h;
+        hint.className='rt-card'; hint.style.display='block';
+        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        const c=rtCond(rt); hint.style.borderColor=c.cor;
+        const chov = rt && rt.chuva_atual!=null && rt.chuva_atual>0;
+        let m='';
+        if(rt){
+          const cell=(rot,v,u)=> (v==null)?'':'<div style="flex:1;min-width:66px"><div style="font-size:11px;color:#8a97a8;text-transform:uppercase;letter-spacing:.3px">'+rot+'</div><div style="font-size:15px;color:#eaf6ff">'+v+' '+u+'</div></div>';
+          m='<div style="display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px">'
+            + cell('Nível',rt.nivel,'m') + cell('Chuva agora',rt.chuva_atual,'mm')
+            + cell('Chuva 24h',rt.chuva_24h,'mm') + cell('Temp',rt.temp,'°C') + '</div>';
+          if(rt.coleta) m+='<div style="font-size:11px;color:#8a97a8;margin-top:7px">medição '+rt.coleta+'</div>';
+        } else { m='<div style="font-size:12px;color:#8a97a8;margin-top:6px">sem dado ao vivo</div>'; }
+        hint.innerHTML =
+          '<div style="padding:14px 16px">'
+          + '<div class="k">'+p.fonte+' · '+p.nome+'</div>'
+          + '<div style="display:flex;align-items:center;gap:11px;margin-top:7px">'
+            + '<div style="font-size:54px;line-height:1">'+c.ic+'</div>'
+            + '<div><div style="font-weight:700;font-size:17px;color:'+c.cor+'">'+c.lvl+'</div>'
+              + '<div style="font-size:12px;color:'+(chov?'#4FC3F7':'#8a97a8')+';margin-top:1px">'+(chov?'🌧️ Chovendo agora':'🌤️ Sem chuva no momento')+'</div></div>'
+          + '</div>' + m + '</div>';
       });
-      map.on('mouseleave','estacoes-pt',()=>{ map.getCanvas().style.cursor=''; hint.style.display='none'; });
+      map.on('mouseleave','estacoes-pt',()=>{ map.getCanvas().style.cursor=''; hint.style.display='none'; hint.className=''; });
       return ['estacoes-pt','estacoes-label'];
     },
   };
@@ -317,9 +390,30 @@ map.on('load', async () => {
   const REALTIME_URL = 'https://brusque-realtime.marcososx.workers.dev/estacoes.json';
   const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+
+  // condição da estação no padrão Defesa Civil de Brusque:
+  // Emergência: nível > 5,00 m · Atenção: nível > 3,00 m OU chuva atual > 30 mm · senão Normalidade
+  const rtCond = (rt) => {
+    const n = rt && rt.nivel, ca = rt && rt.chuva_atual;
+    if(n!=null && n>5) return {lvl:'EMERGÊNCIA', cor:'#FF3B30', ic:'<svg width="52" height="52" viewBox="0 0 24 24" fill="none"><path d="M8.1 2.5h7.8L21.5 8.1v7.8L15.9 21.5H8.1L2.5 15.9V8.1L8.1 2.5Z" fill="#FF3B30"/><path d="M12 7v6" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1.3" fill="#fff"/></svg>'};
+    if((n!=null && n>3) || (ca!=null && ca>30)) return {lvl:'ATENÇÃO', cor:'#FF9500', ic:'<svg width="52" height="52" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a1.6 1.6 0 0 1 1.4.8l7.8 13.5a1.6 1.6 0 0 1-1.4 2.4H4.2a1.6 1.6 0 0 1-1.4-2.4L10.6 4.3a1.6 1.6 0 0 1 1.4-.8Z" fill="#FF9500"/><path d="M12 9.5v4" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1.25" fill="#fff"/></svg>'};
+    return {lvl:'NORMALIDADE', cor:'#34C759', ic:'<svg width="52" height="52" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V5l-8-3Z" fill="#34C759"/><path d="M8.5 12.3l2.4 2.4 4.6-4.8" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+  };
   let _rtLoaded = false;
   async function fetchRealtime(){
     if(_rtLoaded) return; _rtLoaded = true;
+
+    const _mock = new URLSearchParams(location.search).get('rtmock');
+    if(_mock){
+      const S = { emergencia:{nivel:5.8,chuva_atual:42,chuva_24h:120,temp:19},
+                  atencao:{nivel:3.4,chuva_atual:35,chuva_24h:70,temp:21},
+                  chuva:{nivel:1.2,chuva_atual:12,chuva_24h:40,temp:20},
+                  normal:{nivel:0.9,chuva_atual:0,chuva_24h:2,temp:26} };
+      const base = S[_mock] || S.normal;
+      window._RT = new Proxy({}, { get: () => ({ ...base, coleta:'(simulado)' }) });
+      window._RIO = { nivel_m: base.nivel, coleta:'(simulado)' };
+      return;
+    }
     try{
       const d = await (await fetch(REALTIME_URL)).json();
       window._RT = {}; (d.estacoes||[]).forEach(e => window._RT[normNome(e.nome)] = e);
@@ -337,8 +431,8 @@ map.on('load', async () => {
     // sincroniza a UI: combo do dropdown + slider fixo (aparece só com nível escolhido)
     if (window._nivelSel && window._nivelSel.value !== (v||'')) window._nivelSel.value = v||'';
     const bar=document.getElementById('nivelbar'), sl=document.getElementById('nivelrange'), lb=document.getElementById('nivellbl');
-    if (v) { if(sl) sl.value=v; if(lb) lb.textContent=v+' m'; if(bar) bar.style.display='flex'; }
-    else if (bar) bar.style.display='none';
+    if (v) { if(sl) sl.value=v; if(lb) lb.textContent=v+' m'; if(bar) bar.classList.add('show'); }
+    else if (bar) bar.classList.remove('show');
   }
 
   // ── Setores de risco: 1 par de layers por CATEGORIA (filtrado), togglado no
@@ -374,8 +468,41 @@ map.on('load', async () => {
   });
 
   // ── Barra de chips (camadas p/ usuário comum) ───────────────────────────────
-  const applyVis = (L) => (L.layers || []).forEach(id => map.getLayer(id) &&
-    map.setLayoutProperty(id, 'visibility', L.on ? 'visible' : 'none'));
+  // Fade in/out (360 ms) ao ligar/desligar camadas — anima a opacidade porque
+  // 'visibility' não é animável no MapLibre. Guarda a opacidade original de cada layer.
+  const FADE_MS = 360;
+  const OPAC_PROPS = { fill:['fill-opacity'], line:['line-opacity'],
+    circle:['circle-opacity','circle-stroke-opacity'], symbol:['icon-opacity','text-opacity'],
+    raster:['raster-opacity'], background:['background-opacity'],
+    'fill-extrusion':['fill-extrusion-opacity'], heatmap:['heatmap-opacity'] };
+  const _baseOpac = {};     // "id::prop" -> valor original (constante ou expressão)
+  const _fadeTimers = {};   // id -> timeout de esconder
+  let _fadeReady = false;   // só anima após a montagem inicial (evita flash no load)
+  const fadeLayer = (id, show) => {
+    const ly = map.getLayer(id); if(!ly) return;
+    const props = OPAC_PROPS[ly.type] || [];
+    if(!_fadeReady || !props.length){
+      map.setLayoutProperty(id, 'visibility', show ? 'visible' : 'none'); return;
+    }
+    if(_fadeTimers[id]){ clearTimeout(_fadeTimers[id]); delete _fadeTimers[id]; }
+    props.forEach(p => { const k=id+'::'+p;
+      if(!(k in _baseOpac)){ const v=map.getPaintProperty(id,p); _baseOpac[k]=(v==null?1:v); } });
+    if(show){
+      props.forEach(p => { map.setPaintProperty(id, p+'-transition', {duration:0}); map.setPaintProperty(id, p, 0); });
+      map.setLayoutProperty(id, 'visibility', 'visible');
+      requestAnimationFrame(() => requestAnimationFrame(() => props.forEach(p => {
+        map.setPaintProperty(id, p+'-transition', {duration:FADE_MS});
+        map.setPaintProperty(id, p, _baseOpac[id+'::'+p]); })));
+    } else {
+      props.forEach(p => { map.setPaintProperty(id, p+'-transition', {duration:FADE_MS}); map.setPaintProperty(id, p, 0); });
+      _fadeTimers[id] = setTimeout(() => {
+        map.setLayoutProperty(id, 'visibility', 'none');
+        props.forEach(p => { map.setPaintProperty(id, p+'-transition', {duration:0}); map.setPaintProperty(id, p, _baseOpac[id+'::'+p]); });
+        delete _fadeTimers[id];
+      }, FADE_MS);
+    }
+  };
+  const applyVis = (L) => (L.layers || []).forEach(id => fadeLayer(id, !!L.on));
   const paintCbx = (cbx, on, color) => {
     cbx.textContent = on ? '✓' : '';
     cbx.style.background  = on ? color : 'transparent';
@@ -383,13 +510,13 @@ map.on('load', async () => {
   };
 
   const LAYERS = [
-    { id:'bairros', label:'Bairros', on:true, color:'#faee0a', layers:['fill','bairro-linha','reserva-linha','zona-linha'] },
+    { id:'bairros', label:'Bairros', on:false, color:'#faee0a', layers:['fill','bairro-linha','reserva-linha','zona-linha'] },
     // camadas de risco — carregadas sob demanda (build:key)
     { id:'tempo_real', label:'Tempo real', on:false, color:'#00E5FF', build:'tempo_real' },
-    { id:'limites', label:'Limites', on:true, color:'#9aa7b8', layers:['vizinhas-linha','vizinhas-label'] },
+    { id:'limites', label:'Limites', on:false, color:'#9aa7b8', layers:['vizinhas-linha','vizinhas-label'] },
   ];
   const RIO = [   // dropdown "Rio Itajaí Mirim"
-    { id:'rio', label:'Rio Itajaí Mirim', on:true, color:'#00B0FF', layers:['rio-banda','rio-linha','rio-label'] },
+    { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', layers:['rio-banda','rio-linha','rio-label'] },
     // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
     { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
@@ -406,6 +533,80 @@ map.on('load', async () => {
     { id:'estradas', label:'Estradas', on:false, color:'#cbb287', layers:['estradas-linha','estradas-label'] },
     { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', layers:['trafego'] },
   ];
+  // ── Selo "Brusque + clima": visível SÓ quando nenhuma camada está ligada ──────
+  const wxBadge = document.getElementById('title');
+  const wxIcon  = document.getElementById('wx-icon');
+  const wxTemp  = document.getElementById('wx-temp');
+  const wxInfo  = document.getElementById('wx-info');
+  // WMO weather_code → [ícone, rótulo curto pt-BR]
+  const wxOf = (c) => {
+    if (c === 0)  return ['☀️','Céu limpo'];
+    if (c <= 2)   return ['🌤️','Parcialmente nublado'];
+    if (c === 3)  return ['☁️','Nublado'];
+    if (c <= 48)  return ['🌫️','Névoa'];
+    if (c <= 57)  return ['🌦️','Garoa'];
+    if (c <= 67)  return ['🌧️','Chuva'];
+    if (c <= 77)  return ['🌨️','Neve'];
+    if (c <= 82)  return ['🌧️','Pancadas de chuva'];
+    if (c <= 86)  return ['🌨️','Neve'];
+    return ['⛈️','Tempestade'];   // 95+
+  };
+  let _wx = null;
+  const paintWeather = () => {
+    if (_wx) { wxIcon.textContent = _wx.ic; wxTemp.textContent = _wx.t + '°'; wxInfo.textContent = _wx.desc; }
+    else     { wxIcon.textContent = '📍'; wxTemp.textContent = '--°'; wxInfo.textContent = 'Sem dados de clima'; }
+  };
+  (async () => {
+    try {
+      const u = 'https://api.open-meteo.com/v1/forecast?latitude=-27.0977&longitude=-48.9172'
+              + '&current=temperature_2m,weather_code&timezone=America%2FSao_Paulo';
+      const d = await (await fetch(u)).json();
+      const [ic, desc] = wxOf(d.current.weather_code);
+      _wx = { t: Math.round(d.current.temperature_2m), ic, desc };
+    } catch (e) { _wx = null; }   // sem internet → cai no fallback "Santa Catarina"
+    paintWeather();
+  })();
+  // ── Modo "mapa": marcador vetorial ancorado no centro de Brusque, escala c/ zoom ─
+  const _wxB = new maplibregl.LngLatBounds();
+  const _wxExt = c => Array.isArray(c[0]) ? c.forEach(_wxExt) : _wxB.extend(c);
+  data.features.forEach(f => _wxExt(f.geometry.coordinates));
+  const wxMapWrap = document.createElement('div'); wxMapWrap.style.pointerEvents = 'none';
+  new maplibregl.Marker({ element: wxMapWrap, anchor:'center' })
+      .setLngLat(_wxB.getCenter()).addTo(map);
+  const wxCorner = document.createElement('div'); wxCorner.id = 'wx-corner';
+  document.body.appendChild(wxCorner);
+  // zoom-base = zoom em que a cidade preenche a tela (escala 1 nesse ponto)
+  const _cam = map.cameraForBounds(_wxB, { padding:{ top:84, bottom:44, left:44, right:44 } });
+  const wxBaseZoom = _cam ? _cam.zoom : map.getZoom();
+  const wxScale = () => {
+    if (wxBadge.classList.contains('corner')) return;      // no canto não escala
+    const s = Math.min(5, Math.max(0.45, Math.pow(2, map.getZoom() - wxBaseZoom)));
+    wxBadge.style.transform = 'scale(' + s + ')';
+  };
+  map.on('zoom', wxScale);
+
+  // Nenhuma camada ligada? (varre os 4 grupos de toggles)
+  const anyLayerOn = () => [...LAYERS, ...RIO, ...SETORES, ...MAPA].some(l => l.on);
+  const applyMode = () => {
+    wxBadge.style.display = 'flex';
+    if (anyLayerOn()) {                          // camada ligada → canto superior esquerdo
+      if (wxBadge.parentNode !== wxCorner) wxCorner.appendChild(wxBadge);
+      wxBadge.classList.add('corner'); wxBadge.style.transform = '';
+      wxCorner.style.display = 'block';
+    } else {                                     // nada ligado → clima grande no meio do mapa
+      if (wxBadge.parentNode !== wxMapWrap) wxMapWrap.appendChild(wxBadge);
+      wxBadge.classList.remove('corner'); wxCorner.style.display = 'none';
+      wxScale();
+    }
+    requestAnimationFrame(() => { wxBadge.style.opacity = '1'; });   // fade-in
+  };
+  // Gatilho: fade-out breve → troca de modo → fade-in (evita a troca "seca")
+  let _wxFade;
+  const updateBadge = () => {
+    wxBadge.style.opacity = '0';
+    clearTimeout(_wxFade); _wxFade = setTimeout(applyMode, 220);
+  };
+
   const chipbar = document.getElementById('chips');
 
   // chips simples (toggle) — suportam camada lazy (L.build): busca o GeoJSON na 1ª vez
@@ -419,7 +620,7 @@ map.on('load', async () => {
       btn.style.borderColor = L.on ? L.color : '';
       btn.style.background  = L.on ? L.color + '2e' : '';
       btn.style.boxShadow   = L.on ? 'inset 0 -2px 0 0 ' + L.color : '';
-      paintCbx(cbx, L.on, L.color); applyVis(L);
+      paintCbx(cbx, L.on, L.color); applyVis(L); updateBadge();
     };
     paint();
     btn.onclick = async () => {
@@ -465,7 +666,7 @@ map.on('load', async () => {
       const cbx = document.createElement('span'); cbx.className = 'cbx';
       const it = document.createElement('span'); it.textContent = M.label;
       item.append(cbx, it);
-      const paint = () => { item.classList.toggle('on', M.on); paintCbx(cbx, M.on, M.color); applyVis(M); refresh(); };
+      const paint = () => { item.classList.toggle('on', M.on); paintCbx(cbx, M.on, M.color); applyVis(M); refresh(); updateBadge(); };
       paint();
       item.onclick = async (e) => {
         e.stopPropagation(); M.on = !M.on;
@@ -491,6 +692,8 @@ map.on('load', async () => {
   makeDropdown('Rio Itajaí Mirim', RIO, '#00B0FF');
   makeDropdown('Setores de risco', SETORES, '#FF5252');
   makeDropdown('Mapa', MAPA, '#cfd8e3');
+  _fadeReady = true;   // a partir daqui, marcar/desmarcar camadas anima (fade 360 ms)
+  updateBadge();   // estado inicial do selo (camadas default ligadas → escondido)
   // slider fixo dos níveis: arrastar navega pelas cotas do rio (sincroniza com o combo)
   document.getElementById('nivelrange').oninput = (e) => selectNivel(e.target.value);
 
