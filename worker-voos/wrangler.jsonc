@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-voos",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "observability": { "enabled": true }
+  // Sem segredos: fonte = OpenSky Network pública (anônimo, sem chave).
+}

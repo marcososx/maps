@@ -1,0 +1,13 @@
+{
+  "name": "brusque-voos",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: voos em tempo real sobre a região de Brusque via Airplanes.live (ADS-B)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

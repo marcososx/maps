@@ -409,6 +409,9 @@ map.on('load', async () => {
 
   // ── Clima avançado: infra das camadas de tempo (satélite/radar/vento) ───────
   const fmtH  = (d) => { const h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0'); return h+':'+m; };
+  // ISO UTC → "05/08 19:41" (horário local pt-BR); null se inválido
+  const fmtDt = (iso) => { if(!iso) return null; const d=new Date(iso); if(isNaN(d)) return null;
+    const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)} ${p(d.getHours())}:${p(d.getMinutes())}`; };
   const showPanel = (id) => { const el=document.getElementById(id); if(el) el.classList.add('show'); };
   const hidePanel = (id) => { const el=document.getElementById(id); if(el) el.classList.remove('show'); };
   const dir8 = (deg) => { const d=((deg%360)+360)%360; return ['N','NE','L','SE','S','SO','O','NO'][Math.round(d/45)%8]; };
@@ -567,7 +570,24 @@ map.on('load', async () => {
   }
 
   // Timers periódicos das camadas de tempo (parados quando o chip desliga)
-  let _nuvTimer = null, _radarRefreshTimer = null;
+  let _nuvTimer = null, _radarRefreshTimer = null, _voosTimer = null;
+  // Ícone de avião (canvas 40×40, desenhado p/ a camada Voos) — apontando pra cima
+  // (rumo 0°); a camada rotaciona via icon-rotate = rumo real do voo.
+  const _planeCanvas = document.createElement('canvas'); _planeCanvas.width=40; _planeCanvas.height=40;
+  {
+    const g=_planeCanvas.getContext('2d'); g.translate(20,20); g.rotate(Math.PI); // desenha pra cima
+    g.fillStyle='#ffd54f'; g.strokeStyle='#04121c'; g.lineWidth=1.6;
+    g.beginPath(); g.moveTo(0,-15); g.lineTo(4,-6); g.lineTo(15,8); g.lineTo(8,9); g.lineTo(4,2); g.lineTo(-4,2); g.lineTo(-8,9); g.lineTo(-15,8); g.lineTo(-4,-6); g.closePath(); g.fill(); g.stroke();
+  }
+  const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 40, 40);
+  // worker /voos.json → features GeoJSON (aérea em ft; sem solo)
+  const voosFeats = (d) => (d.voos || []).map(v => ({
+    type:'Feature',
+    geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
+    properties:{ icao24:v.icao24, callsign:v.callsign, origem:v.origem,
+      alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null, vel_kmh:v.vel_kmh, rumo:v.rumo,
+      subida:v.subida_mps, categoria:v.categoria, ultima: fmtDt(v.ultima_atualizacao) }
+  }));
   const BUILDERS = {
     // Bairros + zona rural (camada base). Fill: zona rural SEMPRE verde; bairros só no hover.
     bairros: async () => {
@@ -936,6 +956,62 @@ map.on('load', async () => {
       map.on('mouseleave','rios-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       return ['rios-pt','rios-label'];
     },
+    // Voos em tempo real — OpenSky Network (ADS-B) via worker brusque-voos.
+    // Aviões no ar dentro da região monitorada, com ícone rotacionado pelo rumo.
+    // Timestamp em pt-BR e popup com dados do voo.
+    voos: async () => {
+      const d = await (await fetch(VOOS_URL)).json();
+      if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+      map.addImage('aviao', _planeImg);
+      map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
+        layout:{ 'icon-image':'aviao', 'icon-size':0.55, 'icon-allow-overlap':true,
+                  'icon-ignore-placement':true,
+                  'icon-rotate':['get','rumo'], 'icon-rotation-alignment':'map' } });
+      map.addLayer({ id:'voos-label', type:'symbol', source:'voos', minzoom:9,
+        layout:{ 'text-field':['get','callsign'], 'text-font':['Open Sans Regular'], 'text-size':10,
+                 'text-offset':[0,1.4], 'text-anchor':'top', 'text-optional':true,
+                 'text-allow-overlap':true, 'text-ignore-placement':true },
+        paint:{ 'text-color':'#ffd54f','text-halo-color':'#04121c','text-halo-width':1.4 } });
+      map.on('mousemove','voos-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties;
+        showHint('hint'); hint.className='rt-card'; hint.style.borderColor='#FFD54F';
+        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        const fmt=(v,u)=> (v==null)?null:'<div style="flex:1;min-width:74px"><div style="font-size:11px;color:#8a97a8;text-transform:uppercase;letter-spacing:.3px">'+u+'</div><div style="font-size:15px;color:#eaf6ff">'+v+'</div></div>';
+        let m='<div style="display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px">'
+          + (fmt(p.alt_ft && Math.round(p.alt_ft).toLocaleString('pt-BR'),'Altitude')||'')
+          + (fmt(p.vel_kmh, 'Velocidade')||'') + (fmt(p.rumo, 'Rumo')||'')
+          + (p.subida!=null ? (fmt((p.subida>0?'▲':'▼')+Math.abs(p.subida), 'Subida')||'') : '') + '</div>';
+        if(p.categoria) m+='<div style="font-size:12px;color:#8a97a8;margin-top:7px">'+p.categoria+' · ADS-B</div>';
+        if(p.ultima) m+='<div style="font-size:11px;color:#8a97a8;margin-top:7px">posição '+p.ultima+'</div>';
+        hint.innerHTML='<div style="padding:14px 16px">'
+          + '<div class="k">✈️ '+(p.callsign||p.icao24)+'</div>'
+          + '<div style="font-size:12px;color:#ffd54f;margin-top:2px">TRÁFEGO AÉREO · ADS-B</div>'
+          + m + '</div>';
+      });
+      map.on('mouseleave','voos-pt',()=>{ map.getCanvas().style.cursor=''; hint.className=''; hideAllHints(); });
+      map.on('click','voos-pt',(e)=>{
+        const p=e.features[0].properties;
+        const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>',
+          '<span style="color:#8a97a8">Airplanes.live · ADS-B</span>'];
+        if(p.alt_ft!=null) L.push('Altitude: <b>'+Math.round(p.alt_ft).toLocaleString('pt-BR')+' ft</b>');
+        if(p.vel_kmh!=null) L.push('Velocidade: '+p.vel_kmh+' km/h');
+        if(p.rumo!=null) L.push('Rumo: '+p.rumo+'°');
+        if(p.categoria) L.push('Categoria: '+p.categoria);
+        if(p.ultima) L.push('<span style="font-size:10px;color:#8a97a8">posição '+p.ultima+'</span>');
+        new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
+      });
+      // atualiza a cada 30 s enquanto ligada (worker cacheia 2 min)
+      _voosTimer = setInterval(async () => {
+        if (!map.getSource('voos')) return;
+        try {
+          const r = await (await fetch(VOOS_URL)).json();
+          map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+        } catch(e) { /* silencioso: mantém últimos dados */ }
+      }, 30000);
+      map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(d) });
+      return ['voos-pt','voos-label'];
+    },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
     nuvens: async () => {
@@ -1019,6 +1095,7 @@ map.on('load', async () => {
   const REALTIME_URL = 'https://brusque-realtime.marcososx.workers.dev/estacoes.json';
   const ABRIGOS_URL = 'https://brusque-realtime.marcososx.workers.dev/abrigos.json';
   const RIOS_URL = 'https://brusque-rios.marcososx.workers.dev/rios.json';
+  const VOOS_URL = 'https://brusque-voos.marcososx.workers.dev/voos.json';
   const ENSO_URL = 'https://brusque-clima.marcososx.workers.dev/enso.json';
   const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();
@@ -1179,6 +1256,8 @@ map.on('load', async () => {
       } },
     // Monitoramento = as estações/indicadores que antes eram o chip "Tempo real"
     { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real' },
+    { id:'voos', label:'Voos (ADS-B)', on:false, color:'#FFD54F', build:'voos',
+      onToggle: (on) => { if (!on) { clearInterval(_voosTimer); _voosTimer = null; } } },
     { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
   ];
   const INDICADORES = [   // dropdown "Indicadores" — painéis à esquerda do mapa
