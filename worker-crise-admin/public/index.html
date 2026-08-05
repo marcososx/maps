@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel Admin · Gestão de Crise</title>
+<link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+<style>
+  :root{
+    --bg:#0B0E14; --card:#151921; --border:#232D3F;
+    --ok:#00E676; --warn:#FFB300; --crit:#FF3D00; --info:#00B0FF;
+    --txt:#e8ecf4; --mut:#8a97a8;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--txt);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  body{ padding:26px 18px 40px; max-width:720px; margin:0 auto; }
+  h1{ font-size:20px; margin:0 0 4px; }
+  h1 b{ color:var(--info); }
+  .sub{ color:var(--mut); font-size:13px; margin-bottom:26px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:18px; margin-bottom:18px; }
+  .card h2{ margin:0 0 14px; font-size:13px; letter-spacing:.5px; text-transform:uppercase; color:var(--mut); }
+  label{ display:block; font-size:12px; color:var(--mut); margin:12px 0 5px; }
+  input,select,textarea{ width:100%; background:#0d1117; color:var(--txt); border:1px solid var(--border);
+    border-radius:9px; padding:9px 11px; font-size:14px; font-family:inherit; }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--info); }
+  textarea{ resize:vertical; min-height:64px; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .row{ grid-template-columns:1fr; } }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    background:var(--info); color:#04121c; border:0; border-radius:9px; padding:10px 16px;
+    font-size:14px; font-weight:600; cursor:pointer; margin-top:14px; }
+  .btn:hover{ filter:brightness(1.1); }
+  .btn.ghost{ background:transparent; border:1px solid var(--border); color:var(--txt); }
+  .btn.red{ background:var(--crit); color:#fff; }
+  .btn.small{ padding:6px 10px; font-size:12px; margin-top:0; }
+
+  /* login */
+  #login{ max-width:380px; margin:80px auto 0; text-align:center; }
+  #login .card{ text-align:left; }
+  #login .btn{ width:100%; }
+
+  /* posts */
+  .post{ border:1px solid var(--border); border-radius:11px; padding:12px 14px; margin-bottom:10px; background:#0d1117; }
+  .post.pinned{ border-left:3px solid var(--warn); }
+  .post .p-head{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--mut); flex-wrap:wrap; }
+  .post .p-title{ font-size:14.5px; font-weight:600; margin:5px 0 3px; }
+  .post .p-body{ font-size:13px; color:var(--txt); line-height:1.45; }
+  .post .p-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .prio-NORMAL{ color:var(--ok); } .prio-ALERTA{ color:var(--warn); } .prio-EMERGENCIA{ color:var(--crit); }
+  .pill{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; background:rgba(138,151,168,.16); }
+  .pill.pinned-p{ background:rgba(255,179,0,.16); color:var(--warn); }
+  #toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:20;
+    background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 16px;
+    font-size:13px; display:none; }
+</style>
+</head>
+<body>
+
+<div id="login" style="display:none">
+  <div class="card">
+    <h1 style="text-align:center"><b>Gestão</b> de Crise</h1>
+    <div class="sub" style="text-align:center">Acesso restrito · Brusque Discover</div>
+    <label for="senha">Senha de administrador</label>
+    <input id="senha" type="password" placeholder="••••••••">
+    <button class="btn" id="btnLogin">Entrar</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <h1><b>Painel</b> de Crise · Admin</h1>
+  <div class="sub">Publique boletins e defina o estado da crise. <button class="btn ghost small" id="btnLogout" style="float:right">Sair</button></div>
+
+  <div class="card">
+    <h2>Estado da crise</h2>
+    <div class="row">
+      <div>
+        <label>Nível de alerta</label>
+        <select id="nivel">
+          <option>Normalidade</option><option>Atenção</option><option>Emergência</option>
+        </select>
+      </div>
+      <div>
+        <label>Status de cobertura</label>
+        <select id="cob">
+          <option>Estamos de plantão QG Discover</option>
+          <option>Estamos ao vivo no painel de crise</option>
+          <option>Estamos em live (Instagram Discover)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="btnEstado">Salvar estado</button>
+  </div>
+
+  <div class="card">
+    <h2>Novo boletim</h2>
+    <div class="row">
+      <div><label>Título (máx 30)</label><input id="fTitulo" maxlength="30" placeholder="Ex: Ponte interditada"></div>
+      <div><label>Categoria</label>
+        <select id="fCat">
+          <option value="DEFESA_CIVIL">Defesa Civil</option>
+          <option value="TRANSITO">Trânsito</option>
+          <option value="CELESC">CELESC</option>
+          <option value="RIO">Rio</option>
+          <option value="GERAL">Geral</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Prioridade</label>
+        <select id="fPrio"><option value="NORMAL">Normal</option><option value="ALERTA">Atenção</option><option value="EMERGENCIA">Emergência</option></select>
+      </div>
+      <div><label>Fixar no topo</label><select id="fFix"><option value="0">Não</option><option value="1">Sim</option></select></div>
+    </div>
+    <label>Resumo (máx 160)</label>
+    <textarea id="fResumo" maxlength="160" placeholder="Descrição sintetizada da situação…"></textarea>
+    <div class="row">
+      <div><label>URL do link</label><input id="fUrl" placeholder="https://…"></div>
+      <div><label>Label do link</label><input id="fLabel" placeholder="Ver nota oficial"></div>
+    </div>
+    <button class="btn" id="btnPost">Publicar boletim</button>
+  </div>
+
+  <div class="card">
+    <h2>Boletins publicados</h2>
+    <div id="lista"><div class="sub">carregando…</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let BO = [];
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none', 4000); }
+
+async function api(path, opts={}){
+  const r = await fetch(path, { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) } });
+  const j = await r.json().catch(()=>({}));
+  return { status:r.status, ...j };
+}
+
+async function verificaSessao(){
+  const { ok } = await api('/api/me');
+  $('login').style.display = ok ? 'none' : 'block';
+  $('app').style.display   = ok ? 'block' : 'none';
+  if (ok) carregarTudo();
+}
+
+$('btnLogin').onclick = async () => {
+  const { status } = await api('/api/login', { method:'POST', body: JSON.stringify({ senha:$('senha').value }) });
+  if (status===200){ $('senha').value=''; verificaSessao(); toast('Bem-vindo!'); }
+  else toast('Senha incorreta');
+};
+$('senha').addEventListener('keydown', e => { if(e.key==='Enter') $('btnLogin').click(); });
+$('btnLogout').onclick = async () => { await api('/api/logout', { method:'POST' }); verificaSessao(); };
+
+$('btnEstado').onclick = async () => {
+  const { status } = await api('/api/estado', { method:'PUT', body: JSON.stringify({
+    nivel_alerta:$('nivel').value, status_cobertura:$('cob').value }) });
+  toast(status===200 ? 'Estado salvo' : 'Erro ao salvar');
+};
+
+$('btnPost').onclick = async () => {
+  const payload = {
+    titulo:$('fTitulo').value.trim(), conteudo:$('fResumo').value.trim(),
+    url:$('fUrl').value.trim(), label:$('fLabel').value.trim(),
+    categoria:$('fCat').value, prioridade:$('fPrio').value, fixado: $('fFix').value==='1',
+  };
+  const { status } = await api('/api/boletins', { method:'POST', body: JSON.stringify(payload) });
+  if(status===200){
+    ['fTitulo','fResumo','fUrl','fLabel'].forEach(id=>$(id).value='');
+    toast('Boletim publicado'); carregarTudo();
+  } else toast('Erro ao publicar');
+};
+
+async function carregarTudo(){
+  const [estado, boletins] = await Promise.all([ api('/api/estado'), api('/api/boletins') ]);
+  if(estado.nivel_alerta) $('nivel').value = estado.nivel_alerta;
+  if(estado.status_cobertura) $('cob').value = estado.status_cobertura;
+  BO = Array.isArray(boletins) ? boletins : [];
+  render();
+}
+
+function render(){
+  const el = $('lista');
+  if(!BO.length){ el.innerHTML='<div class="sub">Nenhum boletim ainda.</div>'; return; }
+  const sorted = [...BO].sort((a,b)=>{
+    if(!!a.fixado !== !!b.fixado) return a.fixado ? -1 : 1;
+    return new Date(b.criado_em) - new Date(a.criado_em);
+  });
+  el.innerHTML = sorted.map(b => {
+    const d = new Date(b.criado_em).toLocaleString('pt-BR');
+    return '<div class="post'+(b.fixado?' pinned':'')+'">'
+      +'<div class="p-head"><span>'+d+'</span>'
+      + (b.categoria? '<span class="pill">'+b.categoria.replace('_',' ')+'</span>':'')
+      + (b.prioridade? '<span class="pill prio-'+b.prioridade+'">'+b.prioridade+'</span>':'')
+      + (b.fixado? '<span class="pill pinned-p">📌 fixado</span>':'')
+      +'</div>'
+      + (b.titulo? '<div class="p-title">'+b.titulo+'</div>':'')
+      + (b.conteudo? '<div class="p-body">'+b.conteudo+'</div>':'')
+      + (b.url? '<div class="p-body" style="color:var(--info)"><a href="'+b.url+'" target="_blank" rel="noopener">'+ (b.label||'Ver link') +' ↗</a></div>':'')
+      +'<div class="p-actions">'
+      + '<button class="btn ghost small" onclick="toggleFix(\''+b.id+'\')">'+(b.fixado?'Desfixar':'Fixar')+'</button>'
+      + '<button class="btn red small" onclick="del(\''+b.id+'\')">Excluir</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+window.toggleFix = async (id) => {
+  const b = BO.find(x=>x.id===id); if(!b) return;
+  const { status } = await api('/api/boletins/'+id, { method:'PATCH', body: JSON.stringify({ fixado: !b.fixado }) });
+  if(status===200){ toast('Atualizado'); carregarTudo(); }
+};
+window.del = async (id) => {
+  if(!confirm('Excluir este boletim?')) return;
+  const { status } = await api('/api/boletins/'+id, { method:'DELETE' });
+  if(status===200){ toast('Excluído'); carregarTudo(); }
+};
+
+verificaSessao();
+setInterval(carregarTudo, 60000);
+</script>
+</body>
+</html>

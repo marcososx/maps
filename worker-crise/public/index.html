@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel de Crise · Brusque Discover</title>
+<link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚨</text></svg>">
+<style>
+  :root{
+    --bg:#0B0E14; --card:#151921; --border:#232D3F;
+    --ok:#00E676; --warn:#FFB300; --crit:#FF3D00; --info:#00B0FF;
+    --txt:#e8ecf4; --mut:#8a97a8;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--txt);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  body{ padding:0 0 30px; }
+  a{ color:var(--info); }
+  .mono{ font-family:"JetBrains Mono",ui-monospace,monospace; }
+
+  /* header */
+  header{ position:sticky; top:0; z-index:10; background:rgba(11,14,20,.92);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .head-in{ max-width:1400px; margin:0 auto; padding:12px 18px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .brand{ font-size:17px; font-weight:700; letter-spacing:.3px; }
+  .brand b{ color:var(--info); }
+  .head-badges{ display:flex; gap:10px; margin-left:auto; align-items:center; flex-wrap:wrap; }
+  .badge{ font-size:12px; font-weight:600; padding:7px 12px; border-radius:9px;
+    border:1px solid var(--border); background:var(--card); display:flex; align-items:center; gap:7px; }
+  .badge .dot{ width:9px; height:9px; border-radius:50%; background:var(--mut); }
+  .badge.alerta-Normalidade{ color:var(--ok); } .badge.alerta-Normalidade .dot{ background:var(--ok); box-shadow:0 0 8px var(--ok); }
+  .badge.alerta-Atenção{ color:var(--warn); } .badge.alerta-Atenção .dot{ background:var(--warn); box-shadow:0 0 8px var(--warn); }
+  .badge.alerta-Emergência{ color:var(--crit); } .badge.alerta-Emergência .dot{ background:var(--crit); box-shadow:0 0 8px var(--crit); }
+
+  /* ticker */
+  .ticker{ background:#0d1117; border-bottom:1px solid var(--border); overflow:hidden; }
+  .ticker-in{ max-width:1400px; margin:0 auto; padding:7px 18px; white-space:nowrap;
+    overflow:hidden; font-size:13px; color:var(--mut); }
+  .ticker-in span.item{ margin-right:34px; }
+  .ticker-in a{ color:var(--txt); text-decoration:none; }
+  .ticker-in a:hover{ color:var(--info); }
+
+  /* layout principal */
+  .grid{ max-width:1400px; margin:22px auto 0; padding:0 18px;
+    display:grid; grid-template-columns: 1fr 340px; gap:18px; }
+  @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+
+  .panel{ background:var(--card); border:1px solid var(--border); border-radius:14px; }
+  .panel h2{ margin:0; padding:13px 16px; font-size:13px; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--mut); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .panel h2 .live{ width:8px; height:8px; border-radius:50%; background:var(--crit);
+    box-shadow:0 0 8px var(--crit); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ opacity:.3; } }
+
+  .map-wrap{ position:relative; }
+  .map-wrap iframe{ width:100%; height:640px; border:0; display:block; border-radius:0 0 14px 14px; }
+  @media (max-width:900px){ .map-wrap iframe{ height:420px; } }
+  .map-cta{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    background:rgba(11,14,20,.9); border:1px solid var(--border); border-radius:10px;
+    padding:9px 14px; font-size:12.5px; color:var(--txt); text-decoration:none;
+    backdrop-filter:blur(6px); white-space:nowrap; }
+  .map-cta:hover{ border-color:var(--info); color:var(--info); }
+
+  /* feed OSINT */
+  .feed{ max-height:640px; overflow-y:auto; }
+  .post{ padding:12px 16px; border-bottom:1px solid var(--border); }
+  .post.pinned{ background:rgba(255,179,0,.06); border-left:3px solid var(--warn); }
+  .post .meta{ display:flex; gap:8px; align-items:center; font-size:11px; color:var(--mut); }
+  .post .cat{ font-weight:700; letter-spacing:.4px; font-size:10px; padding:2px 7px; border-radius:5px; }
+  .cat-DEFESA_CIVIL{ background:rgba(0,176,255,.14); color:var(--info); }
+  .cat-TRANSITO{ background:rgba(255,179,0,.14); color:var(--warn); }
+  .cat-CELESC{ background:rgba(255,61,0,.14); color:var(--crit); }
+  .cat-RIO{ background:rgba(0,230,118,.14); color:var(--ok); }
+  .cat-GERAL{ background:rgba(138,151,168,.16); color:var(--mut); }
+  .post .prio{ font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; }
+  .prio-NORMAL{ color:var(--ok); } .prio-ALERTA{ color:var(--warn); } .prio-EMERGENCIA{ color:var(--crit); }
+  .post .titulo{ font-size:14.5px; font-weight:600; margin:5px 0 3px; }
+  .post .conteudo{ font-size:13px; color:var(--txt); line-height:1.45; }
+  .post .link{ margin-top:6px; font-size:12.5px; }
+  .empty{ padding:26px 16px; text-align:center; color:var(--mut); font-size:13px; }
+
+  footer{ max-width:1400px; margin:26px auto 0; padding:0 18px; color:var(--mut);
+    font-size:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-in">
+    <div class="brand"><b>Brusque</b> Discover · Painel de Crise</div>
+    <div class="head-badges">
+      <div class="badge" id="b-cob"><span class="dot"></span><span class="txt">carregando…</span></div>
+      <div class="badge alerta-Normalidade" id="b-niv"><span class="dot"></span><span class="txt">Nível: …</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="ticker"><div class="ticker-in" id="ticker">carregando ticker…</div></div>
+
+<div class="grid">
+  <section class="panel map-wrap">
+    <h2><span class="live"></span> Mapa de Crise · Brusque</h2>
+    <iframe src="https://brusque-maps.marcososx.workers.dev/" title="Mapa de crise Brusque"
+      loading="eager" allow="geolocation"></iframe>
+    <a class="map-cta" href="https://brusque-maps.marcososx.workers.dev/" target="_blank" rel="noopener">
+      Abrir mapa em tela cheia ↗
+    </a>
+  </section>
+
+  <aside class="panel">
+    <h2><span class="live"></span> Feed OSINT</h2>
+    <div class="feed" id="feed"><div class="empty">carregando boletins…</div></div>
+  </aside>
+</div>
+
+<footer>
+  <span>Fontes: Defesa Civil de Brusque, CEMADEN, ANA, CELESC.</span>
+  <span class="mono" id="updated">—</span>
+</footer>
+
+<script>
+const NIVEL_CORES = { Normalidade:'var(--ok)', 'Atenção':'var(--warn)', 'Emergência':'var(--crit)' };
+
+async function carregar(){
+  try{
+    const [estado, boletins, ticker] = await Promise.all([
+      fetch('/api/estado').then(r=>r.json()),
+      fetch('/api/boletins').then(r=>r.json()),
+      fetch('/api/ticker').then(r=>r.json()),
+    ]);
+    // badges do header
+    const bn = document.getElementById('b-niv');
+    bn.className = 'badge alerta-' + (estado.nivel_alerta||'Normalidade');
+    bn.querySelector('.txt').textContent = 'Nível: ' + (estado.nivel_alerta||'Normalidade');
+    document.getElementById('b-cob').querySelector('.txt').textContent = estado.status_cobertura || '—';
+    if(estado.atualizado_em) document.getElementById('updated').textContent = 'atualizado ' + new Date(estado.atualizado_em).toLocaleString('pt-BR');
+
+    // ticker
+    const tick = Array.isArray(ticker) && ticker.length ? ticker
+      : (Array.isArray(boletins) ? boletins.filter(b=>b.url).slice(0,10) : []);
+    const tickEl = document.getElementById('ticker');
+    if(tick.length){
+      tickEl.innerHTML = tick.map(b =>
+        '<span class="item">' + (b.url
+          ? '<a href="'+b.url+'" target="_blank" rel="noopener">'+(b.titulo||b.conteudo||'')+' ↗</a>'
+          : (b.titulo||b.conteudo||'')) + '</span>').join('');
+    } else {
+      tickEl.textContent = 'Sem notícias no momento';
+    }
+
+    // feed
+    const feed = document.getElementById('feed');
+    if(Array.isArray(boletins) && boletins.length){
+      const sorted = [...boletins].sort((a,b)=>{
+        if(!!a.fixado !== !!b.fixado) return a.fixado ? -1 : 1;
+        return (new Date(b.criado_em)||0) - (new Date(a.criado_em)||0);
+      });
+      feed.innerHTML = sorted.map(b=>{
+        const d = b.criado_em ? new Date(b.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        return '<div class="post'+(b.fixado?' pinned':'')+'">'
+          +'<div class="meta"><span class="mono">'+d+'</span>'
+          + (b.categoria? '<span class="cat cat-'+b.categoria+'">'+b.categoria.replace('_',' ')+'</span>':'')
+          + (b.prioridade? '<span class="prio prio-'+b.prioridade+'">'+b.prioridade+'</span>':'')
+          +'</div>'
+          + (b.titulo? '<div class="titulo">'+b.titulo+'</div>':'')
+          + (b.conteudo? '<div class="conteudo">'+b.conteudo+'</div>':'')
+          + (b.url? '<div class="link"><a href="'+b.url+'" target="_blank" rel="noopener">'+(b.label||'Ver link')+' ↗</a></div>':'')
+          +'</div>';
+      }).join('');
+    } else {
+      feed.innerHTML = '<div class="empty">Nenhum boletim publicado ainda.</div>';
+    }
+  }catch(e){
+    document.getElementById('feed').innerHTML = '<div class="empty">Erro ao carregar dados.</div>';
+  }
+}
+carregar();
+setInterval(carregar, 30000);   // atualiza a cada 30s
+</script>
+</body>
+</html>

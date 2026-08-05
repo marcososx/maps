@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-crise",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "assets": { "directory": "./public" },
+  "kv_namespaces": [{ "binding": "CRISE_KV", "id": "a1bca59ce8f14d2fb50c7551acef4a29" }],
+  "observability": { "enabled": true }
+}

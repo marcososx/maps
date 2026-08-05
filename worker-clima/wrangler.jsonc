@@ -1,0 +1,7 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-clima",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "observability": { "enabled": true }
+}

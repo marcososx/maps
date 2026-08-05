@@ -1,0 +1,13 @@
+{
+  "name": "brusque-clima",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: índice ENSO (Niño 3.4) via NOAA CPC, com CORS pro mapa",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

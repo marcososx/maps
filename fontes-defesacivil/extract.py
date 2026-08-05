@@ -203,7 +203,19 @@ def cotas_pontes():
         e = ext_of(pm)
         if folder.startswith('Cotas'):
             ano = 2023 if '2023' in folder else 2011
-            cota = num(e.get('cota') or e.get('Nível registrado no local') or name_of(pm))
+            if ano == 2023:
+                # 2023: o nome do placemark é o nível do rio no momento da
+                # medição (ex: 7,65 m). "Nível registrado no local" é quanto a
+                # água subiu naquela rua (ex: 1,31 m). A cota real de alagamento
+                # é a diferença: 7,65 − 1,31 = 6,34 m.
+                rio = num(name_of(pm))
+                local = num(e.get('Nível registrado no local'))
+                calc = round(rio - local, 2) if (rio is not None and local is not None) else None
+                # Pontos com resultado impossível (≤ 0) indicam erro de digitação
+                # no mapa-fonte → usa o nível do rio (Nome) como cota.
+                cota = calc if (calc is not None and calc > 0) else rio
+            else:
+                cota = num(e.get('cota') or e.get('Nível registrado no local') or name_of(pm))
             cotas.append(feat(g, {
                 'cota': cota, 'ano': ano,
                 'bairro': e.get('bairro') or e.get('Bairro', ''),
