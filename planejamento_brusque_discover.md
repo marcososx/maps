@@ -180,16 +180,17 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 - **Umidade do solo** — Open-Meteo; gauge seco→encharcado (superfície + 7–28 cm).
 - Todos com **escala de cores + marcador de posição atual**.
 
-### 7.3 Nível do rio (ANA) — dropdown "Rio Itajaí Mirim"
-- Worker **`brusque-rios`** — API **ANA HidroWebService REST** (autenticação CPF/senha como
-  **segredos do Worker**: `ANA_CPF`/`ANA_SENHA`). Endpoint: `/rios.json` (cache 10 min, CORS).
-- Camada **"Nível do rio"** com as **5 estações fluviométricas do Itajaí-Mirim** (coordenadas
-  exatas da ficha ANA): Brusque (PCD), Brusque, Botuverá, Botuverá-Montante, Salseiro.
-  **Todas aparecem**; as sem dado em tempo real ficam **cinza** ("telemetria indisponível") e
-  **azul** quando a ANA voltar a entregar.
-- ⚠️ **SALSEIRO (Vidal Ramos, nascente) é a única com dado hoje (2,1 m)**. A **BRUSQUE (PCD)**
-  teve a telemetria parada ~2023 — por isso o nível de Brusque continua vindo da DC (origem ANA)
-  e a seção de rios do site da DC está vazia. (Cobrança à EPAGRI/DC pendente — ver IDEIAS-MAPA.md.)
+### 7.3 Nível do rio — dropdown "Rio Itajaí Mirim"
+- Worker **`brusque-rios`** — **Defesa Civil de Santa Catarina (SDC-SC)** via GraphQL público
+  (`monitoramento.defesacivil.sc.gov.br/graphql`), **sem credencial**. Endpoint: `/rios.json`
+  (cache 5 min, CORS).
+- Camada **"Nível do rio"** com as **3 estações fluviométricas** ativas da bacia do Itajaí-Mirim:
+  **Brusque** (Itajaí-Mirim, -27.10068/-48.91722), **Guabiruba** (Ribeirão Guabiruba do Norte,
+  -27.08678/-48.97739) e **Botuverá 1** (Itajaí-Mirim, -27.18619/-49.12059). Todas com dado em
+  tempo real (nível + variação em cm + chuva + horário da coleta); sem dado → marcador cinza.
+- **Fonte anterior ANA HidroWebService abandonada** (telemetria da BRUSQUE PCD parada ~2023 e
+  webservice legado sem devolver dados) — o site da DC de Brusque mantinha a seção de rios vazia
+  e a leitura da ponte (ANA, 28/07) congelada. A troca para a DC-SC resolveu com dados atuais.
 
 ### 7.4 Região monitorada
 - `site/brusque_regiao.geojson` — convex hull de Brusque + 28 cidades vizinhas (cobre a bacia da
@@ -202,7 +203,7 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 | brusque-maps (site) | `site/` + `wrangler.jsonc` | `brusque-maps.marcososx.workers.dev` | assets estáticos (`index.html` + geojsons) |
 | brusque-realtime | `worker-realtime/` | `.../estacoes.json`, `.../abrigos.json` | Defesa Civil Brusque (CEMADEN/CMID/ANA) |
 | brusque-trafego | `worker-trafego/` | `.../traffic/{z}/{x}/{y}.png` | trânsito TomTom |
-| **brusque-rios** | `worker-rios/` | `.../rios.json` | **ANA HidroWebService** (segredos `ANA_CPF`/`ANA_SENHA`) |
+| **brusque-rios** | `worker-rios/` | `.../rios.json` | **Defesa Civil SC** (GraphQL público, sem segredo) — níveis de rio ao vivo |
 | **brusque-clima** | `worker-clima/` | `.../enso.json` | ENSO Niño 3.4 (NOAA CPC) |
 | brusque-crise / -admin | `worker-crise/`, `worker-crise-admin/` | — | feed de crise |
 
@@ -210,7 +211,8 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 1. **Ferramentas:** `node`, `npm`, `npx wrangler` (Cloudflare), token `CLOUDFLARE_API_TOKEN` +
    `CLOUDFLARE_ACCOUNT_ID` (`718f3b4495efa95bff3de18cd58c1e57`).
 2. **Segredos** (por Worker, via `wrangler secret bulk`):
-   - `brusque-rios`: `ANA_CPF` e `ANA_SENHA` (credenciais do HidroWebService — NUNCA commitar).
+   - ~~`brusque-rios`: `ANA_CPF` e `ANA_SENHA`~~ → **removidos** — o `brusque-rios` agora usa o
+     GraphQL público da DC-SC e **não precisa de credencial**. (Nenhum outro worker tem segredo.)
 3. **Deploy:** em cada pasta de worker: `npx wrangler deploy` (ou `npm run deploy`).
    Site: rodar `wrangler deploy` na raiz (assets → `./site`).
 4. **Front:** as URLs dos workers estão no `site/index.html` (constantes `REALTIME_URL`,
@@ -220,7 +222,9 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
    worker — todos gratuitos/sem API key (o NOAA não tem CORS → passa pelo `brusque-clima`).
 
 ### 7.7 Pendências conhecidas
-- Telemetria da **BRUSQUE (PCD)** parada (~2023) — cobrar EPAGRI-SC/DC (texto em IDEIAS-MAPA.md).
+- ~~Telemetria da BRUSQUE (PCD) parada~~ → **resolvido (05/08/2026):** camada "Nível do rio"
+  agora lê a rede da Defesa Civil de SC (Brusque 1,10 m, Guabiruba 24,76 m, Botuverá 2,52 m —
+  última leitura horária, atualizada). O worker `brusque-rios` não depende mais da ANA.
 - Escala da **Chuva acumulada** vs normal climatológica (contexto El Niño) — sugestão em aberto.
 - Índice ENSO usa Niño 3.4 semanal (não o ONI de 3 meses); OK para o gauge atual.
 - `worker-realtime` ainda lê o site da DC (HTML) para CEMADEN/CMID — evolução para ANA REST

@@ -4,6 +4,6 @@
   "main": "src/index.js",
   "compatibility_date": "2025-07-01",
   "observability": { "enabled": true }
-  // Segredos (wrangler secret bulk): ANA_CPF e ANA_SENHA — credenciais do
-  // HidroWebService (login CPF/senha do Marcos). NUNCA commitar.
+  // Sem segredos: a fonte é o GraphQL público da Defesa Civil de SC
+  // (monitoramento.defesacivil.sc.gov.br/graphql) — não precisa de credencial.
 }

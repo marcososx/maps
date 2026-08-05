@@ -1,76 +1,66 @@
-// Worker: nível dos rios da região de Brusque — ANA HidroWebService (REST).
-// Autentica com CPF/senha (segredos ANA_CPF/ANA_SENHA), busca a série de
-// telemetria das estações fluviométricas da bacia do Itajaí-Mirim + cidades
-// limite e serve JSON enxuto com CORS. Cacheia ~10 min.
+// Worker: nível dos rios da região de Brusque — Defesa Civil de Santa Catarina.
+// Consulta o GraphQL público do monitoramento estadual (mesma fonte que o site
+// da DC de Brusque embute via iframe) e serve JSON enxuto com CORS.
 //
 //   GET /rios.json -> { updated, fonte, rios:[{codigo,nome,rio,municipio,
-//                        lat,lon,nivel_m,vazao_m3s,chuva_mm,coleta}] }
+//                        lat,lon,nivel_m,chuva_mm,variacao_cm,coleta,tem_dado}] }
 //
-// Endpoints ANA (spec: /hidrowebservice/api-docs):
-//   OAUth/v1  -> token JWT (headers Identificador/Senha)
-//   HidroinfoanaSerieTelemetricaAdotada/v2?Codigos_Estacoes=&Tipo Filtro Data=
-//     DATA_LEITURA&Data de Busca=yyyy-MM-dd&Range Intervalo de busca=DIAS_2
+// A estação "atual" no resumo (tags_data) às vezes vem nula; o valor confiável
+// é a série horária (Historic), de onde pegamos a última leitura com nível.
+// Cacheia ~5 min pra não pesar no upstream.
+//
+// Fonte: https://monitoramento.defesacivil.sc.gov.br/graphql
+//   query Historic(...) — série horária por estação (campo rio_nivel em metros)
 
-const ANA = 'https://www.ana.gov.br/hidrowebservice';
-const TTL = 600; // 10 min
-const TOKEN_TTL = 50 * 60 * 1000; // re-autentica antes do JWT expirar
+const GQL = 'https://monitoramento.defesacivil.sc.gov.br/graphql';
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
 
-// Estações fluviométricas do Itajaí-Mirim (Brusque + Botuverá + Vidal Ramos),
-// com coordenadas exatas fornecidas pelo Marcos (ficha ANA). O worker envia
-// TODAS as estações; quem ainda não tem cota vem com nivel_m=null e tem_dado=
-// false — o mapa mostra mesmo assim (marcador cinza "sem dado").
+// Estações fluviométricas da DC-SC na bacia do Itajaí-Mirim (Brusque e entorno).
+// Coordenadas conferidas no próprio GraphQL (position.latitude/longitude).
 const STATIONS = [
-  { codigo: '83900000', nome: 'Brusque (PCD)',     rio: 'Rio Itajaí-Mirim', municipio: 'Brusque',     lat: -27.100638938473043, lon: -48.917294330071236 },
-  { codigo: '83905000', nome: 'Brusque',           rio: 'Rio Itajaí-Mirim', municipio: 'Brusque',     lat: -27.03304878573459,  lon: -48.86125925296594 },
-  { codigo: '83893000', nome: 'Botuverá',          rio: 'Rio Itajaí-Mirim', municipio: 'Botuverá',    lat: -27.191052190090126, lon: -49.065404714372725 },
-  { codigo: '83892998', nome: 'Botuverá-Montante', rio: 'Rio Itajaí-Mirim', municipio: 'Botuverá',    lat: -27.191889306861057, lon: -49.07082063689453 },
-  { codigo: '83892990', nome: 'Salseiro',          rio: 'Rio Itajaí-Mirim', municipio: 'Vidal Ramos', lat: -27.332724531358075, lon: -49.3282696357201 },
+  { codigo: 'DCSC-00019', nome: 'Brusque',            rio: 'Rio Itajaí-Mirim',            municipio: 'Brusque',   lat: -27.10068, lon: -48.91722 },
+  { codigo: 'DCSC-00029', nome: 'Guabiruba',          rio: 'Ribeirão Guabiruba do Norte', municipio: 'Guabiruba', lat: -27.08678, lon: -48.97739 },
+  { codigo: 'DCSC-00018', nome: 'Botuverá 1',         rio: 'Rio Itajaí-Mirim',            municipio: 'Botuverá',  lat: -27.18619, lon: -49.12059 },
 ];
 
-let _token = null;
-let _tokenAt = 0;
+// ⚠️ O backend da DC-SC BLOQUEIA queries com quebra de linha ("Operação bloqueada").
+// A query precisa ficar em UMA linha — formato exato validado pelo GraphQL deles.
+const HISTORIC = 'query Historic($stationCode:String!,$startDate:String!,$endDate:String!,$interval:QueryInterval){historic(system:Qualle_Hidrometeorologia,client:"secretaria-de-defesa-civil",stationCode:$stationCode,startDate:$startDate,endDate:$endDate,interval:$interval,opts:{ordenacao:ASC})}';
 
-async function auth(env) {
-  if (_token && Date.now() - _tokenAt < TOKEN_TTL) return _token;
-  const r = await fetch(`${ANA}/EstacoesTelemetricas/OAUth/v1`, {
-    headers: { Identificador: env.ANA_CPF, Senha: env.ANA_SENHA },
+function pad(n) { return String(n).padStart(2, '0'); }
+
+async function gql(query, variables) {
+  const r = await fetch(GQL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables, operationName: 'Historic' }),
   });
   const d = await r.json();
-  const tok = d?.items?.tokenautenticacao;
-  if (!tok) throw new Error('Falha na autenticação ANA');
-  _token = tok;
-  _tokenAt = Date.now();
-  return tok;
+  if (d?.errors) throw new Error((d.errors[0]?.message) || 'GraphQL error');
+  return d?.data || {};
 }
 
-const num = (s) => (s === null || s === undefined || s === '') ? null : parseFloat(s);
-
-async function fetchSeries(token) {
-  const hoje = new Date().toISOString().slice(0, 10);
-  const codes = STATIONS.map(s => s.codigo).join(',');
-  const u = `${ANA}/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v2`
-    + `?Codigos_Estacoes=${codes}`
-    + `&Tipo%20Filtro%20Data=DATA_LEITURA`
-    + `&Data%20de%20Busca=${hoje}`
-    + `&Range%20Intervalo%20de%20busca=DIAS_2`;
-  const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` } });
-  const d = await r.json();
-  return d?.items || [];
-}
-
-function build(records) {
-  // últimos registros (mais recentes) por estação
-  const last = {};
-  for (const rec of records) {
-    const c = rec.codigoestacao;
-    if (!last[c] || rec.Data_Hora_Medicao > last[c].Data_Hora_Medicao) last[c] = rec;
+// últimos ~3 dias de leituras horárias de uma estação
+async function nivelEstacao(code) {
+  const fim = new Date();
+  const ini = new Date(Date.now() - 3 * 864e5);
+  const iso = (x) => `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T${pad(x.getUTCHours())}:00:00Z`;
+  const data = await gql(HISTORIC, {
+    stationCode: code, startDate: iso(ini), endDate: iso(fim), interval: 'HOUR_1',
+  });
+  const items = data?.historic?.items || [];
+  // última leitura com nível (ignora buracos de telemetria)
+  for (let i = items.length - 1; i >= 0; i--) {
+    if (items[i].rio_nivel !== null && items[i].rio_nivel !== undefined) return items[i];
   }
+  return null;
+}
+
+async function build() {
   const rios = [];
   for (const s of STATIONS) {
-    const rec = last[s.codigo];
-    const cota = rec ? num(rec.Cota_Adotada) : null;
+    const rec = await nivelEstacao(s.codigo);
     rios.push({
       codigo: s.codigo,
       nome: s.nome,
@@ -78,11 +68,11 @@ function build(records) {
       municipio: s.municipio,
       lat: s.lat,
       lon: s.lon,
-      nivel_m: cota !== null ? cota / 100 : null,
-      vazao_m3s: rec ? num(rec.Vazao_Adotada) : null,
-      chuva_mm: rec ? num(rec.Chuva_Adotada) : null,
-      coleta: rec && rec.Data_Hora_Medicao ? rec.Data_Hora_Medicao.slice(0, 16) : null,
-      tem_dado: cota !== null,
+      nivel_m: rec ? rec.rio_nivel : null,
+      chuva_mm: rec ? rec.chuva_mm : null,
+      variacao_cm: rec && rec.rio_variacao !== null ? rec.rio_variacao * 100 : null,
+      coleta: rec ? rec.ts.slice(0, 16) : null,
+      tem_dado: !!rec,
     });
   }
   return rios;
@@ -93,9 +83,7 @@ async function handle(req, env, ctx) {
   if (url.pathname !== '/rios.json') {
     return new Response(JSON.stringify({ erro: 'use GET /rios.json' }), { status: 404, headers: CORS });
   }
-  // chave de cache versionada: ao mudar o código, incrementar CACHE_V p/ não
-  // servir a versão antiga (Cache API do Workers não expira sem Cache-Control)
-  const CACHE_V = '5';
+  const CACHE_V = '6';
   const ck = new URL(req.url); ck.searchParams.set('_v', CACHE_V);
   const cacheReq = new Request(ck);
   const cache = caches.default;
@@ -104,17 +92,19 @@ async function handle(req, env, ctx) {
 
   let rios = [];
   try {
-    const token = await auth(env);
-    const records = await fetchSeries(token);
-    rios = build(records);
+    rios = await build();
   } catch (e) {
-    return new Response(JSON.stringify({ erro: 'ANA indisponível', detalhe: String(e.message || e) }),
+    return new Response(JSON.stringify({ erro: 'DC-SC indisponível', detalhe: String(e.message || e) }),
       { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
   }
 
-  const body = JSON.stringify({ updated: new Date().toISOString(), fonte: 'ANA HidroWebService', rios });
+  const body = JSON.stringify({
+    updated: new Date().toISOString(),
+    fonte: 'Defesa Civil de Santa Catarina (SDC-SC, GraphQL)',
+    rios,
+  });
   const res = new Response(body, {
-    headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600' },
+    headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
   });
   ctx.waitUntil(cache.put(cacheReq, res.clone()));
   return res;

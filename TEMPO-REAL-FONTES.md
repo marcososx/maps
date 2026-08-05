@@ -116,7 +116,7 @@ eles é a **região monitorada** (`brusque_regiao.geojson`).
 |---|---|---|
 | **INMET** (portal antigo `apitempo.inmet.gov.br`) | ❌ descontinuado | rotas públicas devolvem 404; a nova **API Portal** (`api-portal.inmet.gov.br`) exige **cadastro + token** |
 | **CEMADEN** (rede federal) | ✅ já no mapa | alimenta a camada **Monitoramento** via `worker-realtime` (chuva por bairro) |
-| **ANA HidroWebService** | ✅ já no mapa | nível do rio via `worker-realtime` (`rio.nivel_m`) |
+| **ANA HidroWebService** | ⚠️ substituído (05/08/2026) | nível do rio agora vem da **DC-SC GraphQL** (seção 6); a ANA segue usada para **chuva** via `worker-realtime` (`rio.nivel_m` era o site da DC) |
 | **EPAGRI CIRAM (SC)** | ✅ **radar integrado** | radar de **Lontras (Vale)** + mosaico SC, via API REST pública (`ciram.epagri.sc.gov.br/radar/rest/radar/`) — ver seção 3.1 |
 
 ## Como o app fala com essas fontes
@@ -130,39 +130,33 @@ eles é a **região monitorada** (`brusque_regiao.geojson`).
 
 ---
 
-## 6. Nível dos rios — ANA HidroWebService (camada "Nível dos rios (ANA)")
+## 6. Nível dos rios — Defesa Civil de SC (camada "Nível do rio")  ⭐ 05/08/2026
 
 - **Worker:** `brusque-rios` (`worker-rios/`) → `https://brusque-rios.marcososx.workers.dev/rios.json`
-- **API:** ANA **HidroWebService REST** — swagger `https://www.ana.gov.br/hidrowebservice/swagger-ui/`
-  · spec `https://www.ana.gov.br/hidrowebservice/api-docs`
-- **Autenticação:** `GET /EstacoesTelemetricas/OAUth/v1` com headers `Identificador` (CPF) e
-  `Senha` → retorna JWT (`tokenautenticacao`); usar `Authorization: Bearer <jwt>` nas demais.
-  As credenciais ficam como **segredos do Worker** (`ANA_CPF`, `ANA_SENHA`) — **nunca commitadas**.
-- **Dados:** `GET /EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v2`
-  `?Codigos_Estacoes={até 10}&Tipo Filtro Data=DATA_LEITURA&Data de Busca=yyyy-MM-dd&Range Intervalo de busca=DIAS_2`
-  → registros a cada **~15 min** com `Cota_Adotada` (cm), `Vazao_Adotada` (m³/s) e `Chuva_Adotada` (mm).
-- **Cadência do worker:** autentica a cada ~50 min, busca as séries e **cacheia 10 min** no Worker.
-- **Estações do Itajaí-Mirim (núcleo — lista do Marcos) + rios das cidades limite.**
-  O worker só envia estação que retorna `Cota_Adotada` → **quando a ANA voltar a
-  entregar, a estação aparece sozinha no mapa** (sem mexer no código).
+- **API:** GraphQL **público** do monitoramento estadual de SC —
+  `https://monitoramento.defesacivil.sc.gov.br/graphql` (a mesma fonte que o site da DC de
+  Brusque embute via iframe). **Sem chave, sem cadastro, com CORS.**
+- **Queries usadas:** `Historic` — série horária por estação (campo `rio_nivel` em metros,
+  `rio_variacao`, `chuva_mm`, `ts`). Pegamos a **última leitura com nível** de cada estação
+  (o campo resumido `tags_data` às vezes vem nulo).
+- ⚠️ **Gotcha do upstream:** o backend da DC-SC **bloqueia queries GraphQL com quebra de linha**
+  ("Operação bloqueada") — a query `HISTORIC` no worker está propositalmente em **uma linha**.
+- **Cadência do worker:** busca as 3 estações e **cacheia 5 min**.
+- **Estações do Itajaí-Mirim (núcleo, todas com dado hoje):**
 
-| Código | Estação | Rio | Município | Coordenadas (exatas, ficha ANA) | Dado hoje? |
+| Código | Estação | Rio | Município | Coordenadas | Nível (05/08 19h) |
 |---|---|---|---|---|---|
-| 83900000 | Brusque (PCD) | Itajaí-Mirim | Brusque | -27.100639, -48.917294 | ⏳ telemetria parou ~2023 (OTT_GOES) |
-| 83905000 | Brusque | Itajaí-Mirim | Brusque | -27.033049, -48.861259 | ⏳ não telemétrica (RNQA) |
-| 83893000 | Botuverá | Itajaí-Mirim | Botuverá | -27.191052, -49.065405 | ⏳ não telemétrica / não opera |
-| 83892998 | Botuverá-Montante | Itajaí-Mirim | Botuverá | -27.191889, -49.070821 | ⏳ não telemétrica |
-| 83892990 | Salseiro | Itajaí-Mirim | Vidal Ramos (nascente) | -27.332725, -49.328270 | ✅ 2,14 m |
-| 83910100 | Captação | Rio Camboriú | Camboriú | -27.0208, -48.6628 | ✅ |
-| 84110000 | Braço | Rio do Braço | Camboriú | -27.0239, -48.7044 | ✅ |
-| 84422100 | Canoas | Rio Canoas | Camboriú | -27.0892, -48.6931 | ✅ |
-| 84095500 | São João Batista | Rio Tijucas | São João Batista | -27.275, -48.85 | ✅ |
+| DCSC-00019 | Brusque | Itajaí-Mirim | Brusque | -27.10068, -48.91722 | ✅ 1,10 m |
+| DCSC-00029 | Guabiruba | Ribeirão Guabiruba do Norte | Guabiruba | -27.08678, -48.97739 | ✅ 24,76 m |
+| DCSC-00018 | Botuverá 1 | Itajaí-Mirim | Botuverá | -27.18619, -49.12059 | ✅ 2,52 m |
 
-- **Fonte primária do nível em Brusque continua a DC** (leitura do site, origem ANA) no
-  `worker-realtime` (`rio.nivel_m`) — a régua **BRUSQUE (PCD)** não retorna pelo feed REST.
-- **Notas:** a cota é por **datum da estação** (valores relativos, ex. Salseiro 1,86 m);
-  algumas estações podem ter cota negativa (régua abaixo do zero local). Inventário completo
-  das estações: `HidroInventarioEstacoes?Unidade Federativa=SC` (1.807 estações em SC).
+- **Histórico da fonte:** a camada nasceu lendo a **ANA HidroWebService REST** (OAuth CPF/senha
+  em segredos do Worker) com 5 estações do Itajaí-Mirim — mas a **BRUSQUE (PCD)** teve a
+  telemetria parada (~2023) e o webservice legado deixou de devolver dados, deixando a seção de
+  rios do site da DC vazia e a leitura da ponte congelada (28/07). Em **05/08/2026** trocamos
+  para a **rede da Defesa Civil de SC**, que cobre Brusque + Guabiruba + Botuverá com dados
+  horários atuais e sem credencial. As estações ANA/coordenadas da ficha antiga ficam
+  documentadas no histórico do `git` do `worker-rios`.
 
 ## 7. Pesquisa — fontes nacionais de chuva/rios (Monitoramento)
 
@@ -173,9 +167,12 @@ scraping do site da DC de Brusque (hoje na camada **Monitoramento**).
 |---|---|---|
 | **ANA HidroWebService (REST)** | ✅ **usada** (rios) e **recomendada** | além dos rios, o inventário traz as **estações de chuva telemétricas** da região (ex. `2748048 BRUSQUE_Azambuja`, `2748043 BRUSQUE_Bateas`, `2748044 BRUSQUE_Centro2`, `2748049 BRUSQUE_Limeira`, `2748050 BRUSQUE_Nova Brasilia`, `2748046 BRUSQUE_Souza Cruz`) com `Chuva_Adotada` — **mesma rede CEMADEN**, acesso direto + CORS via worker, sem depender do site municipal |
 | **CEMADEN** (gov.br) | ⚠️ não verificado ao vivo | `alertas2.cemaden.gov.br` não respondeu desta rede; há portais "dados abertos"/Sala de Situação, mas sem API pública documentada testada. Os dados de chuva dele **já chegam espelhados na ANA REST** |
-| **Defesa Civil estadual (SC)** | ⚠️ sem API pública clara | `defesacivil.sc.gov.br` no ar, mas sem webservice documentado; o estado usa EPAGRI/CIRAM (radar já integrado) e o **SALVAR/SDC** para alertas |
+| **Defesa Civil estadual (SC)** | ✅ **usada (rios)** | **GraphQL público** `monitoramento.defesacivil.sc.gov.br/graphql` — é a fonte da camada "Nível do rio" via `worker-rios` (seção 6); leitura horária, sem chave. Fica o registro: **sem API pública documentada** no site `defesacivil.sc.gov.br`, mas o app do monitoramento estadual expõe esse GraphQL |
 | **CMID** | ⚠️ rede experimental | as estações CMID (escolas) aparecem no inventário ANA como telemétricas (ex. `2748039 BRUSQUE_Poço Fundo`); não há API pública própria confirmada |
 
 **Recomendação de evolução:** trocar a leitura das estações CEMADEN/CMID da DC (HTML) pela
 **ANA REST direta** no mesmo padrão do `worker-rios` — mesma rede, dados iguais, sem scraping,
 com cache e CORS. Deixar a DC só como fallback. Implementação fica como próximo passo.
+
+> **05/08/2026:** a camada de **rios** já saiu da ANA para a **DC-SC GraphQL** (ver seção 6).
+> A recomendação acima vale para a parte de **chuva** (CEMADEN/CMID) da camada Monitoramento.

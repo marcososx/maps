@@ -896,8 +896,8 @@ map.on('load', async () => {
       map.on('mouseleave','abrigos-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       return ['abrigos-pt','abrigos-label'];
     },
-    // Nível do rio — ANA HidroWebService (direto, via worker brusque-rios).
-    // Estações fluviométricas do Itajaí-Mirim (Brusque, Botuverá, Salseiro).
+    // Nível do rio — Defesa Civil de SC (via worker brusque-rios → GraphQL).
+    // Estações fluviométricas do Itajaí-Mirim (Brusque, Guabiruba, Botuverá).
     // Toda estação vira marcador; sem dado em tempo real → marcador cinza.
     rios: async () => {
       const d = await (await fetch(RIOS_URL)).json();
@@ -905,7 +905,7 @@ map.on('load', async () => {
         type: 'Feature',
         geometry: { type:'Point', coordinates:[r.lon, r.lat] },
         properties: { codigo:r.codigo, nome:r.nome, rio:r.rio, municipio:r.municipio,
-                      nivel_m:r.nivel_m, vazao_m3s:r.vazao_m3s, chuva_mm:r.chuva_mm, coleta:r.coleta,
+                      nivel_m:r.nivel_m, variacao_cm:r.variacao_cm, chuva_mm:r.chuva_mm, coleta:r.coleta,
                       tem_dado:!!r.tem_dado }
       }));
       map.addSource('rios', { type:'geojson', data:{ type:'FeatureCollection', features:feats } });
@@ -921,12 +921,12 @@ map.on('load', async () => {
                 'text-halo-color':'#04121c','text-halo-width':1.3 } });
       map.on('click','rios-pt',(e)=>{
         const p=e.features[0].properties;
-        const L=['<b>'+(p.nome||'')+'</b>','<span style="color:#8a97a8">'+(p.rio||'')+' · '+(p.municipio||'')+' · ANA '+(p.codigo||'')+'</span>'];
+        const L=['<b>'+(p.nome||'')+'</b>','<span style="color:#8a97a8">'+(p.rio||'')+' · '+(p.municipio||'')+' · DC-SC '+(p.codigo||'')+'</span>'];
         if (p.tem_dado) {
           if(p.nivel_m!=null) L.push('Nível: <b>'+p.nivel_m.toFixed(2).replace('.',',')+' m</b>');
-          if(p.vazao_m3s!=null) L.push('Vazão: '+p.vazao_m3s+' m³/s');
-          if(p.chuva_mm!=null) L.push('Chuva: '+p.chuva_mm+' mm');
-          if(p.coleta) L.push('<span style="font-size:10px;color:#8a97a8">'+p.coleta+' · ANA</span>');
+          if(p.variacao_cm!=null) L.push('Variação: '+(p.variacao_cm>0?'+':'')+p.variacao_cm.toFixed(1).replace('.',',')+' cm');
+          if(p.chuva_mm!=null) L.push('Chuva: '+p.chuva_mm.toFixed(1).replace('.',',')+' mm');
+          if(p.coleta) L.push('<span style="font-size:10px;color:#8a97a8">'+p.coleta+' · DC-SC</span>');
         } else {
           L.push('<span style="color:#8a97a8">Sem leitura em tempo real (telemetria indisponível)</span>');
         }
@@ -1193,8 +1193,8 @@ map.on('load', async () => {
   ];
   const RIO = [   // dropdown "Rio Itajaí Mirim"
     { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', build:'rio' },
-    // Nível do rio — estações fluviométricas da ANA (Itajaí-Mirim: Brusque,
-    // Botuverá, Salseiro). Só mostra estação com cota em tempo real.
+    // Nível do rio — estações fluviométricas da DC-SC (Itajaí-Mirim: Brusque,
+    // Guabiruba, Botuverá). Só mostra estação com cota em tempo real.
     { id:'rios', label:'Nível do rio', on:false, color:'#00B0FF', build:'rios' },
     // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
