@@ -225,16 +225,20 @@ map.on('load', async () => {
   // ── Rio Itajaí-Mirim (camada SOBREPOSTA — não altera os bairros; chip "Rio") ──
   const rio = await (await fetch('./brusque_rio.geojson')).json();
   map.addSource('rio', { data:rio, type:'geojson' });
-  // faixa com largura real (~40m): fininha na cidade, ganha corpo ao dar zoom
-  map.addLayer({ id:'rio-banda', type:'fill', source:'rio', filter:['==','$type','Polygon'],
+  // faixa com largura real (progressiva 15m→50m): fininha na cidade, ganha corpo ao dar zoom
+  map.addLayer({ id:'rio-banda', type:'fill', source:'rio', filter:['==',['get','tipo'],'banda'],
     paint:{ 'fill-color':'#00B0FF', 'fill-opacity':0.55 } });
+  // bordas (margens esquerda/direita) — acompanham o curso com a largura progressiva
+  map.addLayer({ id:'rio-borda', type:'line', source:'rio', filter:['==',['get','tipo'],'borda'],
+    layout:{ 'line-join':'round','line-cap':'round' },
+    paint:{ 'line-color':'#7fd6ff', 'line-width':1.2, 'line-opacity':0.85 } });
   // linha central: garante visibilidade quando afastado
-  map.addLayer({ id:'rio-linha', type:'line', source:'rio', filter:['==','$type','LineString'],
+  map.addLayer({ id:'rio-linha', type:'line', source:'rio', filter:['==',['get','tipo'],'centro'],
     layout:{ 'line-join':'round','line-cap':'round' },
     paint:{ 'line-color':'#00B0FF',
             'line-width':['interpolate',['linear'],['zoom'],10,1,13,2,16,3], 'line-opacity':0.9 } });
   // nome seguindo o curso do rio (~3x), estilo mapa
-  map.addLayer({ id:'rio-label', type:'symbol', source:'rio', filter:['==','$type','LineString'],
+  map.addLayer({ id:'rio-label', type:'symbol', source:'rio', filter:['==',['get','tipo'],'centro'],
     layout:{ 'symbol-placement':'line', 'symbol-spacing':320, 'text-field':'Rio Itajaí-Mirim',
              'text-font':['Open Sans Italic'], 'text-size':13, 'text-letter-spacing':0.04,
              'text-max-angle':40 },
@@ -567,7 +571,7 @@ map.on('load', async () => {
     { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
   ];
   const RIO = [   // dropdown "Rio Itajaí Mirim"
-    { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', layers:['rio-banda','rio-linha','rio-label'] },
+    { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', layers:['rio-banda','rio-borda','rio-linha','rio-label'] },
     // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
     { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
