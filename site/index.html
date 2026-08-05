@@ -759,10 +759,9 @@ map.on('load', async () => {
   data.features.forEach(f => eachHome(f.geometry.coordinates));
   map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:0 });  // top maior: livra a barra de chips
 
-  // Zoom-out não passa dos limites da bacia do Rio Itajaí-Mirim
-  // (nascente em Vidal Ramos/Presidente Nereu até a foz em Itajaí) — não deixa
-  // panorâmica/zoom-out puxar recursos à toa.
-  map.setMaxBounds([[-49.60,-27.80],[-48.40,-26.70]]);
+  // Zoom-out não passa dos limites das cidades num raio de 50km de Brusque
+  // — não deixa panorâmica/zoom-out puxar recursos à toa.
+  map.setMaxBounds([[-49.75,-27.95],[-48.25,-26.45]]);
 
   // Clique num bairro (só quando visível) → enquadra; clicar de novo / dar zoom no scroll → volta
   let focused = false;
