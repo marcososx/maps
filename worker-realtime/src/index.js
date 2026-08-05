@@ -17,6 +17,7 @@
 const BASE = 'https://defesacivil.brusque.sc.gov.br';
 const TABELA = `${BASE}/monitoramento/tabela`;
 const HOME = `${BASE}/monitoramento`;
+const ABRIGOS_PAGE = `${BASE}/abrigos`;
 const TTL = 300; // 5 min
 
 const CORS = {
@@ -74,6 +75,24 @@ function parseRio(html) {
   };
 }
 
+function parseAbrigos(html) {
+  // cada célula da tabela repete um onclick setarAbrigo(lat, lon, 'nome', 'desc', cap, 'end', 'situ')
+  const unicos = {};
+  const re = /setarAbrigo\(\s*(-?[\d.]+),\s*(-?[\d.]+),\s*'([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)',\s*'([^']*)'\s*\)/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const [, lat, lon, nome, descricao, capacidade, endereco, situacao] = m;
+    if (unicos[nome]) continue;
+    unicos[nome] = {
+      nome, descricao,
+      capacidade: /^\d+$/.test(capacidade) ? parseInt(capacidade, 10) : null,
+      endereco, situacao: situacao.toUpperCase(),
+      lat: parseFloat(lat), lon: parseFloat(lon),
+    };
+  }
+  return Object.values(unicos);
+}
+
 async function build() {
   const [tRes, hRes] = await Promise.all([
     fetch(TABELA, { cf: { cacheTtl: TTL } }),
@@ -88,31 +107,42 @@ async function build() {
   };
 }
 
+async function buildAbrigos() {
+  const res = await fetch(ABRIGOS_PAGE, { cf: { cacheTtl: TTL } });
+  const html = await res.text();
+  return {
+    updated: new Date().toISOString(),
+    fonte: 'Defesa Civil de Brusque',
+    abrigos: parseAbrigos(html),
+  };
+}
+
+async function serveJSON(path, builder, req, ctx) {
+  const cache = caches.default;
+  const cacheKey = new Request(`${req.origin}${path}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit;
+  let data;
+  try {
+    data = await builder();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }),
+      { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
+  }
+  const resp = new Response(JSON.stringify(data), {
+    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8',
+               'Cache-Control': `public, max-age=${TTL}` },
+  });
+  ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+  return resp;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
-    if (!/\/estacoes\.json$/.test(url.pathname)) {
-      return new Response('Use GET /estacoes.json', { status: 404, headers: CORS });
-    }
-
-    const cache = caches.default;
-    const cacheKey = new Request(`${url.origin}/estacoes.json`);
-    const hit = await cache.match(cacheKey);
-    if (hit) return hit;
-
-    let data;
-    try {
-      data = await build();
-    } catch (e) {
-      return new Response(JSON.stringify({ error: String(e) }),
-        { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
-    }
-    const resp = new Response(JSON.stringify(data), {
-      headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8',
-                 'Cache-Control': `public, max-age=${TTL}` },
-    });
-    ctx.waitUntil(cache.put(cacheKey, resp.clone()));
-    return resp;
+    if (/\/estacoes\.json$/.test(url.pathname)) return serveJSON(url.pathname, build, url, ctx);
+    if (/\/abrigos\.json$/.test(url.pathname)) return serveJSON(url.pathname, buildAbrigos, url, ctx);
+    return new Response('Use GET /estacoes.json ou /abrigos.json', { status: 404, headers: CORS });
   },
 };

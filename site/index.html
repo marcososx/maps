@@ -46,19 +46,25 @@
   #hint .k{ color:#8a97a8; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
   #hint.rt-card{ white-space:normal; width:264px; padding:0; }
   #hint.rt-card .k{ font-size:11px; }
-  /* hint de pontes — borda/layout iguais ao hint padrão; card interno com título + infos */
-  #hint-ponte{ position:absolute; z-index:3; pointer-events:none; display:none;
-         min-width:180px; max-width:240px; padding:10px 12px; font-size:12px;
+  /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
+  #hint-ponte, #hint-abrigo{ position:absolute; z-index:3; pointer-events:none; display:none;
+         min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
          background:rgba(11,14,20,.94); border:1px solid #faee0a; border-radius:8px;
          transform:translate(12px,12px); box-shadow:0 6px 20px rgba(0,0,0,.45);
          line-height:1.4; }
-  #hint-ponte .hp-row{ margin-top:6px; }
-  #hint-ponte .hp-row:first-child{ margin-top:0; }
-  #hint-ponte .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
-  #hint-ponte .hp-lbl::after{ content:':'; }
-  #hint-ponte .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
-  #hint-ponte .hp-val.sub{ color:#eaf6ff; font-weight:400; }
-  #hint-ponte .hp-val.info{ color:#00B0FF; }
+  #hint-ponte .hp-row, #hint-abrigo .hp-row{ margin-top:6px; }
+  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child{ margin-top:0; }
+  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
+  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after{ content:':'; }
+  #hint-ponte .hp-val, #hint-abrigo .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
+  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub{ color:#eaf6ff; font-weight:400; }
+  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info{ color:#00B0FF; }
+  /* símbolo de status do abrigo (verde = aberto, vermelho = fechado) */
+  #hint-abrigo .hp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; }
+  #hint-abrigo .hp-dot.aberto{ background:#00E676; box-shadow:0 0 8px rgba(0,230,118,.9); }
+  #hint-abrigo .hp-dot.fechado{ background:#FF5252; box-shadow:0 0 8px rgba(255,82,82,.9); }
+  #hint-abrigo .hp-val.sit-aberto{ color:#00E676; }
+  #hint-abrigo .hp-val.sit-fechado{ color:#FF5252; }
   /* slider de níveis de alagamento (aparece ao escolher um nível) */
   #nivelbar{ position:absolute; z-index:4; right:14px; top:64px;
         display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 10px;
@@ -138,6 +144,7 @@
 <div id="toast"></div>
 <div id="hint"></div>
 <div id="hint-ponte"></div>
+<div id="hint-abrigo"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="1" value="10">
@@ -384,10 +391,51 @@ map.on('load', async () => {
       map.on('mouseleave','estacoes-pt',()=>{ map.getCanvas().style.cursor=''; hint.style.display='none'; hint.className=''; });
       return ['estacoes-pt','estacoes-label'];
     },
+    // Abrigos — lista ao vivo da Defesa Civil (via worker-realtime/abrigos.json).
+    // Pontos verdes (ABERTO) ou vermelhos (FECHADO); hint em card com todos os dados.
+    abrigos: async () => {
+      const d = await (await fetch(ABRIGOS_URL)).json();
+      const feats = (d.abrigos||[]).map(a => ({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[a.lon, a.lat] },
+        properties:{ nome:a.nome, descricao:a.descricao, capacidade:a.capacidade,
+                     endereco:a.endereco, situacao:(a.situacao||'').toUpperCase() }
+      }));
+      map.addSource('abrigos', { type:'geojson', data:{ type:'FeatureCollection', features:feats } });
+      map.addLayer({ id:'abrigos-pt', type:'circle', source:'abrigos',
+        paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,4,16,7],
+          'circle-color':['match',['get','situacao'],'ABERTO','#00E676','FECHADO','#FF5252','#8a97a8'],
+          'circle-stroke-color':'#04121c','circle-stroke-width':1.5 } });
+      map.addLayer({ id:'abrigos-label', type:'symbol', source:'abrigos', minzoom:12.5,
+        layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
+                 'text-offset':[0,1.2], 'text-anchor':'top', 'text-optional':true },
+        paint:{ 'text-color':'#d4f0ff','text-halo-color':'#04121c','text-halo-width':1.3 } });
+      map.on('mousemove','abrigos-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties;
+        const ha=document.getElementById('hint-abrigo');
+        ha.style.display='block'; ha.style.left=e.point.x+'px'; ha.style.top=e.point.y+'px';
+        const aberto = p.situacao==='ABERTO';
+        const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
+          +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+        let h='';
+        if(p.nome) h+=row('Nome', p.nome);
+        if(p.descricao) h+=row('Descrição', p.descricao, 'sub');
+        if(p.capacidade!=null) h+=row('Capacidade', p.capacidade+' pessoas', 'info');
+        if(p.endereco) h+=row('Endereço', p.endereco, 'sub');
+        h+=row('Situação', '<span class="hp-dot '+(aberto?'aberto':'fechado')+'"></span>'+(aberto?'ABERTO':'FECHADO'),
+          aberto?'sit-aberto':'sit-fechado');
+        ha.innerHTML=h;
+      });
+      map.on('mouseleave','abrigos-pt',()=>{ map.getCanvas().style.cursor='';
+        document.getElementById('hint-abrigo').style.display='none'; });
+      return ['abrigos-pt','abrigos-label'];
+    },
   };
   // ── Tempo real: busca do worker (CORS + cache); alimenta hint e popups ───────
   // TODO(deploy): publicar worker-realtime e conferir esta URL (ver worker-realtime/README).
   const REALTIME_URL = 'https://brusque-realtime.marcososx.workers.dev/estacoes.json';
+  const ABRIGOS_URL = 'https://brusque-realtime.marcososx.workers.dev/abrigos.json';
   const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 
@@ -511,9 +559,12 @@ map.on('load', async () => {
 
   const LAYERS = [
     { id:'bairros', label:'Bairros', on:false, color:'#faee0a', layers:['fill','bairro-linha','reserva-linha','zona-linha'] },
-    // camadas de risco — carregadas sob demanda (build:key)
-    { id:'tempo_real', label:'Tempo real', on:false, color:'#00E5FF', build:'tempo_real' },
     { id:'limites', label:'Limites', on:false, color:'#9aa7b8', layers:['vizinhas-linha','vizinhas-label'] },
+  ];
+  const TEMPOREAL = [   // dropdown "Tempo Real"
+    // Monitoramento = as estações/indicadores que antes eram o chip "Tempo real"
+    { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real' },
+    { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
   ];
   const RIO = [   // dropdown "Rio Itajaí Mirim"
     { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', layers:['rio-banda','rio-linha','rio-label'] },
@@ -586,7 +637,7 @@ map.on('load', async () => {
   map.on('zoom', wxScale);
 
   // Nenhuma camada ligada? (varre os 4 grupos de toggles)
-  const anyLayerOn = () => [...LAYERS, ...RIO, ...SETORES, ...MAPA].some(l => l.on);
+  const anyLayerOn = () => [...LAYERS, ...RIO, ...SETORES, ...MAPA, ...TEMPOREAL].some(l => l.on);
   const applyMode = () => {
     wxBadge.style.display = 'flex';
     if (anyLayerOn()) {                          // camada ligada → canto superior esquerdo
@@ -690,6 +741,7 @@ map.on('load', async () => {
   };
   document.addEventListener('click', () => document.querySelectorAll('.chip-menu.open').forEach(m => m.classList.remove('open')));
   makeDropdown('Rio Itajaí Mirim', RIO, '#00B0FF');
+  makeDropdown('Tempo Real', TEMPOREAL, '#00E5FF');
   makeDropdown('Setores de risco', SETORES, '#FF5252');
   makeDropdown('Mapa', MAPA, '#cfd8e3');
   _fadeReady = true;   // a partir daqui, marcar/desmarcar camadas anima (fade 360 ms)
