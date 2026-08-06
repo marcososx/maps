@@ -888,101 +888,77 @@ map.on('load', async () => {
         paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.6 } });
       return ['rio-banda','rio-borda','rio-linha','rio-label'];
     },
-    // Cidades vizinhas (limites) — contorno tracejado + badge de clima GRANDE
-    // ancorado no centro de cada cidade (mesmo padrão do selo de Brusque),
-    // que escala com o zoom e NÃO repete (1 badge por cidade, em HTML).
-    vizinhas: async () => {
-      const d = await (await fetch('./brusque_vizinhas.geojson')).json();
-      window._vizinhas = d;
-      // clima de TODAS as cidades vizinhas — cache localStorage 5 min
-      const VIZWX_KEY = 'brusque_vizwx_v1';
-      const WX_TTLV = 5*60*1000;
-      const wxCacheV = {};
-      try { Object.assign(wxCacheV, JSON.parse(localStorage.getItem(VIZWX_KEY)||'{}')); } catch(e){}
-      const centroid = (geom) => { let sl=0,slat=0,n=0;
-        const all = c => Array.isArray(c[0]) ? c.forEach(all) : (sl+=c[0], slat+=c[1], n++);
-        all(geom.coordinates); return [sl/n, slat/n]; };
-      const carregarTodas = async () => {
-        const pend = d.features.filter(f => {
-          const c=wxCacheV[f.properties.nome];
-          return !c || !c.t || (Date.now()-(c.ts||0))>WX_TTLV;
-        });
-        await Promise.allSettled(pend.map(async f => {
-          try{
-            const [lon,lat]=centroid(f.geometry);
-            const u='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon
-                  +'&current=temperature_2m,weather_code,precipitation'
-                  +'&daily=precipitation_sum&forecast_days=1&timezone=America%2FSao_Paulo';
-            const r=await (await fetch(u)).json();
-            const [ic,desc]=wxOf(r.current.weather_code);
-            wxCacheV[f.properties.nome]={ t:Math.round(r.current.temperature_2m), ic, desc,
-              chuvaNow:r.current.precipitation,
-              chuvaDia:(r.daily && r.daily.precipitation_sum && r.daily.precipitation_sum[0]) || 0,
-              ts:Date.now() };
-          }catch(e){ wxCacheV[f.properties.nome]={ t:null, ic:'·', desc:'—', chuvaNow:null, chuvaDia:null, ts:Date.now() }; }
-        }));
-        try { localStorage.setItem(VIZWX_KEY, JSON.stringify(wxCacheV)); } catch(e){}
-      };
-      map.addSource('vizinhas', { data:d, type:'geojson' });
-      map.addLayer({ id:'vizinhas-linha', type:'line', source:'vizinhas',
-        paint:{ 'line-color':'#9aa7b8', 'line-width':1.2, 'line-dasharray':[2,2], 'line-opacity':0.65 } });
+     // Cidades vizinhas (limites) — contorno tracejado.
+     // Cidades no raio de 100 km: contorno sutil + badge de clima (90 cidades)
+     // agregado num único endpoint (brusque-clima-cidades/clima.json).
+     vizinhas: async () => {
+       const d = await (await fetch('./brusque_vizinhas.geojson')).json();
+       window._vizinhas = d;
+       const centroid = (geom) => { let sl=0,slat=0,n=0;
+         const all = c => Array.isArray(c[0]) ? c.forEach(all) : (sl+=c[0], slat+=c[1], n++);
+         all(geom.coordinates); return [sl/n, slat/n]; };
+       map.addSource('vizinhas', { data:d, type:'geojson' });
+       map.addLayer({ id:'vizinhas-linha', type:'line', source:'vizinhas',
+         paint:{ 'line-color':'#9aa7b8', 'line-width':1.2, 'line-dasharray':[2,2], 'line-opacity':0.65 } });
 
-      // ── Cidades dentro do raio de 100 km de Brusque (base p/ futuras camadas).
-      // Contorno tracejado mais sutil + nome; sem badges de clima (seriam ~90 consultas).
-      if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeLayer('raio100-label'), map.removeSource('raio100');
-      map.addSource('raio100', { type:'geojson', data:'./brusque_raio100.geojson' });
-      map.addLayer({ id:'raio100-linha', type:'line', source:'raio100',
-        paint:{ 'line-color':'#8a97a8', 'line-width':0.9, 'line-dasharray':[2,4], 'line-opacity':0.4 } });
-      map.addLayer({ id:'raio100-label', type:'symbol', source:'raio100', minzoom:9,
-        layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
-                 'text-size':9, 'text-offset':[0,0.4], 'text-anchor':'center', 'text-optional':true,
-                 'text-allow-overlap':false },
-        paint:{ 'text-color':'#7f8da0','text-halo-color':'#0B0E14','text-halo-width':1.2 } });
+       // ── Cidades dentro do raio de 100 km de Brusque: contorno + badge de clima.
+       const d100 = await (await fetch('./brusque_raio100.geojson')).json();
+       if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeLayer('raio100-label'), map.removeSource('raio100');
+       map.addSource('raio100', { type:'geojson', data:d100 });
+       map.addLayer({ id:'raio100-linha', type:'line', source:'raio100',
+         paint:{ 'line-color':'#8a97a8', 'line-width':0.9, 'line-dasharray':[2,4], 'line-opacity':0.4 } });
+       map.addLayer({ id:'raio100-label', type:'symbol', source:'raio100', minzoom:9,
+         layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
+                  'text-size':9, 'text-offset':[0,0.4], 'text-anchor':'center', 'text-optional':true,
+                  'text-allow-overlap':false },
+         paint:{ 'text-color':'#7f8da0','text-halo-color':'#0B0E14','text-halo-width':1.2 } });
 
-      // badges HTML de clima — 1 por cidade, ancorados no centro, escalam com o zoom
-      // (mesma técnica do selo de Brusque: scale no FILHO, wrapper só posiciona)
-      const vizWx = [];
-      const wxBaseZoomV = wxBaseZoom;
-      d.features.forEach(f => {
-        const [lon,lat]=centroid(f.geometry);
-        const wrap=document.createElement('div'); wrap.className='vizwx-wrap';
-        const el=document.createElement('div'); el.className='vizwx';
-        el.innerHTML='<div class="vw-city">'+f.properties.nome+'</div>'
-          +'<div class="vw-cond"><span class="ic">·</span> <span class="vw-info">carregando…</span></div>'
-          +'<div class="vw-temp">--°</div>';
-        wrap.appendChild(el);
-        new maplibregl.Marker({ element: wrap, anchor:'center' }).setLngLat([lon,lat]).addTo(map);
-        vizWx.push({ nome:f.properties.nome, el });
-      });
-      const paintVizBadge = (c) => {
-        c.el.querySelector('.vw-temp').textContent = (c.t!=null ? c.t+'°' : '--°');
-        c.el.querySelector('.ic').textContent = c.ic || '·';
-        let info = c.desc || '—';
-        if (c.chuvaNow!=null && c.chuvaNow>0) info += ' · '+fmtChuva(c.chuvaNow)+' mm/h';
-        c.el.querySelector('.vw-info').textContent = info;
-        if (c.chuvaDia!=null) c.el.title = (c.chuvaDia>0
-          ? '🌧 '+fmtChuva(c.chuvaDia)+' mm acumulado hoje'
-          : 'Sem chuva acumulada hoje');
-      };
-      d.features.forEach((f,i) => {
-        const c=wxCacheV[f.properties.nome]||{ t:null, ic:'·', desc:'carregando…' };
-        paintVizBadge({ el:vizWx[i].el, ...c });
-        vizWx[i].el.classList.add('show');
-      });
-      const vizScale = () => {
-        const s = Math.min(2.2, Math.max(0.6, Math.pow(2, map.getZoom() - wxBaseZoomV)));
-        vizWx.forEach(v => { v.el.style.transform = 'scale('+s+')'; });
-      };
-      map.on('zoom', vizScale);
-      vizScale();
-      window._setVizWx = (on) => vizWx.forEach(v => { v.el.style.display = on ? '' : 'none'; });
-      await carregarTodas();
-      d.features.forEach((f,i) => {
-        const c=wxCacheV[f.properties.nome]||{};
-        if(c.t!=null) paintVizBadge({ el:vizWx[i].el, ...c });
-      });
-      return ['vizinhas-linha','raio100-linha','raio100-label'];
-    },
+       // clima de TODAS as cidades do raio (90) — 1 requisição ao worker agregador
+       let wxMap = {};
+       try {
+         const j = await (await fetch('https://brusque-clima-cidades.marcososx.workers.dev/clima.json', { cache:'no-store' })).json();
+         wxMap = j.cidades || {};
+       } catch(e){}
+
+       // badges HTML de clima — 1 por cidade, ancorados no centro, escalam com o zoom
+       // (mesma técnica do selo de Brusque: scale no FILHO, wrapper só posiciona)
+       const vizWx = [];
+       const wxBaseZoomV = wxBaseZoom;
+       d100.features.forEach(f => {
+         const [lon,lat]=centroid(f.geometry);
+         const wrap=document.createElement('div'); wrap.className='vizwx-wrap';
+         const el=document.createElement('div'); el.className='vizwx';
+         el.innerHTML='<div class="vw-city">'+f.properties.nome+'</div>'
+           +'<div class="vw-cond"><span class="ic">·</span> <span class="vw-info">carregando…</span></div>'
+           +'<div class="vw-temp">--°</div>';
+         wrap.appendChild(el);
+         new maplibregl.Marker({ element: wrap, anchor:'center' }).setLngLat([lon,lat]).addTo(map);
+         vizWx.push({ nome:f.properties.nome, el });
+       });
+       const paintVizBadge = (c) => {
+         c.el.querySelector('.vw-temp').textContent = (c.t!=null ? c.t+'°' : '--°');
+         c.el.querySelector('.ic').textContent = c.ic || '·';
+         let info = c.desc || '—';
+         if (c.chuvaNow!=null && c.chuvaNow>0) info += ' · '+fmtChuva(c.chuvaNow)+' mm/h';
+         c.el.querySelector('.vw-info').textContent = info;
+         if (c.chuvaDia!=null) c.el.title = (c.chuvaDia>0
+           ? '🌧 '+fmtChuva(c.chuvaDia)+' mm acumulado hoje'
+           : 'Sem chuva acumulada hoje');
+       };
+       d100.features.forEach((f,i) => {
+         const c=wxMap[f.properties.nome]||{ t:null, ic:'·', desc:'carregando…' };
+         paintVizBadge({ el:vizWx[i].el, ...c });
+         vizWx[i].el.classList.add('show');
+       });
+       const vizScale = () => {
+         const s = Math.min(2.2, Math.max(0.6, Math.pow(2, map.getZoom() - wxBaseZoomV)));
+         vizWx.forEach(v => { v.el.style.transform = 'scale('+s+')'; });
+       };
+       map.on('zoom', vizScale);
+       vizScale();
+       window._setVizWx = (on) => vizWx.forEach(v => { v.el.style.display = on ? '' : 'none'; });
+       return ['vizinhas-linha','raio100-linha','raio100-label'];
+     },
     // Pontes do Rio Itajaí-Mirim — pontos + label; clique/hover com dados.
     pontes: async () => {
       const d = await (await fetch('./brusque_pontes.geojson')).json();

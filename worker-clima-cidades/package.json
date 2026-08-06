@@ -1,0 +1,13 @@
+{
+  "name": "brusque-clima-cidades",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: condições climáticas das cidades no raio de 100 km de Brusque (Open-Meteo agregado)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

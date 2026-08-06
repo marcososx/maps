@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-clima-cidades",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "observability": { "enabled": true }
+  // Clima das cidades no raio de 100 km de Brusque. Fontes públicas
+  // (Open-Meteo + geojson do próprio brusque-maps) — sem segredos.
+}
