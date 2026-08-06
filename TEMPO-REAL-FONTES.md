@@ -236,3 +236,39 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 > req/**mês**, endpoints de status de voo e catálogos; serve pra consulta pontual, não
 > pra tracker contínuo. Para "aviões sobre a região" a Airplanes.live é a escolha gratuita.
 
+## 9. Status Aberto/Fechado de aeroportos/aeródromos — REDEMET (PLANEJADO)  ⭐ 06/08/2026
+
+> **Status: EM ESPERA.** O Marcos se inscreveu na REDEMET pra receber a **API key**
+> (respondem ~07/08). Implementar quando a chave chegar.
+
+- **Objetivo (pedido do Marcos, 06/08/2026):** status em tempo real de **Aberto/Fechado**
+  para aeroportos e aeródromos (por clima ou outros motivos), no **mesmo padrão da camada
+  de Abrigos** (bolinha verde = ABERTO, vermelha = FECHADO, com motivo). Idealmente com a
+  **lista oficial de motivos** (NOTAM).
+- **Fonte oficial:** **REDEMET/DECEA** (`https://www.redemet.aer.mil.br/api/...`, agora
+  redireciona pra `redemet.decea.mil.br`). API `consulta_automatica` com `api=<key>&local=<OACI>&msg=metar`
+  (METAR) e há endpoint de **NOTAM** (avisos oficiais de fechamento/manutenção/clima — a
+  "lista oficial de motivos"). **Exige API key** (cadastro grátis).
+- **O que foi testado hoje (06/08):**
+  - **NOAA aviationweather** (`aviationweather.gov/api/data/metar?ids=<OACI>&format=json`) —
+    gratuita e sem chave, mas **cobertura parcial no Brasil hoje**: SBFL/SBSP/SBPA/SBGR
+    respondem; SBNF/SSBL/SWJA/etc. retornam `204` (sem METAR). **Não serve como fonte
+    principal** pros 17 aeródromos/aeroportos do raio de Brusque.
+  - **REDEMET sem chave** → `307 Redirect` (exige a key). Por isso a espera pela key.
+- **Dados que já temos no site:** `site/brusque_aerodromos.geojson` (117 pontos: 4 aeroportos,
+  13 aeródromos, 100 helipontos) com `oaci` (ex.: SSBL Blumenau, SWJA Itajaí, SIKY Brusque),
+  `ciad`, `nome`, `municipio`, `altitude`, `dist_km`. O `tipo` distingue
+  aeroporto/aerodromo/heliponto. As camadas de mapa já estão coloridas (aeroporto branco,
+  aeródromo/heliponto azul) e o hint usa ícones Lucide (avião branco/azul + helicóptero).
+- **Plano de implementação (quando a key chegar):**
+  1. Novo Worker (ex.: `brusque-aero-status`) consultando a REDEMET por METAR + NOTAM
+     dos códigos OACI de aeroportos/aeródromos, **cache ~5 min** (padrão dos demais workers).
+  2. Regra de status derivada: METAR severo (TS, FG/visibilidade baixa, vento forte) e/ou
+     NOTAM de fechamento → **FECHADO** (com o motivo do NOTAM); condições normais → **ABERTO**;
+     sem dado → **cinza** (como as estações de rio sem telemetria).
+  3. No `index.html`: sobrepor o status nos pontos da infra (verde/vermelho/cinza, como os
+     abrigos) + linha "Situação" no hint `#hint-voos` com o motivo. Guardar a key da REDEMET
+     como **segredo do Worker** (nunca no cliente).
+- **Referências:** METAR/NOTAM docs da REDEMET em `https://www.redemet.aer.mil.br` (login);
+  a key chega por e-mail após o cadastro.
+
