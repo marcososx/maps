@@ -1526,7 +1526,17 @@ map.on('load', async () => {
   // Satélite/Estradas/Trânsito — libera espaço p/ camadas futuras.
   const MAPA = [
     { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas',
-      onToggle: (on) => { if (window._setVizWx) window._setVizWx(on); } },
+      onToggle: (on) => {
+        if (window._setVizWx) window._setVizWx(on);
+        // ao ATIVAR: enquadra as cidades que fazem divisa com Brusque, para o
+        // usuário ver os limites e saber que pode navegar além (raio de 100 km).
+        if (on && window._vizinhas) {
+          const bb = new maplibregl.LngLatBounds();
+          const all = c => { if (Array.isArray(c[0])) c.forEach(all); else bb.extend(c); };
+          window._vizinhas.features.forEach(f => all(f.geometry.coordinates));
+          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
+        }
+      } },
     { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros' },
     { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true },
     { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'] },
