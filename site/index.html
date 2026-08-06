@@ -617,8 +617,10 @@ map.on('load', async () => {
     // silhueta de avião idêntica à usada pelo Airplanes.live (tar1090 'unknown')
     const g=_planeCanvas.getContext('2d');
     const path=new Path2D('M 4.256,15.496 C 3.979,14.340 7.280,13.606 7.280,13.606 V 8.650 l -6,2 c -0.680,0 -1,-0.350 -1,-0.660 C 0.242,9.595 0.496,9.231 0.880,9.130 1.140,9 4.800,7 7.280,5.630 V 3 C 7.280,1.890 7.720,0.290 8.510,0.290 9.300,0.290 9.770,1.840 9.770,3 v 2.630 c 2.450,1.370 6.100,3.370 6.370,3.500 0.390,0.093 0.651,0.461 0.610,0.860 -0.050,0.310 -0.360,0.670 -1.050,0.670 l -5.930,-2 v 4.946 c 0,0 3.300,0.734 3.024,1.890 -0.331,1.384 -2.830,0.378 -4.254,0.378 -1.434,4.520e-4 -3.950,1.016 -4.284,-0.378 z');
-    // viewBox do site: -2.5 -2.5 22 22 (centro em 8.5, 8.5) → escala p/ caber no canvas
-    g.translate(24,24); g.scale(1.55,-1.55); g.translate(-8.5,-8.5);
+    // viewBox do site: -2.5 -2.5 22 22 (centro em 8.5, 8.5) → escala p/ caber no canvas.
+    // Sem flip de Y: no SVG o nariz fica em y baixo (topo) e a cauda embaixo — assim a
+    // imagem final tem o NARIZ PARA CIMA e o icon-rotate pelo rumo aponta o voo certo.
+    g.translate(24,24); g.scale(1.55,1.55); g.translate(-8.5,-8.5);
     g.fillStyle='#ffd54f'; g.fill(path);
     g.strokeStyle='#04121c'; g.lineWidth=0.6; g.lineJoin='round'; g.lineCap='round'; g.stroke(path);
   }
