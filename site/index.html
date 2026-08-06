@@ -1834,8 +1834,10 @@ map.on('load', async () => {
 
   // Nenhuma camada (exceto o Clima) ligada? Clima é o selo, não "cobre" Brusque.
   const anyLayerOn = () => [...RIO, ...SETORES, ...MAPA, ...TEMPOREAL, ...INDICADORES].some(l => l.on && l.id !== 'clima');
+  let _openDone = false;   // vira true só quando a animação de abertura termina
   const applyMode = () => {
     if (!_wx || !climaI.on) { wxBadge.style.display = 'none'; return; }   // clima desligado ou sem dado
+    if (!_openDone && !anyLayerOn()) return;   // abertura em andamento → espera (selo grande)
     wxBadge.style.display = 'flex';
     if (anyLayerOn()) {                          // camada ligada → chip de clima na barra
       if (wxBadge.parentNode !== chipbar) chipbar.prepend(wxBadge);
@@ -1963,13 +1965,13 @@ map.on('load', async () => {
   const wxpRefresh = document.getElementById('wxp-refresh');
   if (wxpRefresh) wxpRefresh.onclick = () => { loadWx(true); showToast('Indicadores atualizados'); };
 
-  // Abre focado em Brusque (home) — zoom suave: do mapa todo (bem aberto) até
-  // Brusque, DANDO TEMPO do clima carregar enquanto a câmera anima.
+  // Abre focado em Brusque (home) — zoom suave: parte de um zoom menos distante
+  // (≈50% da distância antiga) e "voa" até Brusque, DANDO TEMPO do clima carregar.
   const home = new maplibregl.LngLatBounds();
   const eachHome = c => Array.isArray(c[0]) ? c.forEach(eachHome) : home.extend(c);
   muni.features.forEach(f => eachHome(f.geometry.coordinates));
-  // parte de um zoom mais aberto e "voa" até Brusque (duration alto = suave)
-  map.flyTo({ center: home.getCenter(), zoom: 7.2, duration: 800, essential: true, speed: 0.4 });
+  // começa mais perto (zoom ~9.3; antes era 7.2) — a metade do caminho até o home
+  map.flyTo({ center: home.getCenter(), zoom: 9.3, duration: 800, essential: true, speed: 0.4 });
   // contorno de Brusque surge junto com o zoom (fade-in da linha)
   map.setPaintProperty('municipio-linha', 'line-opacity', 0);
   map.setPaintProperty('municipio-linha', 'line-opacity-transition', { duration: 3000, delay: 120 });
@@ -1978,6 +1980,9 @@ map.on('load', async () => {
   setTimeout(() => map.getContainer().classList.add('ready'), 120);
   setTimeout(() => {
     map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600, essential:true });
+    // o selo de clima SÓ aparece (fade-in) quando a animação terminar E o dado
+    // já tiver chegado — nada de clima surgindo no meio do zoom
+    setTimeout(() => { _openDone = true; updateBadge(); }, 2700);
   }, 700);
 
   // Zoom-out liberado: cobre SC quase inteiro (~1,6x o raio) — permite ver as
