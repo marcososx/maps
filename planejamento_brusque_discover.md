@@ -217,9 +217,11 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   - **Varredura de radar estética**: linha **verde grossa** (#00E676, 3 px) + esteira degradê
     seguindo a **circunferência** do círculo (não corta reta por dentro). Roda **só 1 volta**
     (8 s) ao ativar; na parte final faz **fade out de 270° até 360° (topo)** antes de sumir.
-  - **Radar primário**: quando a varredura cruza o rumo de um avião, acende um **flash forte**
-    (círculo verde que expande e some, camada `voos-blip`) sobre o avião — efeito de radar
-    de verdade. Filtros por geometria: linha só LineString, esteira só Polygon, flash só Point.
+  - **Radar primário (display analógico)**: quando a varredura cruza o rumo de um avião, uma
+    **bola degradê** acende sobre ele (núcleo + halo esfumado, camadas `voos-blip`/`voos-blip-halo`)
+    e expande/some. **Continua pingando os aviões mesmo depois que a linha verde acaba**
+    (o ângulo continua varrendo em silêncio). Filtros por geometria: linha só LineString,
+    esteira só Polygon, flash só Point.
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
     (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
   - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090
