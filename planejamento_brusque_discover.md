@@ -196,6 +196,15 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 - `site/brusque_regiao.geojson` — convex hull de Brusque + 28 cidades vizinhas (cobre a bacia da
   nascente). Usado como limites dos overlays de clima + contorno tracejado.
 
+### 7.4c Cidades no raio de 100 km de Brusque (06/08/2026)
+- `site/brusque_raio100.geojson` — **90 municípios** de SC (IBGE) cujo território toca o círculo
+  de 100 km ao redor de Brusque. Mesmo formato das vizinhas (`nome` + Polygon/MultiPolygon).
+  Gerado via API de malhas do IBGE (códigos 42...) + nomes da API de localidades, filtrados por
+  vértice ≤ 100 km do centro (haversine).
+- Exibido **dentro da camada "Limites"**: contorno tracejado sutil (`raio100-linha`) + nome das
+  cidades (`raio100-label`), sem badges de clima (seriam ~90 consultas Open-Meteo).
+- Base para a futura camada que o Marcos vai criar usando essas cidades.
+
 ### 7.4b Voos em tempo real — dropdown "Tempo Real" (05/08/2026)
 - Worker **`brusque-voos`** — **Airplanes.live** ADS-B (REST, sem chave, 1 req/s), consulta por
   ponto central (**Brusque** -27.0977/-48.9172) + raio e **filtro ≤ 100 km** (haversine).

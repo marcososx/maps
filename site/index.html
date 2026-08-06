@@ -845,6 +845,18 @@ map.on('load', async () => {
       map.addLayer({ id:'vizinhas-linha', type:'line', source:'vizinhas',
         paint:{ 'line-color':'#9aa7b8', 'line-width':1.2, 'line-dasharray':[2,2], 'line-opacity':0.65 } });
 
+      // ── Cidades dentro do raio de 100 km de Brusque (base p/ futuras camadas).
+      // Contorno tracejado mais sutil + nome; sem badges de clima (seriam ~90 consultas).
+      if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeLayer('raio100-label'), map.removeSource('raio100');
+      map.addSource('raio100', { type:'geojson', data:'./brusque_raio100.geojson' });
+      map.addLayer({ id:'raio100-linha', type:'line', source:'raio100',
+        paint:{ 'line-color':'#8a97a8', 'line-width':0.9, 'line-dasharray':[2,4], 'line-opacity':0.4 } });
+      map.addLayer({ id:'raio100-label', type:'symbol', source:'raio100', minzoom:9,
+        layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
+                 'text-size':9, 'text-offset':[0,0.4], 'text-anchor':'center', 'text-optional':true,
+                 'text-allow-overlap':false },
+        paint:{ 'text-color':'#7f8da0','text-halo-color':'#0B0E14','text-halo-width':1.2 } });
+
       // badges HTML de clima — 1 por cidade, ancorados no centro, escalam com o zoom
       // (mesma técnica do selo de Brusque: scale no FILHO, wrapper só posiciona)
       const vizWx = [];
@@ -887,7 +899,7 @@ map.on('load', async () => {
         const c=wxCacheV[f.properties.nome]||{};
         if(c.t!=null) paintVizBadge({ el:vizWx[i].el, ...c });
       });
-      return ['vizinhas-linha'];
+      return ['vizinhas-linha','raio100-linha','raio100-label'];
     },
     // Pontes do Rio Itajaí-Mirim — pontos + label; clique/hover com dados.
     pontes: async () => {
@@ -1500,7 +1512,7 @@ map.on('load', async () => {
           const c = _cirFeat().geometry.coordinates[0];
           const bb = new maplibregl.LngLatBounds();
           c.forEach(([lo, la]) => bb.extend([lo, la]));
-          map.fitBounds(bb, { padding:30, duration:700 });
+          map.fitBounds(bb, { padding:30, duration:2600 });
         } else {
           hidePanel('voospanel');
         }
@@ -1758,9 +1770,9 @@ map.on('load', async () => {
   muni.features.forEach(f => eachHome(f.geometry.coordinates));
   map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:0 });  // top maior: livra a barra de chips
 
-  // Zoom-out liberado ~2x o círculo de 100 km de Brusque (camada Voos) — a
-  // área monitorada cabe folgada na tela e sobra margem pra navegar.
-  map.setMaxBounds([[-51.7,-29.5],[-46.1,-24.7]]);
+  // Zoom-out liberado: cobre SC quase inteiro (~1,6x o raio) — permite ver as
+  // cidades do raio de 100 km e navegar com folga sem travar.
+  map.setMaxBounds([[-53.2,-30.9],[-44.6,-23.2]]);
 
   // Clique num bairro (só quando visível) → enquadra; clicar de novo / dar zoom no scroll → volta
   let focused = false;
