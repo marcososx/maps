@@ -7,10 +7,57 @@
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <style>
-  :root{ --bg:#0B0E14; --panel:#151921; --border:#232D3F; --info:#00B0FF;
-         --ok:#00E676; --rural:#C9A15A; --txt:#cfd8e3; }
+  /* ═══ DESIGN SYSTEM — tokens centralizados (tema operacional dark, Pizza Index) ═══ */
+  :root{
+    /* cores */
+    --bg:#0B0E14; --panel:#151921; --panel-2:#1B2130; --border:#232D3F; --border-2:#2E3A52;
+    --txt:#cfd8e3; --muted:#8a97a8; --hi:#eaf6ff;
+    --ok:#00E676; --warn:#FFB300; --crit:#FF3D00; --info:#00B0FF; --neon:#ffd54f;
+    --red:#E53935; --green:#00E676; --amber:#FFB300; --blue:#00B0FF;
+    /* tipografia */
+    --font-ui:'Inter',system-ui,sans-serif;
+    --font-mono:ui-monospace,'Space Mono',monospace;
+    /* forma / sombra / blur */
+    --radius:12px; --radius-sm:9px; --radius-xs:7px;
+    --shadow:0 10px 26px rgba(0,0,0,.45);
+    --blur:blur(8px);
+    --box-pad:11px 13px;
+    --chip-h:34px;
+  }
   html,body{ margin:0; height:100%; background:var(--bg); color:var(--txt);
-             font-family:Inter,system-ui,sans-serif; }
+             font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+  /* Padrão de componentes — toda caixa/box usa estes tokens */
+  .wpanel{ pointer-events:auto; background:rgba(21,25,33,.93); border:1px solid var(--border);
+        border-radius:var(--radius); padding:var(--box-pad); backdrop-filter:var(--blur);
+        box-shadow:var(--shadow); }
+  .p-head{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+  .p-head b{ font:700 12px var(--font-ui); color:var(--hi); letter-spacing:.4px; }
+  .p-upd{ font-size:9.5px; color:var(--muted); }
+  .wbtn{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--txt);
+        border-radius:var(--radius-xs); padding:4px 9px; font:600 10.5px var(--font-ui); cursor:pointer;
+        transition:background .18s ease, border-color .18s ease; }
+  .wbtn:hover{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); }
+  /* Ações de caixa: reduzir (–) · ocultar (▁) · fechar (×) — em TODAS as caixas */
+  .box-acts{ display:flex; align-items:center; gap:3px; margin-left:auto; }
+  .box-act{ width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center;
+        border:1px solid rgba(255,255,255,.12); border-radius:6px; background:rgba(255,255,255,.05);
+        color:var(--muted); font:700 13px var(--font-mono); line-height:1; cursor:pointer;
+        transition:background .15s ease, color .15s ease, border-color .15s ease; }
+  .box-act:hover{ background:rgba(255,255,255,.14); color:var(--hi); border-color:rgba(255,255,255,.25); }
+  .box-act.act-x:hover{ background:rgba(255,61,0,.18); color:var(--crit); border-color:var(--crit); }
+  /* reduzido: só o cabeçalho (corpo escondido) */
+  .box-min > :not(.p-head):not(.wxp-title):not(.cel-head):not(.rc-head):not(.nc-head):not(.wl-head){ display:none !important; }
+  /* ocultado por completo (a camada continua ligada) */
+  .box-hide{ display:none !important; }
+  .box-min { cursor:pointer; }
+  .box-min .p-head, .box-min .wxp-title, .box-min .rc-head, .box-min .nc-head, .box-min .cel-head, .box-min .wl-head{ margin-bottom:0; }
+  /* botão flutuante de restaurar caixa ocultada */
+  .box-restore{ position:fixed; z-index:7; display:flex; align-items:center; gap:6px;
+        padding:6px 10px; border-radius:999px; border:1px solid var(--border-2);
+        background:rgba(21,25,33,.95); backdrop-filter:var(--blur); box-shadow:var(--shadow);
+        font:600 10.5px var(--font-ui); color:var(--hi); cursor:pointer;
+        transition:opacity .2s ease, transform .2s ease; }
+  .box-restore:hover{ border-color:var(--info); }
   #map{ position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease .3s; }
   #map.ready{ opacity:1; }
   /* HUD */
@@ -180,43 +227,71 @@
         background:#fff; border:3px solid #2c2ce8;
         box-shadow:0 2px 6px rgba(0,0,0,.5); }
   #nivelrange:focus{ outline:none; }
-  /* chips de camadas (header flutuante) */
-  #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex;
-          align-items:center;
-          filter:drop-shadow(0 8px 20px rgba(0,0,0,.45)); }
-  #chips #title{ order:-1; margin-right:10px; }   /* clima à esquerda dos chips, conectado */
-  .chip{ display:inline-flex; align-items:center; gap:8px;
-         font:600 12px/1 Inter,system-ui; letter-spacing:.2px; color:#8a97a8; cursor:pointer;
-         background:rgba(23,28,38,.72); border:1px solid rgba(255,255,255,.10);
-         padding:10px 15px; backdrop-filter:blur(10px) saturate(1.2); border-radius:12px;
-         transition:background .24s ease, border-color .24s ease, color .24s ease, box-shadow .24s ease; }
-  .chip:hover{ color:#cfd8e3; border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.8); }
-  .cbx{ width:15px; height:15px; border-radius:5px; border:1.5px solid #5a6678;
+  /* chips de camadas (header flutuante) — clean e compacto */
+  #chips{ position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:3; display:flex;
+          align-items:center; gap:5px;
+          filter:drop-shadow(0 6px 16px rgba(0,0,0,.4)); }
+  #chips #title{ order:-1; margin-right:8px; }   /* clima à esquerda dos chips, conectado */
+  .chip{ display:inline-flex; align-items:center; gap:6px; height:var(--chip-h);
+         font:600 11px var(--font-ui); letter-spacing:.1px; color:var(--muted); cursor:pointer;
+         background:rgba(23,28,38,.78); border:1px solid rgba(255,255,255,.10);
+         padding:0 11px; backdrop-filter:blur(10px) saturate(1.2); border-radius:999px;
+         transition:background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease; }
+  .chip:hover{ color:var(--txt); border-color:rgba(255,255,255,.22); background:rgba(31,38,51,.85); }
+  .cbx{ width:13px; height:13px; border-radius:4px; border:1.5px solid #5a6678;
         display:inline-flex; align-items:center; justify-content:center; flex:none;
-        font-size:11px; line-height:1; color:#04121c;
-        transition:background .24s ease, border-color .24s ease; }
-  .chip .caret{ width:15px; height:15px; opacity:.7; margin-left:-1px; transition:transform .24s ease, opacity .24s ease; }
+        font-size:10px; line-height:1; color:#04121c;
+        transition:background .2s ease, border-color .2s ease; }
+  .chip .caret{ width:12px; height:12px; opacity:.7; margin-left:-1px; transition:transform .2s ease, opacity .2s ease; }
   /* dropdown */
-  .chip-menu{ position:fixed; z-index:6; min-width:158px; padding:7px; display:none;
-        background:rgba(20,25,34,.92); border:1px solid rgba(255,255,255,.10); border-radius:14px;
+  .chip-menu{ position:fixed; z-index:6; min-width:150px; padding:6px; display:none;
+        background:rgba(20,25,34,.95); border:1px solid rgba(255,255,255,.10); border-radius:12px;
         backdrop-filter:blur(16px) saturate(1.3);
         box-shadow:0 14px 34px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.25); transform-origin:top center; }
-  .chip-menu.open{ display:block; animation:menuIn .2s ease; }
-  @keyframes menuIn{ from{ opacity:0; transform:translateY(-6px) scale(.97) } to{ opacity:1; transform:none } }
-  .chip-menu .item{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px;
-        cursor:pointer; font:600 12px Inter,system-ui; color:#8a97a8; transition:background .18s ease, color .18s ease; }
-  .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:#cfd8e3; }
-  .chip-menu .item.on{ color:#eaf6ff; }
-  .chip-menu .combo-item{ justify-content:space-between; gap:12px; cursor:default; }
-  .chip-menu select.combo{ background:#0B0E14; color:#cfd8e3; border:1px solid rgba(255,255,255,.12);
-        border-radius:8px; font:600 12px Inter,system-ui; padding:4px 6px; cursor:pointer; }
-  .chip + .chip{ border-top-left-radius:0; border-bottom-left-radius:0; margin-left:-1px; }
-  .chip:not(:last-child){ border-top-right-radius:0; border-bottom-right-radius:0; }
-  .chip.on{ color:#eaf6ff; }  /* cor de destaque é setada inline por chip (cor da camada) */
+  .chip-menu.open{ display:block; animation:menuIn .18s ease; }
+  @keyframes menuIn{ from{ opacity:0; transform:translateY(-5px) scale(.98) } to{ opacity:1; transform:none } }
+  .chip-menu .item{ display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px;
+        cursor:pointer; font:600 11px var(--font-ui); color:var(--muted); transition:background .15s ease, color .15s ease; }
+  .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:var(--txt); }
+  .chip-menu .item.on{ color:var(--hi); }
+  .chip-menu .combo-item{ justify-content:space-between; gap:10px; cursor:default; }
+  .chip-menu select.combo{ background:var(--bg); color:var(--txt); border:1px solid rgba(255,255,255,.12);
+        border-radius:8px; font:600 11px var(--font-ui); padding:3px 6px; cursor:pointer; }
+  .chip.on{ color:var(--hi); }  /* cor de destaque é setada inline por chip (cor da camada) */
+  /* widget de base estilo Google — grid 3×2 de miniaturas locais + toggle */
+  .mapbase-w{ width:344px; padding:2px 2px 8px; margin-bottom:7px; border-bottom:1px solid rgba(255,255,255,.08); }
+  .mapbase-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+  .mapbase-th{ position:relative; min-width:0; padding:0; cursor:pointer; overflow:hidden;
+        border-radius:9px; border:2px solid rgba(255,255,255,.12); background:#0d1119;
+        transition:border-color .18s ease, box-shadow .18s ease; }
+  .mapbase-th:hover{ border-color:rgba(255,255,255,.30); }
+  .mapbase-th img{ display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
+  .mapbase-th .mb-label{ position:absolute; left:5px; bottom:4px; z-index:2; padding:1px 7px;
+        border-radius:999px; font:700 9px var(--font-ui); letter-spacing:.2px; color:#fff;
+        background:rgba(0,0,0,.55); text-shadow:0 1px 2px rgba(0,0,0,.9); }
+  /* rover de seleção: moldura acesa + seta na base do mapa ativo */
+  .mapbase-th.sel{ border-color:var(--info); box-shadow:0 0 0 1px var(--info), 0 0 14px -2px rgba(74,158,255,.5); }
+  .mapbase-th.sel::after{ content:''; position:absolute; left:50%; bottom:-2px; transform:translateX(-50%);
+        border:7px solid transparent; border-bottom-color:var(--info); z-index:3; }
+  /* toggle Claro/Escuro — padrão Uiverse (by arghyaBiswasDev), em PRETO */
+  .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:9px;
+        padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+        transition:opacity .2s ease; }
+  .mapbase-tone .mbw-tone-label{ font:700 10px var(--font-ui); letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
+  .mapbase-tone.disabled{ opacity:.4; pointer-events:none; filter:grayscale(.7); }
+  .mapbase-tone .switch{ font-size:15px; position:relative; display:inline-block; width:3.5em; height:2em; }
+  .mapbase-tone .switch input{ opacity:0; width:0; height:0; }
+  .mapbase-tone .slider{ position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+        background-color:#fff; border:1px solid #adb5bd; transition:.4s; border-radius:30px; }
+  .mapbase-tone .slider:before{ position:absolute; content:""; height:1.4em; width:1.4em; border-radius:20px;
+        left:.27em; bottom:.25em; background-color:#adb5bd; transition:.4s; }
+  .mapbase-tone input:checked + .slider{ background-color:#111; border:1px solid #111; }
+  .mapbase-tone input:focus + .slider{ box-shadow:0 0 1px #111; }
+  .mapbase-tone input:checked + .slider:before{ transform:translateX(1.4em); background-color:#fff; }
   /* botão de localização = primeiro chip (ação, não toggle) */
-  #locate{ padding-left:12px; padding-right:12px; border-color:#3a4b63; }
+  #locate{ width:var(--chip-h); padding:0; justify-content:center; border-color:#3a4b63; }
   #locate:hover{ border-color:var(--info); background:rgba(0,176,255,.10); }
-  #locate svg{ width:16px; height:16px; display:block; }
+  #locate svg{ width:15px; height:15px; display:block; }
   /* ponto "eu estou aqui" (estilo iOS) */
   .me-dot{ position:relative; width:16px; height:16px; border-radius:50%; background:#2a7fff;
            border:2.5px solid #fff; box-shadow:0 0 0 2px rgba(42,127,255,.35), 0 1px 4px rgba(0,0,0,.5); }
@@ -235,12 +310,6 @@
         display:flex; flex-direction:column; gap:10px; pointer-events:none; }
   #wxstack .wpanel{ display:none; }
   #wxstack .wpanel.show{ display:block; }
-  .wpanel{ pointer-events:auto; background:rgba(21,25,33,.93); border:1px solid var(--border);
-        border-radius:12px; padding:12px 14px; backdrop-filter:blur(8px);
-        box-shadow:0 10px 26px rgba(0,0,0,.45); }
-  .wpanel .p-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px; }
-  .wpanel .p-head b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
-  .wpanel .p-upd{ font-size:9.5px; color:#8a97a8; }
   /* gauge: barra de gradação de cores + marcador de posição atual */
   .gauge{ margin-top:8px; }
   .g-bar{ position:relative; height:14px; border-radius:7px; border:1px solid rgba(255,255,255,.15); }
@@ -337,10 +406,6 @@
   .wxp-cell .k{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
   .wxp-cell .v{ font:700 15px Inter,system-ui; color:#eaf6ff; margin-top:2px; white-space:nowrap; }
   .wxp-cell .v small{ font-size:10px; font-weight:600; color:#8a97a8; }
-  .wbtn{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#cfd8e3;
-        border-radius:8px; padding:4px 9px; font:600 10.5px Inter,system-ui; cursor:pointer;
-        transition:background .18s ease, border-color .18s ease; }
-  .wbtn:hover{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); }
   /* controle do radar (leve: 1 PNG por cima do mapa + legenda) */
   #radarctl{ position:absolute; z-index:4; right:14px; top:64px; width:232px; padding:11px 13px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px;
@@ -378,8 +443,27 @@
   #nuvctl .nc-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#7b8cff; }
   #nuvctl .nc-note{ font-size:9.5px; color:#8a97a8; line-height:1.45; margin-top:8px; }
   /* painel do vento (Windy embed) — REMOVIDO (Marcos não curtiu; fica p/ reavaliar) */
+  /* ═══ Mobile — tela vertical (todas as funções) ═══ */
   @media (max-width:700px){
-    #wxstack,#radarctl,#nuvctl{ left:50%; margin-left:-126px; right:auto; top:58px; }
+    #chips{ top:10px; left:10px; right:10px; transform:none; justify-content:flex-start;
+            overflow-x:auto; overflow-y:hidden; gap:6px; padding-bottom:2px;
+            scrollbar-width:none; -ms-overflow-style:none; }
+    #chips::-webkit-scrollbar{ display:none; }
+    #chips #title{ order:-1; flex:0 0 auto; margin-right:6px; }
+    .chip{ height:32px; padding:0 10px; font-size:10.5px; flex:0 0 auto; }
+    #wxstack{ left:10px; top:56px; width:calc(100vw - 20px); }
+    #radarctl, #nuvctl{ left:10px; right:10px; top:56px; width:auto; margin-left:0; }
+    #voosleg{ right:10px; bottom:10px; }
+    #voospanel{ width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
+    #celregpanel{ right:10px; top:56px; width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
+    #celelegend{ left:10px; bottom:10px; width:calc(100vw - 20px); }
+    #wlegend{ width:calc(100vw - 20px); }
+    #nivelbar{ width:calc(100vw - 20px); }
+    #hint, #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ max-width:calc(100vw - 24px); }
+    .box-restore{ right:10px !important; }
+  }
+  @media (max-width:420px){
+    .chip{ padding:0 9px; }
   }
 </style>
 </head>
@@ -416,7 +500,7 @@
 <!-- Indicadores · painéis à ESQUERDA (dropdown "Indicadores") -->
 <div id="wxstack">
   <!-- Indicadores de tempo (Open-Meteo) -->
-  <div id="wxpanel" class="wpanel">
+  <div id="wxpanel" class="wpanel" data-chip="indicadores">
     <div class="wxp-title"><b>Brusque · Tempo agora</b><span class="wxp-upd">—</span></div>
     <div class="wxp-grid">
       <div class="wxp-cell"><span class="k">Temperatura</span><span class="v" id="wxp-t">--°</span></div>
@@ -434,7 +518,7 @@
   </div>
 
   <!-- Índice ENSO · Niño 3.4 / ONI -->
-  <div id="ensopanel" class="wpanel">
+  <div id="ensopanel" class="wpanel" data-chip="enso">
     <div class="p-head"><b>Índice ENSO · Niño 3.4</b><span class="p-upd" id="enso-upd">—</span></div>
     <div class="gauge">
       <div class="g-bar" id="enso-bar"></div>
@@ -444,7 +528,7 @@
   </div>
 
   <!-- Chuva acumulada · 30 dias -->
-  <div id="chuvapanel" class="wpanel">
+  <div id="chuvapanel" class="wpanel" data-chip="chuvaacum">
     <div class="p-head"><b>Chuva acumulada · 30 dias</b><span class="p-upd" id="chuva-upd">—</span></div>
     <div class="gauge">
       <div class="g-bar" id="chuva-bar"></div>
@@ -454,7 +538,7 @@
   </div>
 
   <!-- Umidade do solo -->
-  <div id="solopanel" class="wpanel">
+  <div id="solopanel" class="wpanel" data-chip="soloum">
     <div class="p-head"><b>Umidade do solo</b><span class="p-upd" id="solo-upd">—</span></div>
     <div class="gauge">
       <div class="g-bar" id="solo-bar"></div>
@@ -464,14 +548,14 @@
   </div>
 
   <!-- Voos · aeronaves no raio de 100 km de Brusque (ADS-B) -->
-  <div id="voospanel" class="wpanel">
+  <div id="voospanel" class="wpanel" data-chip="voos">
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
     <div class="voo-count" id="voos-count">carregando…</div>
     <div class="voo-list" id="voos-list"></div>
   </div>
 
   <!-- Legenda da infra aeronáutica (aparece junto com a camada Voos) -->
-  <div id="voosleg" class="wpanel">
+  <div id="voosleg" class="wpanel" data-chip="voos">
     <div class="p-head"><b>Legenda</b></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
@@ -481,7 +565,7 @@
 </div>
 
 <!-- Tempo Real · radar de precipitação (EPAGRI/Lontras padrão, fallback RainViewer) -->
-<div id="radarctl">
+<div id="radarctl" data-chip="radar">
   <div class="rc-head"><b>Radar de chuva</b><span class="rc-time" id="radar-time">--:--</span></div>
   <div class="rc-foot">
     <span class="rc-note" id="radar-note">radar do estado (EPAGRI/CIRAM) · atualiza a cada 5 min</span>
@@ -490,14 +574,14 @@
 </div>
 
 <!-- Legenda de cores do radar — barra inferior (mesma largura dos chips) -->
-<div id="wlegend">
+<div id="wlegend" data-chip="radar">
   <div class="wl-head"><span id="wl-head-txt"></span><span id="wl-head-time" style="font-family:ui-monospace,Space Mono,monospace"></span></div>
   <div class="wl-bar" id="wl-bar"></div>
   <div class="wl-labels"><span>fraca</span><span>moderada</span><span>forte</span><span>intensa</span></div>
 </div>
 
 <!-- Tempo Real · CELESC — legenda de UC sem energia (canto inferior ESQUERDO) -->
-<div id="celelegend">
+<div id="celelegend" data-chip="celesc">
   <div class="cel-head"><b>CELESC</b><span class="cel-time" id="celesc-time">--:--</span></div>
   <div class="cel-sub">Unidades consumidoras sem energia</div>
   <div class="cel-row"><span class="cel-mk" style="background:#00E676"></span><span>0% a 5%</span></div>
@@ -509,7 +593,7 @@
 </div>
 
 <!-- Tempo Real · CELESC por regional — tabela compacta (canto superior DIREITO) -->
-<div id="celregpanel" class="wpanel">
+<div id="celregpanel" class="wpanel" data-chip="celesc">
   <div class="p-head"><b>CELESC · por regional</b><span class="p-upd" id="celreg-upd">—</span></div>
   <table class="celreg-t">
     <thead><tr><th>Regional</th><th>Cid</th><th>UC</th><th>Sem</th><th>%</th></tr></thead>
@@ -519,7 +603,7 @@
 </div>
 
 <!-- Tempo Real · satélite / nuvens (NASA GIBS GOES-East) -->
-<div id="nuvctl">
+<div id="nuvctl" data-chip="nuvens">
   <div class="nc-head"><b>Nuvens · GOES-East</b><span class="nc-time" id="nuv-time">--:--Z</span></div>
   <div style="display:flex;justify-content:flex-end">
     <button class="wbtn" id="nuv-refresh">Atualizar</button>
@@ -558,6 +642,18 @@ map.on('load', async () => {
                              el.className=''; el.style.display='block'; return el; };
   map.getContainer().addEventListener('mouseleave', hideAllHints);
 
+  // ── Base do mapa: CARTO (OpenStreetMap) em 4 variantes + Satélite (Esri) ────
+  // 'mapa'      = sem rótulos  → dark_nolabels / light_nolabels (segue o claro/escuro)
+  // 'estradas'  = com estradas → dark_all     / light_all     (idem)
+  // 'satelite'  = Esri via worker (sem variação de claro/escuro)
+  // Claro/escuro é um item do dropdown; trânsito (TomTom) sobrepõe em todas.
+  const CARTO = { mapa:{ dark:'dark_nolabels', light:'light_nolabels' },
+                  estradas:{ dark:'dark_all', light:'light_all' } };
+  const cartoURL = (st) => 'https://basemaps.cartocdn.com/' + st + '/{z}/{x}/{y}{r}.png';
+  map.addSource('base-mapa', { type:'raster', tileSize:256, minzoom:1, maxzoom:19,
+    tiles:[cartoURL('dark_nolabels')], attribution:'© OpenStreetMap contributors © CARTO' });
+  map.addLayer({ id:'base-mapa', type:'raster', source:'base-mapa', layout:{ visibility:'visible' } });
+
   // ── Satélite (Esri World Imagery via WORKER de cache) — POR BAIXO de tudo ────
   // O worker brusque-satelite baixa cada tile da Esri UMA vez e cacheia no edge
   // (Cache API, 30 dias) — nas sessões seguintes o carregamento é instantâneo.
@@ -565,6 +661,32 @@ map.on('load', async () => {
     tiles:['https://brusque-satelite.marcososx.workers.dev/tile/{z}/{y}/{x}'],
     attribution:'Esri, Maxar, Earthstar Geographics' });
   map.addLayer({ id:'satelite', type:'raster', source:'satelite', layout:{ visibility:'none' } });
+
+  // ── Estado da base: escolha única (mapa/estradas/satelite) + claro/escuro ──
+  // Abertura = 'mapa' escuro SEM rótulos (dark_nolabels). Clima/Limites/Bairros
+  // forçam dark_nolabels ao ligar (darkBase). Trânsito sobrepõe em qualquer base.
+  let _base = 'mapa';        // 'mapa' | 'estradas' | 'satelite'
+  let _dark = true;          // true=escuro, false=claro (afeta mapa/estradas)
+  const refreshMapa = () => { if (_mapaMenu && _mapaMenu._refresh) _mapaMenu._refresh(); };
+  const applyBase = () => {
+    const isSat = _base === 'satelite';
+    const sat = MAPA.find(m => m.id === 'satelite');
+    map.setLayoutProperty('base-mapa', 'visibility', isSat ? 'none' : 'visible');
+    if (!isSat) {
+      const st = CARTO[_base][_dark ? 'dark' : 'light'];
+      map.getSource('base-mapa').setTiles([cartoURL(st)]);
+      satHideOverlay();
+    }
+    if (sat && sat.on !== isSat) { sat.on = isSat; fadeLayer('satelite', isSat); refreshMapa(); }
+    updateBaseWidget();
+  };
+  const selectBase = (b) => { if (b !== _base) { _base = b; applyBase(); } else updateBaseWidget(); };
+  const setDark = (d) => { if (d !== _dark) { _dark = d; applyBase(); } else updateBaseWidget(); };
+  const setTrafego = (on) => {
+    const T = MAPA.find(m => m.id === 'trafego');
+    if (T.on === on) { updateBaseWidget(); return; }
+    T.on = on; fadeLayer('trafego', on); refreshMapa(); updateBaseWidget();
+  };
 
   // ── Satélite: estática durante o movimento, refina no idle ──────────────────
   // O chip e a fonte 'satelite' continuam como estão (mesmo processo). Durante
@@ -656,8 +778,11 @@ map.on('load', async () => {
   const satCircleHide = () => {
     if (map.getSource('satelite-circulo')) { map.removeLayer('satelite-circulo'); map.removeSource('satelite-circulo'); }
   };
+  // O overlay estático é usado SÓ no modo Voos (onde o círculo é assado na
+  // imagem). Como base de mapa, o satélite é um raster NORMAL: os tiles sobem
+  // progressivamente no zoom sem refetch de export (a origem do travamento).
   map.on('move', () => {
-    if(!_satVisible() || _satMoving || !_satHasImg) return;
+    if(!_voosSat || !_satVisible() || _satMoving || !_satHasImg) return;
     _satMoving = true;
     map.setLayoutProperty('satelite','visibility','none');
     map.setLayoutProperty('satelite-estatica','visibility','visible');
@@ -667,7 +792,7 @@ map.on('load', async () => {
       // takeover só aconteceu porque o satélite estava visível → volta a mostrar.
       map.setLayoutProperty('satelite','visibility','visible');
       if(_satStatic) map.setLayoutProperty('satelite-estatica','visibility','none'); }
-    if(_satVisible()) satSnapshot();
+    if(_voosSat && _satVisible()) satSnapshot();
     else if(_satStatic) map.setLayoutProperty('satelite-estatica','visibility','none');
     if(_voosSat){
       // Dentro do círculo de 100 km → SÓ a imagem estática (nada de tiles no
@@ -2121,7 +2246,7 @@ map.on('load', async () => {
   // Mapa = dropdown PRIMEIRO da barra; agrupa base do mapa (Limites, Bairros) +
   // Satélite/Estradas/Trânsito — libera espaço p/ camadas futuras.
   const MAPA = [
-    { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas',
+    { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas', inWidget:true, darkBase:true,
       onToggle: (on) => {
         if (window._setVizWx) window._setVizWx(on);
         // (a camada de texto com o nome das cidades foi REMOVIDA — o badge de
@@ -2135,14 +2260,13 @@ map.on('load', async () => {
           map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
         }
       } },
-    { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros' },
+    { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros', inWidget:true, darkBase:true },
     // Clima: marcar mantém o zoom onde está; desmarcar volta à visão inicial.
-    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true,
+    // darkBase: ao ligar, a base volta pra 'mapa' escuro sem rótulos (dark_nolabels).
+    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true, darkBase:true,
       onToggle: (on) => { if (!on) goHome(); } },
-    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'],
-      onToggle: (on) => { if(!on) satHideOverlay(); } },
-    { id:'estradas', label:'Estradas', on:false, color:'#cbb287', build:'estradas' },
-    { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', layers:['trafego'] },
+    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', inWidget:true, layers:['satelite'] },
+    { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', inWidget:true, layers:['trafego'] },
   ];
   const TEMPOREAL = [   // dropdown "Tempo Real"
     // ── Clima (overlays). Nuvens/Radar são EXCLUSIVOS entre si (marcar um
@@ -2185,9 +2309,8 @@ map.on('load', async () => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
-          // liga o satélite JUNTO (contexto de imagem)
-          const sat = MAPA.find(m => m.id === 'satelite');
-          if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
+          // liga o satélite JUNTO (contexto de imagem) — vira a base do widget
+          selectBase('satelite');
           // círculo de 100 km estático: interior fixo, tiles só fora do círculo
           _voosSat = true; satCircleBuild();
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
@@ -2224,9 +2347,8 @@ map.on('load', async () => {
           hidePanel('voospanel'); hidePanel('voosleg');
           // remove o círculo estático do satélite junto com o voos
           _voosSat = false; satCircleHide();
-          // se o satélite foi ligado junto com o voos, desliga junto
-          const sat = MAPA.find(m => m.id === 'satelite');
-          if (sat && sat.on) { sat.on = false; if (sat.paint) sat.paint(); }
+          // se o satélite foi ligado junto com o voos, desliga junto e volta pro mapa
+          selectBase('mapa');
           goHome();   // desmarcar Voos → volta à visão inicial
         }
       } },
@@ -2410,7 +2532,9 @@ map.on('load', async () => {
       gbtn.style.borderColor = any ? accent : '';
       gbtn.style.boxShadow   = any ? 'inset 0 -2px 0 0 ' + accent : '';
     };
+    menu._refresh = refresh;   // exposto p/ o widget da base atualizar o chip "Mapa"
     arr.forEach(M => {
+      if (M.inWidget) return;   // controle no widget estilo Google (Mapa/Satélite/Trânsito)
       // item COMBO (select) — ex.: Níveis de alagamento (uma cota por vez)
       if (M.combo) {
         const item = document.createElement('div'); item.className = 'item combo-item';
@@ -2434,6 +2558,7 @@ map.on('load', async () => {
       paint();
       M.paint = paint;   // expõe o repaint p/ exclusividade / fechar painéis
       if (M.clima) { _climaPaint = paint; _climaM = M; }
+      (window._chips = window._chips || {})[M.id] = M;   // p/ as ações das caixas
       item.onclick = async (e) => {
         e.stopPropagation(); M.on = !M.on;
         // Camadas exclusivas (overlays de tempo): marcar uma desmarca a outra.
@@ -2449,6 +2574,8 @@ map.on('load', async () => {
         if (M.on && M.build && !M.layers) { cbx.textContent='…'; try{ M.layers = await ensureBuilt(M.build);}finally{} }
         if (M.on && M.id !== 'clima' && isBrusqueCover(M.id)) uncheckClima();
         if (M.onToggle) await M.onToggle(M.on);
+        // Clima/Limites/Bairros: ao ligar, a base volta pra mapa escuro sem rótulos
+        if (M.on && M.darkBase) { selectBase('mapa'); setDark(true); }
         paint();
       };
       menu.appendChild(item);
@@ -2464,6 +2591,7 @@ map.on('load', async () => {
     chipbar.appendChild(gbtn);
     document.body.appendChild(menu);
     refresh();
+    return menu;
   };
   // Dropdown fecha ao interagir FORA dele: clique em qualquer coisa (pointerdown
   // pega antes do click, inclusive arrastar o mapa) ou mexer no mapa (drag/zoom).
@@ -2473,13 +2601,162 @@ map.on('load', async () => {
     closeMenus();
   });
   map.on('movestart', closeMenus);
-  makeDropdown('Mapa', MAPA, '#cfd8e3');
+  const _mapaMenu = makeDropdown('Mapa', MAPA, '#cfd8e3');
   makeDropdown('Indicadores', INDICADORES, '#FFB300');
   makeDropdown('Rio Itajaí Mirim', RIO, '#00B0FF');
   makeDropdown('Tempo Real', TEMPOREAL, '#00E5FF');
   makeDropdown('Setores de risco', SETORES, '#FF5252');
+
+  // ── Widget de base (estilo Google) no topo do dropdown "Mapa" ─────────────
+  // Grid 3×2 de miniaturas (imagens locais em site/thumbs/): Mapa / Estradas /
+  // Satélite · Trânsito / Bairros / Limites, com rover no ativo. O toggle
+  // Claro/Escuro (padrão Uiverse, em PRETO) troca a variação da miniatura de
+  // cada item; abre em escuro e fica INATIVO na visão satélite.
+  const TH_IMG = {
+    mapa:      { dark:'thumbs/mapa-escuro.png',      light:'thumbs/mapa-claro.png' },
+    estradas:  { dark:'thumbs/estradas-escuro.png',  light:'thumbs/estradas-claro.png' },
+    trafego:   { dark:'thumbs/trafego-escuro.png',   light:'thumbs/trafego-claro.png' },
+    bairros:   { dark:'thumbs/bairros.png',          light:'thumbs/bairros.png' },
+    limites:   { dark:'thumbs/limites.png',          light:'thumbs/limites.png' },
+    satelite:  { dark:'thumbs/satelite.png',         light:'thumbs/satelite.png' },
+  };
+  const mb_thumb = (opts) => {
+    const b = document.createElement('button'); b.className = 'mapbase-th';
+    if (opts.base) b.dataset.base = opts.base;
+    if (opts.toggle) b.dataset.toggle = opts.toggle;
+    if (opts.chip) b.dataset.chip = opts.chip;
+    b.title = opts.title || opts.label;
+    const im = document.createElement('img'); im.alt = ''; b.appendChild(im);
+    const l = document.createElement('span'); l.className = 'mb-label'; l.textContent = opts.label;
+    b.appendChild(l);
+    b._key = opts.key;
+    return b;
+  };
+  const updateBaseWidget = () => {
+    // rover de seleção da base (Mapa/Estradas/Satélite)
+    document.querySelectorAll('.mapbase-th[data-base]').forEach(b => b.classList.toggle('sel', b.dataset.base === _base));
+    // rover das sobreposições em thumb (Bairros/Limites/Trânsito)
+    document.querySelectorAll('.mapbase-th[data-chip]').forEach(b => b.classList.toggle('sel', !!MAPA.find(m => m.id === b.dataset.chip).on));
+    const tb = document.querySelector('.mapbase-th[data-toggle="trafego"]');
+    if (tb) tb.classList.toggle('sel', !!MAPA.find(m => m.id === 'trafego').on);
+    // miniaturas locais: o claro/escuro troca a variação de cada item
+    document.querySelectorAll('.mapbase-th').forEach(b => {
+      const key = b._key, img = b.querySelector('img');
+      if (key && img) img.src = TH_IMG[key][_dark ? 'dark' : 'light'];
+    });
+    // toggle Claro/Escuro (checkbox) — sincroniza e desativa no satélite
+    const cb = document.getElementById('mbw-tone-cb');
+    if (cb) cb.checked = _dark;
+    const tone = document.querySelector('.mapbase-tone');
+    if (tone) tone.classList.toggle('disabled', _base === 'satelite');
+  };
+  const _baseW = document.createElement('div');
+  _baseW.className = 'mapbase-w';
+  _baseW.innerHTML = '<div class="mapbase-grid"></div>'
+    + '<div class="mapbase-tone">'
+    +   '<span class="mbw-tone-label">Claro</span>'
+    +   '<label class="switch"><input type="checkbox" id="mbw-tone-cb" checked><span class="slider"></span></label>'
+    +   '<span class="mbw-tone-label">Escuro</span>'
+    + '</div>';
+  const _mbGrid = _baseW.querySelector('.mapbase-grid');
+  _mbGrid.appendChild(mb_thumb({ key:'mapa',      base:'mapa',      label:'Mapa' }));
+  _mbGrid.appendChild(mb_thumb({ key:'estradas',  base:'estradas',  label:'Estradas' }));
+  _mbGrid.appendChild(mb_thumb({ key:'satelite',  base:'satelite',  label:'Satélite' }));
+  _mbGrid.appendChild(mb_thumb({ key:'trafego',   toggle:'trafego', label:'Trânsito' }));
+  _mbGrid.appendChild(mb_thumb({ key:'bairros',   chip:'bairros',   label:'Bairros' }));
+  _mbGrid.appendChild(mb_thumb({ key:'limites',   chip:'limites',   label:'Limites' }));
+  // alterna um chip que virou miniatura (Bairros/Limites)
+  const toggleChip = async (id) => {
+    const M = MAPA.find(m => m.id === id);
+    if (!M) return;
+    M.on = !M.on;
+    if (M.on && M.build && !M.layers) { try { M.layers = await ensureBuilt(M.build); } catch(e) {} }
+    applyVis(M);
+    if (M.on && M.id !== 'clima' && isBrusqueCover(M.id)) uncheckClima();
+    if (M.onToggle) M.onToggle(M.on);
+    if (M.on && M.darkBase) { selectBase('mapa'); setDark(true); }
+    refreshMapa(); updateBaseWidget(); updateBadge();
+  };
+  _baseW.addEventListener('click', (e) => {
+    const th = e.target.closest('.mapbase-th');
+    if (!th) return;
+    if (th.dataset.base) {
+      const b = th.dataset.base;
+      if (b !== 'mapa' && MAPA.find(m => m.id === 'clima').on) uncheckClima();   // clima vive no dark_nolabels
+      selectBase(b);
+    } else if (th.dataset.toggle === 'trafego') {
+      setTrafego(!MAPA.find(m => m.id === 'trafego').on);
+      if (MAPA.find(m => m.id === 'trafego').on) uncheckClima();   // trânsito cobre o selo de Brusque
+    } else if (th.dataset.chip) {
+      toggleChip(th.dataset.chip);
+    }
+  });
+  _baseW.querySelector('#mbw-tone-cb').addEventListener('change', (e) => {
+    if (_base !== 'satelite') setDark(e.target.checked);
+  });
+  _mapaMenu.insertBefore(_baseW, _mapaMenu.firstChild);
+  updateBaseWidget();
   _fadeReady = true;   // a partir daqui, marcar/desmarcar camadas anima (fade 360 ms)
   updateBadge();   // estado inicial do selo (camadas default ligadas → escondido)
+
+  // ── Ações de caixa: reduzir (–) · ocultar (▁) · fechar (×) em TODAS as caixas ──
+  // injeta os 3 botões no cabeçalho de cada caixa com [data-chip] e liga a lógica.
+  const _boxRestores = {};   // boxId -> botão flutuante de restaurar
+  const makeRestore = (box, chipId) => {
+    const old = _boxRestores[box.id]; if (old) old.remove();
+    const b = document.createElement('button');
+    b.className = 'box-restore';
+    b.innerHTML = '<span style="color:var(--info)">▣</span>' + (box.dataset.title || box.id);
+    b.onclick = () => { box.classList.remove('box-hide'); b.remove(); delete _boxRestores[box.id]; };
+    document.body.appendChild(b);
+    _boxRestores[box.id] = b;
+    const pos = Object.keys(_boxRestores).length;
+    b.style.right = '14px'; b.style.top = (64 + (pos - 1) * 36) + 'px';
+  };
+  const boxOff = (box, chipId) => {   // desliga o chip (fecha caixa + camada)
+    const M = (window._chips || {})[chipId];
+    if (M && M.on) { M.on = false; if (M.onToggle) M.onToggle(false); if (M.paint) M.paint(); }
+  };
+  document.querySelectorAll('[data-chip]').forEach(box => {
+    const head = box.querySelector('.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head');
+    if (!head) return;
+    if (head.querySelector('.box-acts')) return;
+    box.dataset.title = box.querySelector('.p-head b, .wxp-title b, .cel-head b, .rc-head b, .nc-head b')?.textContent || box.id;
+    const acts = document.createElement('span');
+    acts.className = 'box-acts';
+    acts.innerHTML =
+      '<button class="box-act act-min" data-a="min" title="Reduzir">–</button>'
+      + '<button class="box-act act-hide" data-a="hide" title="Ocultar">▁</button>'
+      + '<button class="box-act act-x" data-a="close" title="Fechar">×</button>';
+    head.appendChild(acts);
+  });
+  document.addEventListener('click', (e) => {
+    const act = e.target.closest('.box-act'); if (!act) return;
+    const box = act.closest('[data-chip]'); if (!box) return;
+    const chipId = box.dataset.chip, a = act.dataset.a;
+    e.stopPropagation();
+    if (a === 'min') {
+      box.classList.toggle('box-min');
+      act.textContent = box.classList.contains('box-min') ? '▢' : '–';
+    } else if (a === 'hide') {
+      box.classList.add('box-hide');
+      makeRestore(box, chipId);
+    } else if (a === 'close') {
+      box.classList.remove('box-min', 'box-hide');
+      boxOff(box, chipId);
+      const old = _boxRestores[box.id]; if (old) { old.remove(); delete _boxRestores[box.id]; }
+    }
+  });
+  // clicar no cabeçalho de uma caixa reduzida re-expande
+  document.addEventListener('click', (e) => {
+    const head = e.target.closest('[data-chip] .p-head, [data-chip] .wxp-title, [data-chip] .cel-head, [data-chip] .rc-head, [data-chip] .nc-head, [data-chip] .wl-head');
+    if (!head || e.target.closest('.box-act')) return;
+    const box = head.closest('[data-chip]');
+    if (box.classList.contains('box-min')) {
+      box.classList.remove('box-min');
+      const min = box.querySelector('.act-min'); if (min) min.textContent = '–';
+    }
+  });
   // slider fixo dos níveis: arrastar navega pelas cotas do rio (sincroniza com o combo)
   document.getElementById('nivelrange').oninput = (e) => selectNivel(e.target.value);
   // ── "Nível atual" (ANA): mostra o nível do rio retornado pelo worker e um botão
