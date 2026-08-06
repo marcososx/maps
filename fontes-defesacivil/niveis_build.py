@@ -15,7 +15,7 @@ from shapely.geometry import Polygon, mapping
 from shapely.ops import unary_union
 from shapely import make_valid, set_precision
 
-TOL = 0.00015   # ~15 m — suave o bastante p/ escala de cidade, mantém a mancha fiel
+TOL = 0.00002   # ~2 m — fiel às bordas originais da Carta Enchente (~2 MB)
 NS = '{http://www.opengis.net/kml/2.2}'
 def tag(e): return e.tag.replace(NS, '')
 def nm(e):
