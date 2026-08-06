@@ -704,8 +704,19 @@ map.on('load', async () => {
     const lo = _cirLon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(_cirLat*Math.PI/180), Math.cos(d)-Math.sin(_cirLat*Math.PI/180)*Math.sin(la));
     return [lo*180/Math.PI, la*180/Math.PI];
   };
-  let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0;
-  const _RADAR_ROT = 8000, _RADAR_TURNS = 2;   // 8 s/volta, só 2 voltas ao ativar
+  let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0, _sweepPrev = 0;
+  const _RADAR_ROT = 8000, _RADAR_TURNS = 1;   // 8 s/volta, só 1 volta ao ativar
+  // ângulo de um ponto qualquer em relação ao centro (0 = norte, sentido horário) —
+  // mesmo critério do _radarPt, usado pra saber quando a varredura passa por um avião
+  const _bearingTo = (lon, lat) => {
+    const f1 = _cirLat*Math.PI/180, f2 = lat*Math.PI/180;
+    const dl = (lon - _cirLon)*Math.PI/180;
+    const y = Math.sin(dl)*Math.cos(f2);
+    const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+    return (Math.atan2(y, x) + 2*Math.PI) % (2*Math.PI);
+  };
+  let _blips = [];   // flashes de radar primário: { lon, lat, born }
+  const _BLIP_TTL = 900, _BLIP_STEPS = 14;
   const _radarStep = (ts) => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
     const t = ts - _sweepT0;
@@ -713,29 +724,53 @@ map.on('load', async () => {
     const volta = Math.floor(t / _RADAR_ROT);
     const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
     const edge = _radarPt(ang);
-    const trail = _radarPt(ang - 0.4);                 // esteira ~23° atrás da linha
-    map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[
+    // esteira seguindo a CIRCUNFERÊNCIA (não corta reta pelo círculo → sem "vazio")
+    const ring = [[_cirLon, _cirLat]];
+    for (let i = 1; i <= _BLIP_STEPS; i++) ring.push(_radarPt(ang - 0.4 + 0.4 * i / _BLIP_STEPS));
+    ring.push([_cirLon, _cirLat]);
+    // radar primário: quando a varredura cruza o rumo de um avião → flash forte no ponto
+    if (map.getSource('voos')) {
+      try {
+        const feats = map.querySourceFeatures('voos');
+        for (const f of feats) {
+          const c = f.geometry && f.geometry.coordinates;
+          if (!c) continue;
+          const b = _bearingTo(c[0], c[1]);
+          // cruzou se ang passou de _sweepPrev (mantém em volta de 0; 1ª volta não faz wrap)
+          if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts });
+        }
+      } catch(e) {}
+    }
+    _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
+    const feats = [
       { type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:[[_cirLon,_cirLat], edge] } },
-      { type:'Feature', properties:{}, geometry:{ type:'Polygon',
-        coordinates:[[[_cirLon,_cirLat], edge, trail, [_cirLon,_cirLat]]] } }
-    ]});
+      { type:'Feature', properties:{}, geometry:{ type:'Polygon', coordinates:[ring] } },
+    ];
+    for (const x of _blips) {
+      const age = (ts - x.born) / _BLIP_TTL;
+      feats.push({ type:'Feature', properties:{ a:age },
+        geometry:{ type:'Point', coordinates:[x.lon, x.lat] } });
+    }
+    map.getSource('voos-radar').setData({ type:'FeatureCollection', features:feats });
     // fade out na última volta: de 270° (1.5π) até 360°/topo (2π) a varredura some
     let op = 1;
     if (volta === _RADAR_TURNS - 1 && ang > 1.5 * Math.PI) {
       op = Math.max(0, (2 * Math.PI - ang) / (0.5 * Math.PI));
     }
-    if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0.85 * op);
-    if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0.06 * op);
+    if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0.9 * op);
+    if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0.07 * op);
+    _sweepPrev = ang;
     _sweepRaf = requestAnimationFrame(_radarStep);
   };
   const _radarStart = () => {
     if (_sweepOn) return;
-    _sweepOn = true; _sweepT0 = performance.now();
+    _sweepOn = true; _sweepT0 = performance.now(); _sweepPrev = 0; _blips = [];
     if (!_sweepRaf) _sweepRaf = requestAnimationFrame(_radarStep);
   };
   const _radarStop = () => {
     _sweepOn = false;
     if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; }
+    _blips = [];
     if (map.getSource('voos-radar')) map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[] });
   };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
@@ -1188,10 +1223,10 @@ map.on('load', async () => {
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
           filter:['==',['geometry-type'],'Polygon'],
-          paint:{ 'fill-color':'#00E676', 'fill-opacity':0.06 } });
+          paint:{ 'fill-color':'#00E676', 'fill-opacity':0.07 } });
         map.addLayer({ id:'voos-radar-line', type:'line', source:'voos-radar',
           filter:['==',['geometry-type'],'LineString'],
-          paint:{ 'line-color':'#00E676', 'line-width':1.6, 'line-opacity':0.85 } });
+          paint:{ 'line-color':'#00E676', 'line-width':3, 'line-opacity':0.9 } });
       }
       _radarStart();
       // ── aeronaves ──────────────────────────────────────────────────────────
@@ -1211,6 +1246,15 @@ map.on('load', async () => {
                  'text-offset':[0,1.4], 'text-anchor':'top', 'text-optional':true,
                  'text-allow-overlap':true, 'text-ignore-placement':true },
         paint:{ 'text-color':'#ffd54f','text-halo-color':'#04121c','text-halo-width':1.4 } });
+      // flashes de radar primário: acendem forte sobre o avião quando a varredura cruza
+      if (!map.getLayer('voos-blip')) map.addLayer({ id:'voos-blip', type:'circle', source:'voos-radar',
+        filter:['==',['geometry-type'],'Point'],
+        paint:{ 'circle-radius':['interpolate',['linear'],['get','a'],0,9,1,34],
+                'circle-color':'#00E676',
+                'circle-opacity':['interpolate',['linear'],['get','a'],0,0.95,1,0],
+                'circle-stroke-color':'#eafff5',
+                'circle-stroke-width':['interpolate',['linear'],['get','a'],0,2.5,1,0],
+                'circle-blur':0.25 } });
       // hover no avião → hint no padrão das pontes (#hint-voos)
       map.on('mouseenter','voos-pt',()=>map.getCanvas().style.cursor='pointer');
       let _hvKey = null, _hvAt = 0;   // cache p/ não reconstruir a <img> do logo a cada mousemove
@@ -1283,7 +1327,7 @@ map.on('load', async () => {
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
       }, 1000);
-      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill','voos-radar-line','voos-radar-fill'];
+      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill','voos-radar-line','voos-radar-fill','voos-blip'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.

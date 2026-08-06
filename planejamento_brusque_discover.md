@@ -214,10 +214,12 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
     ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds, animação lenta ~2,6 s p/
     dar tempo de carregar os aviões) e o usuário navega/zooms livre. `maxBounds` cobre SC
     quase todo (`[[-53.2,-30.9],[-44.6,-23.2]]`).
-  - **Varredura de radar estética**: linha verde + esteira (degradê) girando do centro até a
-    borda do círculo (1 volta/8 s) — roda **só 2 voltas ao ativar** a camada; na 2ª volta faz
-    **fade out de 270° até 360° (topo)** antes de sumir. Filtros por geometria:
-    `voos-radar-line` só LineString, `voos-radar-fill` só Polygon.
+  - **Varredura de radar estética**: linha **verde grossa** (#00E676, 3 px) + esteira degradê
+    seguindo a **circunferência** do círculo (não corta reta por dentro). Roda **só 1 volta**
+    (8 s) ao ativar; na parte final faz **fade out de 270° até 360° (topo)** antes de sumir.
+  - **Radar primário**: quando a varredura cruza o rumo de um avião, acende um **flash forte**
+    (círculo verde que expande e some, camada `voos-blip`) sobre o avião — efeito de radar
+    de verdade. Filtros por geometria: linha só LineString, esteira só Polygon, flash só Point.
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
     (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
   - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090
