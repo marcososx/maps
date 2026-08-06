@@ -710,6 +710,7 @@ map.on('load', async () => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
     const t = ts - _sweepT0;
     if (t > _RADAR_ROT * _RADAR_TURNS) { _radarStop(); return; }   // acabou → limpa e para
+    const volta = Math.floor(t / _RADAR_ROT);
     const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
     const edge = _radarPt(ang);
     const trail = _radarPt(ang - 0.4);                 // esteira ~23° atrás da linha
@@ -718,6 +719,13 @@ map.on('load', async () => {
       { type:'Feature', properties:{}, geometry:{ type:'Polygon',
         coordinates:[[[_cirLon,_cirLat], edge, trail, [_cirLon,_cirLat]]] } }
     ]});
+    // fade out na última volta: de 270° (1.5π) até 360°/topo (2π) a varredura some
+    let op = 1;
+    if (volta === _RADAR_TURNS - 1 && ang > 1.5 * Math.PI) {
+      op = Math.max(0, (2 * Math.PI - ang) / (0.5 * Math.PI));
+    }
+    if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0.85 * op);
+    if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0.06 * op);
     _sweepRaf = requestAnimationFrame(_radarStep);
   };
   const _radarStart = () => {
@@ -1176,14 +1184,14 @@ map.on('load', async () => {
           paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
           paint:{ 'line-color':'#FFD54F', 'line-width':1.4, 'line-dasharray':[2,2], 'line-opacity':0.75 } });
-        // varredura de radar (estética) — fonte + linha/esteira animadas
+        // varredura de radar (estética) — fonte + linha/esteira animadas (verde)
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
           filter:['==',['geometry-type'],'Polygon'],
-          paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
+          paint:{ 'fill-color':'#00E676', 'fill-opacity':0.06 } });
         map.addLayer({ id:'voos-radar-line', type:'line', source:'voos-radar',
           filter:['==',['geometry-type'],'LineString'],
-          paint:{ 'line-color':'#FFD54F', 'line-width':1.6, 'line-opacity':0.8 } });
+          paint:{ 'line-color':'#00E676', 'line-width':1.6, 'line-opacity':0.85 } });
       }
       _radarStart();
       // ── aeronaves ──────────────────────────────────────────────────────────
