@@ -704,10 +704,13 @@ map.on('load', async () => {
     const lo = _cirLon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(_cirLat*Math.PI/180), Math.cos(d)-Math.sin(_cirLat*Math.PI/180)*Math.sin(la));
     return [lo*180/Math.PI, la*180/Math.PI];
   };
-  let _sweepOn = false, _sweepRaf = null;
+  let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0;
+  const _RADAR_ROT = 8000, _RADAR_TURNS = 2;   // 8 s/volta, só 2 voltas ao ativar
   const _radarStep = (ts) => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
-    const ang = (ts % 8000) / 8000 * 2 * Math.PI;      // 1 volta / 8 s
+    const t = ts - _sweepT0;
+    if (t > _RADAR_ROT * _RADAR_TURNS) { _radarStop(); return; }   // acabou → limpa e para
+    const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
     const edge = _radarPt(ang);
     const trail = _radarPt(ang - 0.4);                 // esteira ~23° atrás da linha
     map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[
@@ -717,8 +720,16 @@ map.on('load', async () => {
     ]});
     _sweepRaf = requestAnimationFrame(_radarStep);
   };
-  const _radarStart = () => { _sweepOn = true; if (!_sweepRaf) _sweepRaf = requestAnimationFrame(_radarStep); };
-  const _radarStop = () => { _sweepOn = false; if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; } };
+  const _radarStart = () => {
+    if (_sweepOn) return;
+    _sweepOn = true; _sweepT0 = performance.now();
+    if (!_sweepRaf) _sweepRaf = requestAnimationFrame(_radarStep);
+  };
+  const _radarStop = () => {
+    _sweepOn = false;
+    if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; }
+    if (map.getSource('voos-radar')) map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[] });
+  };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
   const renderVoosList = (d) => {
     const count = document.getElementById('voos-count');
@@ -1168,8 +1179,10 @@ map.on('load', async () => {
         // varredura de radar (estética) — fonte + linha/esteira animadas
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
+          filter:['==',['geometry-type'],'Polygon'],
           paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
         map.addLayer({ id:'voos-radar-line', type:'line', source:'voos-radar',
+          filter:['==',['geometry-type'],'LineString'],
           paint:{ 'line-color':'#FFD54F', 'line-width':1.6, 'line-opacity':0.8 } });
       }
       _radarStart();

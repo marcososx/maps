@@ -215,8 +215,9 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
     dar tempo de carregar os aviões) e o usuário navega/zooms livre. `maxBounds` cobre SC
     quase todo (`[[-53.2,-30.9],[-44.6,-23.2]]`).
   - **Varredura de radar estética**: linha âmbar + esteira girando do centro até a borda do
-    círculo (1 volta/8 s, `requestAnimationFrame` sobre a fonte `voos-radar`); não interfere
-    nos aviões. Para quando a camada é desligada.
+    círculo (1 volta/8 s) — roda **só 2 voltas ao ativar** a camada e para (limpa a fonte).
+    Filtros por geometria: `voos-radar-line` só LineString, `voos-radar-fill` só Polygon
+    (evita a linha dupla do contorno da esteira).
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
     (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
   - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090
