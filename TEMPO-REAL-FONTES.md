@@ -202,8 +202,19 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
   - **Ícones de avião idênticos ao Airplanes.live** (silhueta 'unknown' do tar1090, desenhada
     no canvas via `Path2D`, `icon-size` 0.8) girando pelo rumo real (`icon-rotate`), callsign
     como label. Front busca com `cache:'no-store'` (nenhuma resposta antiga do browser).
-  - **Hint no padrão das pontes** (`#hint-voos`, card com `hp-row/hp-lbl/hp-val`): Voo, Aeronave,
-    Altitude, Velocidade, Rumo, Subida, Posição — aparece ao passar o mouse sobre o avião.
+  - **Hint no padrão das pontes** (`#hint-voos`, card com `hp-row/hp-lbl/hp-val`):
+    - **Rota em neon** quando disponível (via **adsbdb**): `ORIGEM ───► DESTINO` (siglas IATA
+      com glow, linha/seta âmbar) + municípios embaixo das siglas.
+    - **Logo da companhia** (`https://static.airplanes.live/airline_banners/{icao}.png`, o mesmo
+      que o próprio Airplanes.live usa) + callsign ao lado; some se a fonte não tiver.
+    - **Altitude** em dupla notação: `38.016 ft — 11.587 m`.
+    - **Velocidade** em dupla notação: `520 kt — 963 km/h`.
+    - Aeronave (tipo + descrição), Rumo, Subida, Posição.
+    - Campos ausentes **não aparecem** (o que carecer não quebra o card).
+    - **Clique no avião não abre mais popup** — só o hint do hover.
+  - **Worker enriquece cada voo com rota** (`origem`, `destino`, `cia`) consultando
+    `api.adsbdb.com/v0/callsign/{callsign}` (CORS `*`, sem rate limit visível) com **cache de
+    1 h por callsign** no worker (rota raramente muda) — evita requisições repetidas.
   - **Painel à esquerda** (`voospanel`): contagem + lista separada em **duas seções** —
     "VOOS SOBRE BRUSQUE" (≤ 25 km do centro) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — com
     títulos em estilo neon (mono + âmbar com glow, inspirado no PizzINT). Cada aeronave:

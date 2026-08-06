@@ -210,6 +210,12 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
     desenhada em canvas via `Path2D`) girando pelo rumo real (`icon-rotate`), callsign como
     label; **hint no padrão das pontes** (`#hint-voos`) no hover. Busca com `cache:'no-store'`
     (nenhuma resposta antiga).
+  - **Hint do voo enriquecido:** rota `ORIGEM ───► DESTINO` em neon (via adsbdb, siglas IATA +
+    municípios), **logo da companhia** (static.airplanes.live/airline_banners/{icao}.png),
+    altitude/velocidade em **notação dupla** (`38.016 ft — 11.587 m`, `520 kt — 963 km/h`),
+    aeronave/rumo/subida/posição. Campos ausentes não aparecem. **Clique não abre popup.**
+  - **Worker** enriquece rota por callsign via `api.adsbdb.com/v0/callsign/{cs}` com cache de
+    1 h no worker (CORS `*`, sem rate limit visível).
   - **Painel à esquerda** (`voospanel`): contagem + lista em **duas seções** — "VOOS SOBRE
     BRUSQUE" (≤ 25 km) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — títulos neon estilo PizzINT
     (mono + âmbar com glow). Cada aeronave: ícone do tipo em destaque, callsign, descrição,

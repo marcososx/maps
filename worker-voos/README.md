@@ -5,7 +5,10 @@ Worker Cloudflare que serve, em JSON limpo e com CORS, os aviões no ar num
 (`site/index.html`, dropdown Tempo Real) consome este Worker via `VOOS_URL`.
 
 - Endpoint: `GET /voos.json`
-- Cache: 2 s (Cache API do Worker) — posições quase em tempo real (o front re-valida a cada 2 s)
+- Cache: 2 s (Cache API do Worker) — posições quase em tempo real (o front re-valida a cada 1 s)
+- **Rotas:** cada voo é enriquecido com `origem`/`destino`/`cia` (IATA/ICAO, municípios, nome
+  da cia) consultando `api.adsbdb.com/v0/callsign/{callsign}` — cache de **1 h por callsign**
+  no worker (rota raramente muda). Logo da cia: `static.airplanes.live/airline_banners/{icao}.png`
 - Retorna: `{ updated, fonte, centro, raio_km, voos:[{icao24,callsign,lat,lon,alt_m,vel_kmh,rumo,subida_mps,tipo,desc,categoria,dist_km,ultima_atualizacao}] }`
   — **ordenado por distância** (mais perto primeiro), filtrado a **≤ 100 km** (haversine).
   `tipo` = código ICAO (ex.: A320) e `desc` = descrição (ex.: "AIRBUS A-320") da aeronave.

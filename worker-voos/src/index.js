@@ -13,7 +13,9 @@
 // 1 req/s, sem chave) responde de Workers normalmente.
 
 const ADSB = 'https://api.airplanes.live/v2/point';
+const ADSBDB = 'https://api.adsbdb.com/v0/callsign';   // rota (origem/destino/cia)
 const TTL = 2; // 2 s — posições quase em tempo real (poucos usuários; ~0,5 req/s)
+const ROUTE_TTL = 3600; // 1 h — rota de um callsign raramente muda
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
 
@@ -40,6 +42,39 @@ async function fetchADSB() {
   return r.json();
 }
 
+// rota de um callsign via adsbdb (origem/destino/companhia) — cache de 1 h
+async function routeFor(callsign, cache, ctx) {
+  if (!callsign) return null;
+  const ck = new URL(`https://brusque-voos/rota/${encodeURIComponent(callsign)}`);
+  const cacheReq = new Request(ck);
+  try {
+    const cached = await cache.match(cacheReq);
+    if (cached) return cached.json();
+  } catch (e) {}
+  let route = null;
+  try {
+    const r = await fetch(`${ADSBDB}/${encodeURIComponent(callsign)}`, { cf: { cacheTtl: ROUTE_TTL } });
+    if (r.ok) {
+      const d = await r.json();
+      const fr = d && d.response && d.response.flightroute;
+      if (fr) {
+        route = {
+          origem: fr.origin ? { iata: fr.origin.iata_code || null, icao: fr.origin.icao_code || null,
+                                nome: fr.origin.name || null, municipio: fr.origin.municipality || null } : null,
+          destino: fr.destination ? { iata: fr.destination.iata_code || null, icao: fr.destination.icao_code || null,
+                                      nome: fr.destination.name || null, municipio: fr.destination.municipality || null } : null,
+          cia: fr.airline ? { icao: fr.airline.icao || null, iata: fr.airline.iata || null, nome: fr.airline.name || null } : null,
+        };
+      }
+    }
+  } catch (e) {}
+  try {
+    const res = new Response(JSON.stringify(route), { headers: { 'Content-Type': 'application/json' } });
+    ctx.waitUntil(cache.put(cacheReq, res.clone(), { expirationTtl: ROUTE_TTL }));
+  } catch (e) {}
+  return route;
+}
+
 function build(d) {
   const voos = (d.ac || [])
     .filter(a => a.lat != null && a.lon != null)
@@ -48,7 +83,9 @@ function build(d) {
       return {
         icao24: a.hex || null,
         callsign: (a.flight || '').trim() || null,
-        origem: null,                              // Airplanes.live não informa país
+        origem: null,                              // preenchido via adsbdb (rota)
+        destino: null,
+        cia: null,
         lat: num(a.lat),
         lon: num(a.lon),
         alt_m: a.alt_geom != null ? Math.round(a.alt_geom * FT_M)
@@ -74,7 +111,7 @@ async function handle(req, env, ctx) {
   if (url.pathname !== '/voos.json') {
     return new Response(JSON.stringify({ erro: 'use GET /voos.json' }), { status: 404, headers: CORS });
   }
-  const CACHE_V = '8';
+  const CACHE_V = '9';
   const ck = new URL(req.url); ck.searchParams.set('_v', CACHE_V);
   const cacheReq = new Request(ck);
   const cache = caches.default;
@@ -85,6 +122,15 @@ async function handle(req, env, ctx) {
   try {
     const d = await fetchADSB();
     voos = build(d);
+    // enriquece cada voo com rota (origem/destino/companhia) via adsbdb,
+    // consultando 1x por callsign único (cache de 1 h no worker)
+    const unicos = [...new Set(voos.map(v => v.callsign).filter(Boolean))];
+    const rotas = {};
+    await Promise.all(unicos.map(async cs => { rotas[cs] = await routeFor(cs, cache, ctx); }));
+    for (const v of voos) {
+      const r = rotas[v.callsign];
+      if (r) { v.origem = r.origem; v.destino = r.destino; v.cia = r.cia; }
+    }
   } catch (e) {
     return new Response(JSON.stringify({ erro: 'Airplanes.live indisponível', detalhe: String(e.message || e) }),
       { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
@@ -92,7 +138,7 @@ async function handle(req, env, ctx) {
 
   const body = JSON.stringify({
     updated: new Date().toISOString(),
-    fonte: 'Airplanes.live (ADS-B open data)',
+    fonte: 'Airplanes.live (ADS-B open data) + adsbdb (rotas)',
     centro: CENTRO,
     raio_km: RAIO_KM,
     voos,
