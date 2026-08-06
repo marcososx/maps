@@ -126,18 +126,51 @@
      na parte de baixo do mapa, mesma largura dos chips (centralizado) */
   #nivelbar{ position:absolute; z-index:4; bottom:14px; left:50%;
         transform:translateX(-50%) translateY(-6px);
-        display:flex; flex-direction:row; align-items:center; gap:10px; padding:10px 16px 12px;
+        display:flex; flex-direction:row; align-items:center; gap:12px; padding:10px 16px 12px;
         width:min(560px, calc(100% - 28px)); box-sizing:border-box;
         background:rgba(21,25,33,.92); border:1px solid var(--border); border-radius:12px;
         backdrop-filter:blur(8px); box-shadow:0 10px 26px rgba(0,0,0,.45);
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .36s ease, transform .36s ease, visibility .36s; }
   #nivelbar.show{ opacity:1; visibility:visible; transform:translateX(-50%); pointer-events:auto; }
-  #nivelbar #nivellbl{ font:700 13px Inter,system-ui; color:#eaf6ff; min-width:38px; text-align:center; }
+  /* valor do nível — largura FIXA (não expande/retrai ao alternar int↔decimal) */
+  #nivelbar #nivellbl{ font:700 14px Inter,system-ui; color:#eaf6ff; min-width:52px;
+        text-align:center; font-variant-numeric:tabular-nums; white-space:nowrap;
+        transition:color .2s ease; }
+  #nivelbar .nb-atual{ display:flex; align-items:center; gap:7px; padding-left:12px;
+        border-left:1px solid var(--border); }
+  #nivelbar .nb-atual .nb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase;
+        letter-spacing:.5px; white-space:nowrap; }
+  #nivelbar .nb-atual .nb-val{ font:700 12px Inter,system-ui; color:#eaf6ff;
+        font-variant-numeric:tabular-nums; white-space:nowrap; }
+  #nivelbar .nb-atual .nb-val.off{ color:#8a97a8; font-weight:400; }
+  #nivelbar .nb-atual button{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
+        color:#eaf6ff; font:600 9.5px Inter,system-ui; letter-spacing:.4px; border-radius:6px;
+        padding:3px 8px; cursor:pointer; text-transform:uppercase; white-space:nowrap;
+        transition:background .2s ease, border-color .2s ease; }
+  #nivelbar .nb-atual button:hover{ background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.3); }
   #nivelbar .nb-cap{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px;
         text-align:center; margin-left:auto; white-space:nowrap; }
-  /* range horizontal: menor à esquerda, maior à direita */
-  #nivelrange{ flex:1; height:6px; min-width:0; accent-color:#e12f2f; cursor:pointer; }
+  /* range horizontal — track com o GRADIENTE da escala (7 aqua → 15 vermelho) */
+  #nivelrange{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
+        -webkit-appearance:none; background:transparent; }
+  #nivelrange::-webkit-slider-runnable-track{ height:8px; border-radius:4px;
+        background:linear-gradient(90deg,
+          #a7d8f1 0%, #63d0ee 12.5%, #2f69ee 25%, #2c2ce8 37.5%, #763adf 50%,
+          #b43ad9 62.5%, #e232be 75%, #ee2b72 87.5%, #f91010 100%);
+        box-shadow:inset 0 1px 2px rgba(0,0,0,.4); }
+  #nivelrange::-moz-range-track{ height:8px; border-radius:4px;
+        background:linear-gradient(90deg,
+          #a7d8f1 0%, #63d0ee 12.5%, #2f69ee 25%, #2c2ce8 37.5%, #763adf 50%,
+          #b43ad9 62.5%, #e232be 75%, #ee2b72 87.5%, #f91010 100%); }
+  #nivelrange::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px;
+        border-radius:50%; background:#eaf6ff; border:3px solid var(--nivel-cor, #e12f2f);
+        margin-top:-5px; box-shadow:0 2px 6px rgba(0,0,0,.5);
+        transition:border-color .2s ease; }
+  #nivelrange::-moz-range-thumb{ width:14px; height:14px; border-radius:50%;
+        background:#eaf6ff; border:3px solid var(--nivel-cor, #e12f2f);
+        box-shadow:0 2px 6px rgba(0,0,0,.5); transition:border-color .2s ease; }
+  #nivelrange:focus{ outline:none; }
   /* chips de camadas (header flutuante) */
   #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex;
           align-items:center;
@@ -328,6 +361,11 @@
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="0.5" value="10">
+  <div class="nb-atual">
+    <span class="nb-lbl">Nível atual</span>
+    <span class="nb-val off" id="nivelatual-val">—</span>
+    <button id="nivelatual-btn" title="Usar o nível do rio retornado pela ANA">ANA</button>
+  </div>
   <span class="nb-cap">nível do rio</span>
 </div>
 
@@ -1099,10 +1137,10 @@ map.on('load', async () => {
     niveis: async () => {
       const d = await (await fetch('./brusque_niveis_alagamento.geojson')).json();
       map.addSource('niveis', { data:d, type:'geojson' });
-      // 7m aqua suave → 15m vermelho grave
+      // 7m água (ciano) → 15m crítico (vermelho): azul → índigo → roxo → magenta → vermelho
       const escala = ['interpolate',['linear'],['get','nivel'],
-        7,'#a6e3f0', 8,'#74c7e3', 9,'#46a6d6', 10,'#2f83c4', 11,'#3160b0',
-        12,'#5a44a8', 13,'#8b3d92', 14,'#bd3a63', 15,'#e12f2f'];
+        7,'#a7d8f1', 8,'#63d0ee', 9,'#2f69ee', 10,'#2c2ce8', 11,'#763adf',
+        12,'#b43ad9', 13,'#e232be', 14,'#ee2b72', 15,'#f91010'];
       map.addLayer({ id:'niveis-fill', type:'fill', source:'niveis',
         filter:['==',['get','nivel'],-1],   // começa sem cota selecionada
         paint:{ 'fill-opacity':0.5, 'fill-color':escala } }, 'municipio-linha');
@@ -1591,6 +1629,38 @@ map.on('load', async () => {
   const ensureBuilt = async (key) => { if(!_built[key]) _built[key] = await BUILDERS[key](); return _built[key]; };
   // Níveis de alagamento: mostra UMA cota por vez (combo). '' = nenhuma.
   // Os níveis agora têm meios-termos (7, 7.5, 8, …) — usa float, não int.
+  // Cor do nível → cor do slider (mesma escala das bandas no mapa).
+  const _NIVEL_STOPS = [[7,'#a7d8f1'],[8,'#63d0ee'],[9,'#2f69ee'],[10,'#2c2ce8'],[11,'#763adf'],
+    [12,'#b43ad9'],[13,'#e232be'],[14,'#ee2b72'],[15,'#f91010']];
+  const nivelCor = (n) => {
+    if (n == null) return '#e12f2f';
+    for (let i = 0; i < _NIVEL_STOPS.length; i++) {
+      const [s, c] = _NIVEL_STOPS[i];
+      if (n <= s) return c;
+      const [s2, c2] = _NIVEL_STOPS[i + 1] || _NIVEL_STOPS[i];
+      if (n < s2) {
+        // interpola hex entre s (c) e s2 (c2)
+        const t = (n - s) / (s2 - s);
+        const hx = (a, b) => {
+          const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+          const ch = (v) => String(Math.round(pa + (pb - pa) * t).toString(16)).padStart(2, '0');
+          return '#' + ch(0) + ch(1) + ch(2);
+        };
+        return hx(c, c2);
+      }
+    }
+    return _NIVEL_STOPS[_NIVEL_STOPS.length - 1][1];
+  };
+  const _atualizaNivelUI = (v) => {
+    const bar=document.getElementById('nivelbar'), sl=document.getElementById('nivelrange'), lb=document.getElementById('nivellbl');
+    if (v) {
+      if (sl) sl.value = v;
+      if (lb) { lb.textContent = v+' m'; lb.style.color = nivelCor(parseFloat(v)); }
+      if (sl) sl.style.setProperty('--nivel-cor', nivelCor(parseFloat(v)));
+      if (bar) bar.classList.add('show');
+    }
+    else if (bar) bar.classList.remove('show');
+  };
   async function selectNivel(v){
     await ensureBuilt('niveis');
     const n = v ? parseFloat(String(v).replace(',', '.')) : -1;
@@ -1598,9 +1668,7 @@ map.on('load', async () => {
     map.setFilter('niveis-linha', ['==',['get','nivel'],n]);
     // sincroniza a UI: combo do dropdown + slider fixo (aparece só com nível escolhido)
     if (window._nivelSel && window._nivelSel.value !== (v||'')) window._nivelSel.value = v||'';
-    const bar=document.getElementById('nivelbar'), sl=document.getElementById('nivelrange'), lb=document.getElementById('nivellbl');
-    if (v) { if(sl) sl.value=v; if(lb) lb.textContent=v+' m'; if(bar) bar.classList.add('show'); }
-    else if (bar) bar.classList.remove('show');
+    _atualizaNivelUI(v);
   }
 
   // ── Setores de risco: 1 par de layers por CATEGORIA (filtrado), togglado no
@@ -2012,6 +2080,37 @@ map.on('load', async () => {
   updateBadge();   // estado inicial do selo (camadas default ligadas → escondido)
   // slider fixo dos níveis: arrastar navega pelas cotas do rio (sincroniza com o combo)
   document.getElementById('nivelrange').oninput = (e) => selectNivel(e.target.value);
+  // ── "Nível atual" (ANA): mostra o nível do rio retornado pelo worker e um botão
+  // que move o slider para essa cota. Futuro: fonte ANA direta. ────────────────
+  const _nvAtual = document.getElementById('nivelatual-val');
+  const atualizaNivelAtual = () => {
+    if (!_nvAtual) return;
+    const r = (typeof window._RIO !== 'undefined' && window._RIO) || null;
+    if (r && r.nivel_m != null) {
+      _nvAtual.textContent = r.nivel_m.toFixed(2).replace('.', ',') + ' m';
+      _nvAtual.classList.remove('off');
+      _nvAtual.title = (r.coleta ? 'coleta ' + r.coleta : '') + (r.fonte ? ' · ' + r.fonte : '');
+    } else {
+      _nvAtual.textContent = '—';
+      _nvAtual.classList.add('off');
+      _nvAtual.title = '';
+    }
+  };
+  const nvBtn = document.getElementById('nivelatual-btn');
+  if (nvBtn) nvBtn.onclick = async () => {
+    if (typeof fetchRealtime === 'function') await fetchRealtime();
+    atualizaNivelAtual();
+    const r = (typeof window._RIO !== 'undefined' && window._RIO) || null;
+    const n = r && r.nivel_m != null ? r.nivel_m : null;
+    if (n == null) { showToast('Nível do rio indisponível no momento'); return; }
+    // arredonda para o degrau do slider (0.5) e aplica
+    const v = Math.max(7, Math.min(15, Math.round(n * 2) / 2));
+    selectNivel(String(v));
+    showToast('Nível atual do rio: ' + n.toFixed(2).replace('.', ',') + ' m');
+  };
+  // mostra o valor assim que o tempo real chegar
+  if (typeof fetchRealtime === 'function') fetchRealtime().then(atualizaNivelAtual).catch(() => {});
+  setInterval(() => { if (typeof fetchRealtime === 'function') fetchRealtime().then(atualizaNivelAtual).catch(() => {}); }, 5*60*1000);
 
   // ── Controles do clima (radar / satélite / indicadores) ─────────────────────
   const radarRefresh = document.getElementById('radar-refresh');
