@@ -1,12 +1,13 @@
-# brusque-voos — voos em tempo real sobre a região (Airplanes.live ADS-B)
+# brusque-voos — voos num raio de 100 km de Brusque (Airplanes.live ADS-B)
 
-Worker Cloudflare que serve, em JSON limpo e com CORS, os aviões no ar dentro
-da região monitorada de Brusque. A camada **"Voos (ADS-B)"** do mapa
+Worker Cloudflare que serve, em JSON limpo e com CORS, os aviões no ar num
+**raio de 100 km de Brusque**. A camada **"Voos (ADS-B)"** do mapa
 (`site/index.html`, dropdown Tempo Real) consome este Worker via `VOOS_URL`.
 
 - Endpoint: `GET /voos.json`
 - Cache: 2 min (Cache API do Worker)
-- Retorna: `{ updated, fonte, bbox, voos:[{icao24,callsign,lat,lon,alt_m,vel_kmh,rumo,subida_mps,categoria,ultima_atualizacao}] }`
+- Retorna: `{ updated, fonte, centro, raio_km, voos:[{icao24,callsign,lat,lon,alt_m,vel_kmh,rumo,subida_mps,categoria,dist_km,ultima_atualizacao}] }`
+  — **ordenado por distância** (mais perto primeiro), filtrado a **≤ 100 km** (haversine).
 
 ## Fonte dos dados
 
@@ -14,9 +15,9 @@ da região monitorada de Brusque. A camada **"Voos (ADS-B)"** do mapa
 `https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}` (raio até 250 NM).
 Sem chave, rate limit 1 req/s, dados sob licença open (ODbL).
 
-Consulta: ponto central da região (`-27.1215, -48.9787`) com raio de 60 NM
-(~111 km), depois filtramos pelos limites exatos da região monitorada
-(`bbox`, os mesmos do radar/nuvens).
+Consulta: centro em **Brusque** (`-27.0977, -48.9172`) com raio de 60 NM (~111 km,
+margem), depois o Worker **filtra a ≤ 100 km** pelo haversine. O mapa desenha um
+**círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos).
 
 ## Por que não OpenSky / ADSB.lol / adsb.fi
 

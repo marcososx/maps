@@ -184,6 +184,22 @@
   .g-labels{ display:flex; justify-content:space-between; font-size:9px; color:#8a97a8; margin-top:3px; }
   .g-val{ margin-top:6px; font-size:11.5px; color:#eaf6ff; line-height:1.35; }
   .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
+  /* painel Voos: contagem + lista de aeronaves no raio de 100 km */
+  #voospanel{ max-width:288px; }
+  .voo-count{ font-size:10px; color:#8a97a8; margin:6px 0 8px; }
+  .voo-count b{ color:#ffd54f; font:700 14px ui-monospace,Space Mono,monospace; }
+  .voo-list{ max-height:230px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+        scrollbar-width:thin; scrollbar-color:#3a4b63 transparent; }
+  .voo-row{ display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.045);
+        border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:7px 9px; cursor:pointer;
+        transition:background .18s ease, border-color .18s ease; }
+  .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
+  .voo-row .voo-cs{ font:700 12px ui-monospace,Space Mono,monospace; color:#ffd54f; min-width:0;
+        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .voo-row .voo-d{ flex:1; min-width:0; display:flex; flex-wrap:wrap; gap:1px 8px;
+        font-size:9.5px; color:#8a97a8; }
+  .voo-row .voo-d b{ color:#eaf6ff; font-weight:600; }
+  .voo-row .voo-dst{ font:600 10px ui-monospace,Space Mono,monospace; color:#4FC3F7; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -313,6 +329,13 @@
       <div class="g-labels"><span>seco</span><span>úmido</span><span>encharcado</span></div>
       <div class="g-val" id="solo-val">carregando…</div>
     </div>
+  </div>
+
+  <!-- Voos · aeronaves no raio de 100 km de Brusque (ADS-B) -->
+  <div id="voospanel" class="wpanel">
+    <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
+    <div class="voo-count" id="voos-count">carregando…</div>
+    <div class="voo-list" id="voos-list"></div>
   </div>
 </div>
 
@@ -586,8 +609,59 @@ map.on('load', async () => {
     geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
     properties:{ icao24:v.icao24, callsign:v.callsign, origem:v.origem,
       alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null, vel_kmh:v.vel_kmh, rumo:v.rumo,
-      subida:v.subida_mps, categoria:v.categoria, ultima: fmtDt(v.ultima_atualizacao) }
+      subida:v.subida_mps, categoria:v.categoria, dist_km:v.dist_km,
+      ultima: fmtDt(v.ultima_atualizacao) }
   }));
+  // círculo de 100 km ao redor de Brusque (GeoJSON de ~128 pontos)
+  const _raioKm = 100, _cirLat = -27.0977, _cirLon = -48.9172;
+  const _cirFeat = () => {
+    const coords = [];
+    const R = 6371, d = _raioKm / R;
+    for (let i = 0; i <= 128; i++) {
+      const br = 2 * Math.PI * i / 128;
+      const la = Math.asin(Math.sin(_cirLat*Math.PI/180)*Math.cos(d) + Math.cos(_cirLat*Math.PI/180)*Math.sin(d)*Math.cos(br));
+      const lo = _cirLon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(_cirLat*Math.PI/180), Math.cos(d)-Math.sin(_cirLat*Math.PI/180)*Math.sin(la));
+      coords.push([lo*180/Math.PI, la*180/Math.PI]);
+    }
+    return { type:'Feature', properties:{ raio_km:_raioKm },
+      geometry:{ type:'Polygon', coordinates:[coords] } };
+  };
+  // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
+  const renderVoosList = (d) => {
+    const count = document.getElementById('voos-count');
+    const list = document.getElementById('voos-list');
+    if (!list) return;
+    const voos = d.voos || [];
+    if (count) count.innerHTML = voos.length
+      ? '<b>'+voos.length+'</b> aeronave'+(voos.length!==1?'s':'')+' no raio de 100 km'
+      : 'nenhuma aeronave no raio de 100 km no momento';
+    const upd = document.getElementById('voos-upd');
+    if (upd) upd.textContent = d.updated ? fmtDt(d.updated)+' · ADS-B' : '—';
+    list.innerHTML = '';
+    voos.forEach(v => {
+      const row = document.createElement('div'); row.className = 'voo-row';
+      const alt = v.alt_m!=null ? Math.round(v.alt_m).toLocaleString('pt-BR')+' m' : '—';
+      const vel = v.vel_kmh!=null ? v.vel_kmh+' km/h' : '—';
+      const rumo = v.rumo!=null ? v.rumo+'°' : '—';
+      const cat = v.categoria || '—';
+      row.innerHTML = '<span class="voo-cs">✈ '+(v.callsign||v.icao24||'—')+'</span>'
+        + '<span class="voo-d"><span><b>'+alt+'</b> alt</span><span><b>'+vel+'</b></span>'
+        + '<span>rumo <b>'+rumo+'</b></span><span>'+cat+'</span></span>'
+        + '<span class="voo-dst">'+v.dist_km+' km</span>';
+      row.onclick = () => {
+        map.easeTo({ center:[v.lon, v.lat], zoom: Math.max(map.getZoom(), 10) });
+        const p = { callsign:v.callsign, icao24:v.icao24, alt_ft:v.alt_m!=null?v.alt_m*3.28084:null,
+          vel_kmh:v.vel_kmh, rumo:v.rumo, categoria:v.categoria, ultima:fmtDt(v.ultima_atualizacao) };
+        const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>','<span style="color:#8a97a8">Airplanes.live · ADS-B</span>'];
+        if(p.alt_ft!=null) L.push('Altitude: <b>'+Math.round(p.alt_ft).toLocaleString('pt-BR')+' ft</b>');
+        if(p.vel_kmh!=null) L.push('Velocidade: '+p.vel_kmh+' km/h');
+        if(p.rumo!=null) L.push('Rumo: '+p.rumo+'°');
+        if(p.categoria) L.push('Categoria: '+p.categoria);
+        new maplibregl.Popup({closeButton:false}).setLngLat([v.lon, v.lat]).setHTML(L.join('<br>')).addTo(map);
+      };
+      list.appendChild(row);
+    });
+  };
   const BUILDERS = {
     // Bairros + zona rural (camada base). Fill: zona rural SEMPRE verde; bairros só no hover.
     bairros: async () => {
@@ -956,11 +1030,21 @@ map.on('load', async () => {
       map.on('mouseleave','rios-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       return ['rios-pt','rios-label'];
     },
-    // Voos em tempo real — OpenSky Network (ADS-B) via worker brusque-voos.
-    // Aviões no ar dentro da região monitorada, com ícone rotacionado pelo rumo.
-    // Timestamp em pt-BR e popup com dados do voo.
+    // Voos em tempo real — Airplanes.live (ADS-B) via worker brusque-voos.
+    // Círculo estático de 100 km ao redor de Brusque + aeronaves no ar dentro
+    // dele, com ícone rotacionado pelo rumo. Lista lateral (voospanel) com as
+    // aeronaves e propriedades. Ativa satélite e desmarca as demais camadas.
     voos: async () => {
       const d = await (await fetch(VOOS_URL)).json();
+      // ── círculo de 100 km (estático) ───────────────────────────────────────
+      if (!map.getSource('voos-circulo')) {
+        map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
+        map.addLayer({ id:'voos-circulo-fill', type:'fill', source:'voos-circulo',
+          paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
+        map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
+          paint:{ 'line-color':'#FFD54F', 'line-width':1.4, 'line-dasharray':[2,2], 'line-opacity':0.75 } });
+      }
+      // ── aeronaves ──────────────────────────────────────────────────────────
       if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
       map.addImage('aviao', _planeImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
@@ -1001,16 +1085,20 @@ map.on('load', async () => {
         if(p.ultima) L.push('<span style="font-size:10px;color:#8a97a8">posição '+p.ultima+'</span>');
         new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
       });
+      const setVoos = (data) => {
+        map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(data) });
+        renderVoosList(data);
+      };
+      setVoos(d);
       // atualiza a cada 30 s enquanto ligada (worker cacheia 2 min)
       _voosTimer = setInterval(async () => {
         if (!map.getSource('voos')) return;
         try {
           const r = await (await fetch(VOOS_URL)).json();
-          map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+          setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
       }, 30000);
-      map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(d) });
-      return ['voos-pt','voos-label'];
+      return ['voos-pt','voos-label','voos-circulo','voos-circulo-fill'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -1257,7 +1345,37 @@ map.on('load', async () => {
     // Monitoramento = as estações/indicadores que antes eram o chip "Tempo real"
     { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real' },
     { id:'voos', label:'Voos (ADS-B)', on:false, color:'#FFD54F', build:'voos',
-      onToggle: (on) => { if (!on) { clearInterval(_voosTimer); _voosTimer = null; } } },
+      onToggle: async (on) => {
+        clearInterval(_voosTimer); _voosTimer = null;
+        if (on) {
+          // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga satélite
+          [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
+            if (m.id === 'voos') return;
+            if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
+          }));
+          const sat = MAPA.find(m => m.id === 'satelite');
+          if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
+          // re-busca + reinicia o refresh (ao reativar depois de desligar)
+          if (map.getSource('voos')) {
+            try {
+              const r = await (await fetch(VOOS_URL)).json();
+              map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+              renderVoosList(r);
+            } catch(e) {}
+          }
+          _voosTimer = setInterval(async () => {
+            if (!map.getSource('voos')) return;
+            try {
+              const r = await (await fetch(VOOS_URL)).json();
+              map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+              renderVoosList(r);
+            } catch(e) {}
+          }, 30000);
+          showPanel('voospanel');
+        } else {
+          hidePanel('voospanel');
+        }
+      } },
     { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
   ];
   const INDICADORES = [   // dropdown "Indicadores" — painéis à esquerda do mapa

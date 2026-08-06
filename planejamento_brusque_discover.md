@@ -198,11 +198,16 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 
 ### 7.4b Voos em tempo real — dropdown "Tempo Real" (05/08/2026)
 - Worker **`brusque-voos`** — **Airplanes.live** ADS-B (REST, sem chave, 1 req/s), consulta por
-  ponto central + raio 60 NM e **filtro pelo bbox** da região monitorada. Endpoint: `/voos.json`
-  (cache 2 min, CORS).
-- Camada **"Voos (ADS-B)"** no dropdown Tempo Real: aviões **no ar** dentro da região, ícone de
-  avião girando pelo rumo real (canvas 40×40 + `icon-rotate`), callsign como label, hint/popup
-  com altitude, velocidade, rumo, subida e categoria ICAO. Front re-valida a cada 30 s.
+  ponto central (**Brusque** -27.0977/-48.9172) + raio e **filtro ≤ 100 km** (haversine).
+  Endpoint: `/voos.json` (cache 2 min, CORS), voos **ordenados por distância**.
+- Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
+  - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar).
+  - Aviões **no ar** com ícone girando pelo rumo real (canvas 40×40 + `icon-rotate`), callsign
+    como label, hint/popup com altitude, velocidade, rumo, subida e categoria ICAO.
+  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (callsign, altitude,
+    velocidade, rumo, categoria, distância); clicar foca o avião no mapa.
+  - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
+    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada 30 s.
 - **Por que Airplanes.live:** OpenSky (522), ADSB.lol (429) e adsb.fi (403) **bloqueiam IPs de
   Workers Cloudflare** — testados em 05/08. Airplanes.live roda atrás de Cloudflare e funciona.
 

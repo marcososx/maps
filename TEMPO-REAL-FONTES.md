@@ -183,14 +183,19 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 - **Worker:** `brusque-voos` (`worker-voos/`) → `https://brusque-voos.marcososx.workers.dev/voos.json`
 - **API:** **Airplanes.live** REST (`https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}`),
   rede comunitária de receptores ADS-B/MLAT. **Sem chave**, rate limit 1 req/s, dados ODbL.
-- **Como consulta:** ponto central da região (-27.1215, -48.9787) com raio de **60 NM**
-  (~111 km) → depois **filtra pelo bbox** da região monitorada (mesmos limites do radar).
+- **Como consulta:** centro em **Brusque** (-27.0977, -48.9172), raio de 60 NM na chamada
+  e o Worker **filtra a ≤ 100 km** (haversine) → `voos` ordenados por `dist_km`.
 - **Campos por voo:** `icao24`, `callsign`, `lat/lon`, `alt_m` (geométrica), `vel_kmh`,
-  `rumo`, `subida_mps` (fpm→m/s), `categoria` (ICAO: A1/A3/A5…), `ultima_atualizacao`.
+  `rumo`, `subida_mps` (fpm→m/s), `categoria` (ICAO: A1/A3/A5…), `dist_km`, `ultima_atualizacao`.
 - **Cadência do worker:** busca e **cacheia 2 min**; o front re-valida a cada 30 s.
-- **No mapa:** dropdown **Tempo Real → Voos (ADS-B)**. Ícones de avião girando pelo
-  rumo real (canvas 40×40, `icon-rotate`), callsign como label, hint + popup com
-  altitude/velocidade/rumo/subida/categoria. Só mostra aeronaves **no ar** (filtra solo).
+- **No mapa (dropdown Tempo Real → Voos (ADS-B)):**
+  - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar).
+  - Ícones de avião girando pelo rumo real (canvas 40×40, `icon-rotate`), callsign como label,
+    hint + popup com altitude/velocidade/rumo/subida/categoria.
+  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves com propriedades
+    (callsign, altitude, velocidade, rumo, categoria, distância); clicar foca o avião no mapa.
+  - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
+    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores).
 
 ### Por que Airplanes.live e não outra (testadas em 05/08/2026)
 
