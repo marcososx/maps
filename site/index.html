@@ -643,15 +643,21 @@ map.on('load', async () => {
     g.strokeStyle='#04121c'; g.lineWidth=0.6; g.lineJoin='round'; g.lineCap='round'; g.stroke(path);
   }
   const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 48, 48);
-  // worker /voos.json → features GeoJSON (aérea em ft; sem solo)
-  const voosFeats = (d) => (d.voos || []).map(v => ({
-    type:'Feature',
-    geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
-    properties:{ icao24:v.icao24, callsign:v.callsign, origem:v.origem, destino:v.destino,
-      cia:v.cia, alt_m:v.alt_m, alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null,
-      vel_kmh:v.vel_kmh, rumo:v.rumo, subida:v.subida_mps, tipo:v.tipo, desc:v.desc,
-      categoria:v.categoria, dist_km:v.dist_km, ultima: fmtDt(v.ultima_atualizacao) }
-  }));
+  // worker /voos.json → features GeoJSON (aérea em ft; sem solo). Rota/logo são
+  // achatadas em campos planos (MapLibre pode perder objetos aninhados na query).
+  const voosFeats = (d) => (d.voos || []).map(v => {
+    const o=v.origem||{}, de=v.destino||{}, c=v.cia||{};
+    return { type:'Feature',
+      geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
+      properties:{ icao24:v.icao24, callsign:v.callsign,
+        cia_icao:c.icao||null, cia_iata:c.iata||null, cia_nome:c.nome||null,
+        orig_iata:o.iata||null, orig_muni:o.municipio||null, orig_nome:o.nome||null,
+        dest_iata:de.iata||null, dest_muni:de.municipio||null, dest_nome:de.nome||null,
+        alt_m:v.alt_m, alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null,
+        vel_kmh:v.vel_kmh, rumo:v.rumo, subida:v.subida_mps, tipo:v.tipo, desc:v.desc,
+        categoria:v.categoria, dist_km:v.dist_km, ultima: fmtDt(v.ultima_atualizacao) }
+    };
+  });
   // círculo de 100 km ao redor de Brusque (GeoJSON de ~128 pontos)
   const _raioKm = 100, _cirLat = -27.0977, _cirLon = -48.9172;
   // ── Trajeto dos voos: acumula as posições de cada aeronave ao longo do tempo
@@ -1150,20 +1156,20 @@ map.on('load', async () => {
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
         let h='';
         // logo da companhia + callsign (se a fonte tiver o logo)
-        if (p.cia && p.cia.icao) {
+        if (p.cia_icao) {
           h+='<div class="hv-logo"><img src="https://static.airplanes.live/airline_banners/'
-            +encodeURIComponent(p.cia.icao)+'.png" onerror="this.style.display=\'none\'" alt="">'
+            +encodeURIComponent(p.cia_icao)+'.png" onerror="this.style.display=\'none\'" alt="">'
             +'<span class="hv-callsign">'+(p.callsign||'')+'</span></div>';
         } else {
           h+=row('Voo', (p.callsign||p.icao24||'—'));
         }
         // rota: origem ───► destino (só se tiver os dois)
-        if (p.origem && p.origem.iata && p.destino && p.destino.iata) {
-          h+='<div class="hv-rota"><span class="hv-aero">'+p.origem.iata
-            +'<small>'+(p.origem.municipio||'')+'</small></span>'
+        if (p.orig_iata && p.dest_iata) {
+          h+='<div class="hv-rota"><span class="hv-aero">'+p.orig_iata
+            +'<small>'+(p.orig_muni||'')+'</small></span>'
             +'<span class="hv-seta"></span>'
-            +'<span class="hv-aero">'+p.destino.iata
-            +'<small>'+(p.destino.municipio||'')+'</small></span></div>';
+            +'<span class="hv-aero">'+p.dest_iata
+            +'<small>'+(p.dest_muni||'')+'</small></span></div>';
         } else {
           h+=row('Rota', (p.callsign||'—'), 'sub');
         }
