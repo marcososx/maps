@@ -15,6 +15,7 @@
 | **Nuvens (satélite)** | Imagem de satélite GOES-East (infravermelho) cobrindo toda a região | NASA GIBS | imagem nova a cada ~15 min; latência 15–25 min; overlay auto-atualiza a cada 15 min |
 | **Precipitação (radar)** | **Radar real EPAGRI/CIRAM — Lontras (Vale), CAPPI 2Km** com cores dBZ; padrão fixo (sem seletor p/ o usuário) + **legenda inferior** | EPAGRI/CIRAM (+ fallback automático RainViewer) | frame novo a cada ~5 min; overlay atualiza a cada 5 min |
 | **Cidades vizinhas (Limites)** | Badge por cidade com condição + chuva agora (mm/h) + acumulado do dia | Open-Meteo | ~5 min (cache localStorage) |
+| **CELESC** | **UC sem energia por município em TODO o estado de SC** (16 regionais da CELESC) — polígonos pintados por faixa de % (verde 0–5% → vermelho >50%), hint com números (UC, %, acidentais, programados) + regional, **tabela compacta por regional**, legenda inferior e círculo de 100 km marcando o raio de Brusque | Informa CELESC (`celgeoweb.celesc.com.br`) via worker `brusque-celesc` | cache 5 min no worker; front re-busca a cada 5 min enquanto a camada está ligada |
 
 **Regra de sobreposição:** Nuvens e Radar são **exclusivos entre si** — marcar um
 desmarca o outro (não sobrepõem imagens). O **polígono tracejado** que aparece com
@@ -271,4 +272,65 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
      como **segredo do Worker** (nunca no cliente).
 - **Referências:** METAR/NOTAM docs da REDEMET em `https://www.redemet.aer.mil.br` (login);
   a key chega por e-mail após o cadastro.
+
+## 10. CELESC — UC sem energia (camada "CELESC", dropdown Tempo Real)  ⭐ 06/08/2026
+
+- **Worker:** `brusque-celesc` (`worker-celesc/`) → `https://brusque-celesc.marcososx.workers.dev/celesc.json`
+- **Fonte:** painel público **"Informa CELESC"** (`https://celgeoweb.celesc.com.br/desktop.html`).
+  O site é um mapa OpenLayers que lê 2 arquivos JS estáticos (sem chave, sem cadastro):
+  - `json/mapa.js` → `var mapaIndicador = {"municipios":[...]}` — por município: `nr_municipio`,
+    `nr_cor` (cor oficial da CELESC) e `ds_informacao` (HTML com nome, total de UCs e "Sem energia").
+  - `json/tabelas.js` → `var visaoGeralPublico` — visão geral + detalhe por cidade/bairro:
+    `QUANTIDADE_ACIDENTAL`/`QUANTIDADE_PROGRAMADA` (e por bairro dentro de cada cidade).
+- **Por que Worker (proxy obrigatório):** o site **NÃO manda `Access-Control-Allow-Origin`** —
+  o navegador não consegue ler direto. O Worker baixa os 2 JS, limpa o prefixo `var x =`, corrige
+  a matriz esparsa (`"municipios":[,` → `[null,`) e devolve JSON enxuto com CORS `*`.
+- **Casamento com o nosso mapa:** as 90 cidades do raio de 100 km (`brusque_raio100.geojson`)
+  ganharam a propriedade **`celesc_id`** (gerada por **casamento geométrico**: centroide de cada
+  município dentro do polígono da malha da CELESC em `json/municipio.js` — 90/90 únicos, incluindo
+  os nomes difíceis: BALN. BARRA DO SUL, GOV. CELSO RAMOS, STO AMARO IMPERATRIZ etc.). O Worker
+  filtra a lista de SC (~325) para esses 90 ids e o front junta por `celesc_id`.
+- **Classes de cor (pedido do Marcos, paleta verde → vermelho):**
+
+| Faixa de UC sem energia | Classe | Cor |
+|---|---|---|
+| 0% a 5% | 1 | **verde** `#00E676` |
+| 5% a 15% | 2 | amarelo `#FFEB3B` |
+| 15% a 30% | 3 | âmbar `#FFB300` |
+| 30% a 50% | 4 | laranja `#FF6D00` |
+| maior que 50% | 5 | **vermelho** `#E53935` |
+
+  O `pct` é calculado no worker (`sem_energia / total * 100`) — não usamos o `nr_cor` oficial,
+  que é classificado por faixas diferentes. Sem dado → `classe 0` (pinta cinza).
+- **No mapa (dropdown Tempo Real → CELESC):**
+  - **Fill nos polígonos de TODOS os municípios de SC** (base `brusque_celesc_estado.geojson`,
+    gerada da malha oficial da CELESC `json/municipio.js`, com `regional_id`/`regional`),
+    colorido pela classe (`fill-color` = match por `classe`) + contorno âmbar sutil. Ao ativar,
+    a câmera enquadra o **raio de 100 km**; o usuário pode dar zoom out e navegar por todo o
+    estado. As **90 cidades do raio** ganham contorno âmbar tracejado em destaque
+    (`celesc-raio`), mantendo o "foco no raio" mesmo no zoom out.
+  - **Hint** reformulado (06/08): card com **logo da CELESC no canto superior direito**
+    (`site/celesc_logo.png`, extraída do próprio painel `images/celesc.gif`), percentual em
+    destaque, badge da faixa colorida, "Regional · <nome>" e linhas com **"UC" por extenso**
+    ("Unidades consumidoras sem energia", "Total de unidades consumidoras", …) + rodapé com a
+    hora da última leitura.
+  - **Tabela por regional** (`#celregpanel`, canto superior direito): card compacto com as
+    **16 regionais oficiais da CELESC** (nome, cidades, total de UCs, sem energia, %) — o
+    percentual é colorido pela mesma escala verde→vermelho — + rodapé com o resumo de SC.
+    Municípios de fora de SC (borda PR/RS, sem `NR_REGIONAL`) ficam de fora da tabela.
+  - **Legenda** (`#celelegend`, canto inferior esquerdo): a "lista" das 5 faixas com as cores +
+    resumo da região (UC sem energia / total / % / cidades com corte) + hora da última leitura.
+  - **Círculo de 100 km** ao redor de Brusque demarcando o raio rastreado (tracejado âmbar,
+    mesmo recurso da camada de Voos; enquadra o raio ao ativar).
+  - **Refresh a cada 5 min** enquanto a camada está ligada (`setInterval` no onToggle; o worker
+    cacheia 5 min via `caches.default`). A fonte CELESC se atualiza nessa cadência — **real-time
+    (<1 min) não faz sentido**: o dado não muda mais rápido que ~5 min e bater no site com
+    frequência maior só aumenta o risco de bloqueio.
+- **Gotchas:**
+  - `ds_informacao` é HTML; o rótulo "Sem energia" fica dentro de `<b>` (`<b>Sem energia</b>`).
+    O parse usa `Sem energia<\/?b>`. Números em pt-BR (separador de milhar = `.`).
+  - Alguns municípios do raio vêm com `total: 0` na CELESC (ex.: Anitápolis, Paulo Lopes,
+    São Bonifácio) — provavelmente outra concessionária naquela área; pintam cinza e o hint mostra 0.
+  - O `mapa.js` é regenerado a cada poucos minutos e **não tem timestamp**; o `tabelas.js` tem o
+    campo `DATA`. O worker usa o momento do próprio build como `updated`.
 

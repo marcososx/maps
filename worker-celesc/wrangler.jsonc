@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-celesc",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "observability": { "enabled": true }
+  // Sem segredos: a fonte é o "Informa CELESC" público
+  // (celgeoweb.celesc.com.br) — só o painel não manda CORS, então o Worker
+  // faz o papel de proxy + cache de 5 min + filtro das 90 cidades do raio.
+}

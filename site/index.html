@@ -85,12 +85,28 @@
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
   #hint.cota-card .cota-big .n .m{ font-size:20px; font-weight:700; margin-left:2px; }
   /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
-  #hint-ponte, #hint-abrigo, #hint-voos{ position:absolute; z-index:3; pointer-events:none; display:none;
+  #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ position:absolute; z-index:3; pointer-events:none; display:none;
          min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
          background:rgba(11,14,20,.94); border:1px solid #faee0a; border-radius:8px;
          transform:translate(12px,12px); box-shadow:0 6px 20px rgba(0,0,0,.45);
          line-height:1.4; }
   #hint-voos{ border-color:#FFD54F; }
+  #hint-celesc{ border-color:#FFB300; }
+  /* card da CELESC: cabeçalho com logo (topo direito) + percentual em destaque */
+  #hint-celesc .cel-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  #hint-celesc .cel-logo{ width:34px; height:34px; flex:0 0 auto; object-fit:contain;
+        filter:drop-shadow(0 0 6px rgba(255,179,0,.5)); }
+  #hint-celesc .cel-tit{ font-weight:700; color:#eaf6ff; font-size:13px; line-height:1.2; }
+  #hint-celesc .cel-faixa{ display:inline-block; font-size:9px; font-weight:700; color:#0B0E14;
+        padding:1px 6px; border-radius:8px; margin-top:3px; }
+  #hint-celesc .cel-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px;
+        vertical-align:middle; }
+  #hint-celesc .cel-big{ font:800 24px ui-monospace,Space Mono,monospace; color:#eaf6ff; margin:8px 0 2px;
+        line-height:1; }
+  #hint-celesc .cel-big small{ font-size:10.5px; font-weight:600; color:#8a97a8; letter-spacing:.3px; }
+  #hint-celesc .cel-foot{ margin-top:7px; padding-top:6px; border-top:1px solid rgba(255,255,255,.08);
+        display:flex; justify-content:space-between; gap:8px; font-size:9px; color:#8a97a8; }
+  #hint-celesc .cel-foot b{ color:#FFB300; font-weight:700; }
   #hint-voos .hv-logo{ display:flex; align-items:center; gap:8px; margin-bottom:7px;
         padding-bottom:6px; border-bottom:1px solid rgba(255,213,79,.18); }
   #hint-voos .hv-logo img{ height:22px; max-width:110px; object-fit:contain; }
@@ -110,13 +126,13 @@
   #hint-voos .hv-seta::after{ content:''; position:absolute; right:0; top:-3px;
         width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent;
         border-left:7px solid #ffd54f; filter:drop-shadow(0 0 3px rgba(255,213,79,.8)); }
-  #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row{ margin-top:6px; }
-  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child{ margin-top:0; }
-  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
-  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after, #hint-voos .hp-lbl::after{ content:':'; }
-  #hint-ponte .hp-val, #hint-abrigo .hp-val, #hint-voos .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
-  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub, #hint-voos .hp-val.sub{ color:#eaf6ff; font-weight:400; }
-  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info, #hint-voos .hp-val.info{ color:#00B0FF; }
+  #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row, #hint-celesc .hp-row{ margin-top:6px; }
+  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child, #hint-celesc .hp-row:first-child{ margin-top:0; }
+  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl, #hint-celesc .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
+  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after, #hint-voos .hp-lbl::after, #hint-celesc .hp-lbl::after{ content:':'; }
+  #hint-ponte .hp-val, #hint-abrigo .hp-val, #hint-voos .hp-val, #hint-celesc .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
+  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub, #hint-voos .hp-val.sub, #hint-celesc .hp-val.sub{ color:#eaf6ff; font-weight:400; }
+  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info, #hint-voos .hp-val.info, #hint-celesc .hp-val.info{ color:#00B0FF; }
   /* símbolo de status do abrigo (verde = aberto, vermelho = fechado) */
   #hint-abrigo .hp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; }
   #hint-abrigo .hp-dot.aberto{ background:#00E676; box-shadow:0 0 8px rgba(0,230,118,.9); }
@@ -246,6 +262,43 @@
   .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
   .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
   .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
+  /* legenda CELESC (UC sem energia) — canto inferior ESQUERDO */
+  #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:232px;
+        background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
+        backdrop-filter:blur(8px); box-shadow:0 10px 26px rgba(0,0,0,.45);
+        opacity:0; visibility:hidden; pointer-events:none;
+        transition:opacity .3s ease, visibility .3s; }
+  #celelegend.show{ opacity:1; visibility:visible; pointer-events:auto; }
+  #celelegend .cel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; }
+  #celelegend .cel-head b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
+  #celelegend .cel-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#FFB300; }
+  #celelegend .cel-sub{ font-size:9px; color:#8a97a8; margin:-2px 0 6px; }
+  #celelegend .cel-row{ display:flex; align-items:center; gap:9px; margin:5.5px 0; font-size:10.5px; color:#cfd8e3; }
+  #celelegend .cel-mk{ flex:0 0 auto; width:12px; height:12px; border-radius:3px; border:1px solid rgba(255,255,255,.18); }
+  #celelegend .cel-sum{ font-size:9px; color:#8a97a8; line-height:1.45; margin-top:8px; padding-top:7px;
+        border-top:1px solid rgba(255,255,255,.08); }
+  #celelegend .cel-sum b{ color:#eaf6ff; font-weight:600; }
+  /* painel CELESC por regional — tabela compacta, canto superior DIREITO */
+  #celregpanel{ position:fixed; right:14px; top:64px; left:auto; bottom:auto; z-index:5;
+        width:312px; max-width:calc(100vw - 28px); padding:11px 13px; display:none;
+        max-height:calc(100vh - 180px); overflow-y:auto;
+        scrollbar-width:thin; scrollbar-color:#3a4b63 transparent; }
+  #celregpanel.show{ display:block; }
+  /* tabela compacta por regional — colunas alinhadas (border-collapse) */
+  .celreg-t{ width:100%; border-collapse:collapse; font-size:9.5px; }
+  .celreg-t th, .celreg-t td{ padding:4px 2px; border-bottom:1px solid rgba(255,255,255,.05);
+        text-align:right; font-variant-numeric:tabular-nums; }
+  .celreg-t thead th{ color:#8a97a8; font-size:8.5px; text-transform:uppercase; letter-spacing:.5px;
+        border-bottom-color:rgba(255,255,255,.12); padding-top:7px; }
+  .celreg-t th:first-child, .celreg-t td:first-child{ text-align:left; padding-left:0; }
+  .celreg-t td.cr-reg{ font-weight:600; color:#cfd8e3; white-space:nowrap; overflow:hidden;
+        text-overflow:ellipsis; max-width:0; }
+  .celreg-t td.cr-cid, .celreg-t td.cr-uc{ color:#8a97a8; }
+  .celreg-t td.cr-sem{ color:#eaf6ff; font-weight:600; }
+  .celreg-t td.cr-pct{ font-weight:700; }
+  .celreg-ft{ display:flex; justify-content:space-between; gap:8px; font-size:9px; color:#8a97a8;
+        padding-top:7px; margin-top:2px; border-top:1px solid rgba(255,255,255,.12); line-height:1.45; }
+  .celreg-ft b{ color:#eaf6ff; font-weight:700; }
   .vl-sep{ height:1px; background:rgba(255,255,255,.08); margin:9px 0 4px; }
   .voo-count{ font-size:10px; color:#8a97a8; margin:6px 0 8px; }
   .voo-count b{ color:#ffd54f; font:700 14px ui-monospace,Space Mono,monospace; }
@@ -350,6 +403,7 @@
 <div id="hint-ponte"></div>
 <div id="hint-abrigo"></div>
 <div id="hint-voos"></div>
+<div id="hint-celesc"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="0.5" value="10">
@@ -442,6 +496,28 @@
   <div class="wl-labels"><span>fraca</span><span>moderada</span><span>forte</span><span>intensa</span></div>
 </div>
 
+<!-- Tempo Real · CELESC — legenda de UC sem energia (canto inferior ESQUERDO) -->
+<div id="celelegend">
+  <div class="cel-head"><b>CELESC</b><span class="cel-time" id="celesc-time">--:--</span></div>
+  <div class="cel-sub">Unidades consumidoras sem energia</div>
+  <div class="cel-row"><span class="cel-mk" style="background:#00E676"></span><span>0% a 5%</span></div>
+  <div class="cel-row"><span class="cel-mk" style="background:#FFEB3B"></span><span>5% a 15%</span></div>
+  <div class="cel-row"><span class="cel-mk" style="background:#FFB300"></span><span>15% a 30%</span></div>
+  <div class="cel-row"><span class="cel-mk" style="background:#FF6D00"></span><span>30% a 50%</span></div>
+  <div class="cel-row"><span class="cel-mk" style="background:#E53935"></span><span>maior que 50%</span></div>
+  <div class="cel-sum" id="celesc-sum">—</div>
+</div>
+
+<!-- Tempo Real · CELESC por regional — tabela compacta (canto superior DIREITO) -->
+<div id="celregpanel" class="wpanel">
+  <div class="p-head"><b>CELESC · por regional</b><span class="p-upd" id="celreg-upd">—</span></div>
+  <table class="celreg-t">
+    <thead><tr><th>Regional</th><th>Cid</th><th>UC</th><th>Sem</th><th>%</th></tr></thead>
+    <tbody id="celreg-rows"></tbody>
+  </table>
+  <div class="celreg-ft" id="celreg-ft">—</div>
+</div>
+
 <!-- Tempo Real · satélite / nuvens (NASA GIBS GOES-East) -->
 <div id="nuvctl">
   <div class="nc-head"><b>Nuvens · GOES-East</b><span class="nc-time" id="nuv-time">--:--Z</span></div>
@@ -459,15 +535,24 @@ const map = new maplibregl.Map({
   // Estilo base = só um fundo sólido dark. Sem tiles externos (contorno puro).
   style:{ version:8, sources:{}, glyphs:'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
           layers:[{ id:'bg', type:'background', paint:{'background-color':'#0B0E14'} }] },
-  center:[-48.905,-27.11], zoom:9.3, maxZoom: 17, attributionControl:false
+  center:[-48.905,-27.11], zoom:9.3, maxZoom: 17,
+  maxPitch: 0,                        // sempre 2D (sem inclinação 3D)
+  attributionControl:false
 });
+// Trava o mapa ao norte e proíbe inclinar (2D fixo) — reduz o re-render do
+// raster (satélite/trânsito) e melhora o desempenho.
+if (map.dragRotate) map.dragRotate.disable();
+if (map.dragPitch) map.dragPitch.disable();
+if (map.touchPitch) map.touchPitch.disable();
+if (map.touchZoomRotate) map.touchZoomRotate.disableRotation();
 
 map.on('load', async () => {
   // ── Hints: helpers universais (um por vez; sair da camada/mapa esconde) ───────
   const _hintEls = { hint:document.getElementById('hint'),
                      ponte:document.getElementById('hint-ponte'),
                      abrigo:document.getElementById('hint-abrigo'),
-                     voos:document.getElementById('hint-voos') };
+                     voos:document.getElementById('hint-voos'),
+                     celesc:document.getElementById('hint-celesc') };
   const hideAllHints = () => { for (const k in _hintEls){ const el=_hintEls[k]; if(el) el.style.display='none'; } };
   const showHint = (id) => { hideAllHints(); const el=_hintEls[id]; if(!el) return null;
                              el.className=''; el.style.display='block'; return el; };
@@ -485,6 +570,10 @@ map.on('load', async () => {
   // pesadas (bairros, estradas, rio, vizinhas, pontes) carregam sob demanda.
   const muni = await (await fetch('./brusque_municipio.geojson')).json();
   map.addSource('municipio', { data:muni, type:'geojson' });
+  // contorno preto (casing) por baixo da linha amarela — mantém contraste
+  // mesmo sobre bases claras (OpenStreetMap na camada de Voos)
+  map.addLayer({ id:'municipio-casing', type:'line', source:'municipio',
+    paint:{ 'line-color':'#000000', 'line-width':4.6, 'line-opacity':0.85 } }, 'municipio-linha');
   map.addLayer({ id:'municipio-linha', type:'line', source:'municipio',
     paint:{ 'line-color':COLORS.municipio, 'line-width':2.2 } });
 
@@ -505,8 +594,9 @@ map.on('load', async () => {
 
   // ── Trânsito (TomTom via SEU Worker de cache; usuário NÃO fala com a TomTom) ──
   // Acima dos bairros, abaixo do rio e dos nomes. Desligado por padrão (chip).
+  // Cobertura = raio de 100 km de Brusque (o worker proxy não filtra tiles).
   map.addSource('trafego', { type:'raster', tileSize:256, minzoom:9, maxzoom:18,
-    bounds:[-49.25,-27.35,-48.55,-26.90],   // só Brusque + cidades limite (economiza requisições)
+    bounds:[-50.0,-28.0,-47.85,-26.2],
     tiles:['https://brusque-trafego.marcososx.workers.dev/traffic/{z}/{x}/{y}.png?style=relative'] });
   map.addLayer({ id:'trafego', type:'raster', source:'trafego',
     layout:{ visibility:'none' }, paint:{ 'raster-opacity':0.85 } });
@@ -917,10 +1007,72 @@ map.on('load', async () => {
       restante.forEach(v => list.appendChild(rowHTML(v)));
     }
   };
+  // ── CELESC (UC sem energia) — cores das 5 faixas + busca/refresh do worker ──
+  // Paleta: verde → amarelo → âmbar → laranja → vermelho (0% a >50%)
+  const CELESC_CORES = { 0:'#8a97a8', 1:'#00E676', 2:'#FFEB3B', 3:'#FFB300', 4:'#FF6D00', 5:'#E53935' };
+  const CELESC_FAIXA = ['', '0–5%', '5–15%', '15–30%', '30–50%', '>50%'];
+  const celCorFor = (pct) => pct<5 ? '#00E676' : pct<15 ? '#FFEB3B' : pct<30 ? '#FFB300' : pct<=50 ? '#FF6D00' : '#E53935';
+  let _celescTimer = null;
+  let _celescUpdated = '';
+  // re-busca o /celesc.json (worker cacheia 5 min) e repinta o fill + legenda +
+  // tabela por regional. A fonte CELESC se atualiza nessa cadência — não vale a
+  // pena buscar mais rápido.
+  const refreshCelesc = async () => {
+    try {
+      const cel = await (await fetch(CELESC_URL, { cache:'no-store' })).json();
+      const byId = {}; cel.municipios.forEach(m => byId[m.id] = m);
+      // nome "bonito" (IBGE) das 90 cidades do raio sobrescreve o nome CELESC
+      const nome90 = {};
+      (window._raio100 || { features:[] }).features.forEach(f => {
+        if (f.properties.celesc_id) nome90[f.properties.celesc_id] = f.properties.nome;
+      });
+      const feats = (window._estado || { features:[] }).features.map(f => {
+        const m = byId[f.properties.celesc_id] || {};
+        return { type:'Feature',
+                 geometry:f.geometry,
+                 properties:Object.assign({}, f.properties, {
+                   nome: nome90[f.properties.celesc_id] || m.nome || f.properties.nome,
+                   classe:m.classe||0, sem_energia:m.sem_energia||0, total:m.total||0,
+                   pct:m.pct||0, acidentais:m.acidentais||0, programados:m.programados||0,
+                   raio: !!m.raio }) };
+      });
+      if (map.getSource('celesc')) map.getSource('celesc').setData({ type:'FeatureCollection', features:feats });
+      _celescUpdated = fmtDt(cel.updated) || '';
+      const tEl = document.getElementById('celesc-time');
+      if (tEl) tEl.textContent = _celescUpdated || '';
+      const sEl = document.getElementById('celesc-sum');
+      if (sEl && cel.visao_geral) {
+        const v = cel.visao_geral;
+        sEl.innerHTML = '<b>'+v.sem_energia.toLocaleString('pt-BR')+'</b> unidades consumidoras sem energia de <b>'
+          + v.total_uc.toLocaleString('pt-BR')+'</b> ('+String(v.pct_sem).replace('.',',')+'%) em <b>'
+          + v.cidades_com_corte+'</b> cidades';
+      }
+      // tabela por regional (divisão oficial da CELESC)
+      const upd = document.getElementById('celreg-upd');
+      if (upd) upd.textContent = _celescUpdated || '';
+      const rowsEl = document.getElementById('celreg-rows');
+      if (rowsEl) {
+        rowsEl.innerHTML = (cel.regioes || []).map(r =>
+          '<tr><td class="cr-reg" title="'+r.nome+'">'+r.nome+'</td>'
+          +'<td class="cr-cid">'+r.cidades+'</td>'
+          +'<td class="cr-uc">'+r.total_uc.toLocaleString('pt-BR')+'</td>'
+          +'<td class="cr-sem">'+r.sem_energia.toLocaleString('pt-BR')+'</td>'
+          +'<td class="cr-pct" style="color:'+celCorFor(r.pct_sem)+'">'+String(r.pct_sem).replace('.',',')+'%</td></tr>'
+        ).join('');
+      }
+      const ftEl = document.getElementById('celreg-ft');
+      if (ftEl && cel.visao_geral) {
+        const v = cel.visao_geral;
+        ftEl.innerHTML = '<span><b>SC · '+v.total_uc.toLocaleString('pt-BR')+'</b> unidades consumidoras</span>'
+          +'<span><b>'+v.sem_energia.toLocaleString('pt-BR')+'</b> sem energia ('+String(v.pct_sem).replace('.',',')+'%)</span>';
+      }
+    } catch(e) { /* worker fora do ar: mantém o último dado pintado */ }
+  };
   const BUILDERS = {
     // Bairros + zona rural (camada base). Fill: zona rural SEMPRE verde; bairros só no hover.
     bairros: async () => {
-      const d = await (await fetch('./brusque_camadas.geojson')).json();
+      const d = await (_pre.camadas || pre('camadas', fetchJson('./brusque_camadas.geojson')));
+      if (!d) return [];
       window._camadas = d;
       map.addSource('brusque', { data:d, type:'geojson', promoteId:'nome' });
       map.addLayer({ id:'fill', type:'fill', source:'brusque',
@@ -939,7 +1091,8 @@ map.on('load', async () => {
     },
     // Estradas (rede viária OSM) — recortadas em Brusque; chip "Estradas".
     estradas: async () => {
-      const d = await (await fetch('./brusque_estradas.geojson')).json();
+      const d = await (_pre.estradas || pre('estradas', fetchJson('./brusque_estradas.geojson')));
+      if (!d) return [];
       map.addSource('estradas', { data:d, type:'geojson' });
       map.addLayer({ id:'estradas-linha', type:'line', source:'estradas',
         layout:{ 'line-join':'round', 'line-cap':'round' },
@@ -958,10 +1111,12 @@ map.on('load', async () => {
     // Também carrega TODOS os rios e ribeirões da região monitorada (OSM,
     // brusque_rios.geojson) — a bacia inteira que influencia Brusque.
     rio: async () => {
-      const d = await (await fetch('./brusque_rio.geojson')).json();
+      const d = await (_pre.rio || pre('rio', fetchJson('./brusque_rio.geojson')));
+      if (!d) return [];
       map.addSource('rio', { data:d, type:'geojson' });
       // ── Rede hidrográfica completa (rios + ribeirões nomeados da região) ──
-      const rede = await (await fetch('./brusque_rios.geojson')).json();
+      const rede = await (_pre.rede || pre('rede', fetchJson('./brusque_rios.geojson')));
+      if (!rede) return [];
       map.addSource('rios-rede', { data:rede, type:'geojson' });
       // ribeirões/canais: traço fino e discreto (base)
       map.addLayer({ id:'rios-rede-base', type:'line', source:'rios-rede',
@@ -1001,8 +1156,9 @@ map.on('load', async () => {
      // Cidades vizinhas (limites) — contorno tracejado.
      // Cidades no raio de 100 km: contorno sutil + badge de clima (90 cidades)
      // agregado num único endpoint (brusque-clima-cidades/clima.json).
-     vizinhas: async () => {
-       const d = await (await fetch('./brusque_vizinhas.geojson')).json();
+      vizinhas: async () => {
+       const d = await (_pre.vizinhas || pre('vizinhas', fetchJson('./brusque_vizinhas.geojson')));
+       if (!d) return [];
        window._vizinhas = d;
        const centroid = (geom) => { let sl=0,slat=0,n=0;
          const all = c => Array.isArray(c[0]) ? c.forEach(all) : (sl+=c[0], slat+=c[1], n++);
@@ -1012,7 +1168,7 @@ map.on('load', async () => {
          paint:{ 'line-color':'#9aa7b8', 'line-width':1.2, 'line-dasharray':[2,2], 'line-opacity':0.65 } });
 
        // ── Cidades dentro do raio de 100 km de Brusque: contorno + badge de clima.
-       const d100 = await (await fetch('./brusque_raio100.geojson')).json();
+       const d100 = await (_pre.raio100 || pre('raio100', fetchJson('./brusque_raio100.geojson')));
        if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeSource('raio100');
        map.addSource('raio100', { type:'geojson', data:d100 });
        map.addLayer({ id:'raio100-linha', type:'line', source:'raio100',
@@ -1084,7 +1240,8 @@ map.on('load', async () => {
      },
     // Pontes do Rio Itajaí-Mirim — pontos + label; clique/hover com dados.
     pontes: async () => {
-      const d = await (await fetch('./brusque_pontes.geojson')).json();
+      const d = await (_pre.pontes || pre('pontes', fetchJson('./brusque_pontes.geojson')));
+      if (!d) return [];
       map.addSource('pontes', { data:d, type:'geojson' });
       map.addLayer({ id:'pontes-pt', type:'circle', source:'pontes',
         paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,3,16,6],
@@ -1125,7 +1282,8 @@ map.on('load', async () => {
     // Níveis de alagamento (Carta Enchente 7m–15m). UMA cota por vez (combo no
     // dropdown Rio). Escala de cor suave (baixa) → grave (alta).
     niveis: async () => {
-      const d = await (await fetch('./brusque_niveis_alagamento.geojson')).json();
+      const d = await (_pre.niveis || pre('niveis', fetchJson('./brusque_niveis_alagamento.geojson')));
+      if (!d) return [];
       map.addSource('niveis', { data:d, type:'geojson' });
       // 7m água (ciano) → 15m crítico (vermelho): azul → índigo → roxo → magenta → vermelho
       const escala = ['interpolate',['linear'],['get','nivel'],
@@ -1142,19 +1300,22 @@ map.on('load', async () => {
     // Setores de risco — só adiciona a FONTE uma vez; as layers são criadas por
     // categoria pelos builders 'sr_*' (ver bloco SETORES mais abaixo).
     setores: async () => {
-      const d = await (await fetch('./brusque_setores_risco.geojson')).json();
+      const d = await (_pre.setores || pre('setores', fetchJson('./brusque_setores_risco.geojson')));
+      if (!d) return [];
       map.addSource('setores', { data:d, type:'geojson', promoteId:'setor' });
       return [];
     },
     // Rotas seguras de enchente — hierarquia por cor (6 níveis, cor vinda do KML)
     rotas: async () => {
-      const d = await (await fetch('./brusque_rotas_seguras.geojson')).json();
+      const d = await (_pre.rotas || pre('rotas', fetchJson('./brusque_rotas_seguras.geojson')));
+      if (!d) return [];
       map.addSource('rotas', { data:d, type:'geojson' });
       map.addLayer({ id:'rotas-linha', type:'line', source:'rotas',
         layout:{ 'line-join':'round','line-cap':'round' },
         paint:{ 'line-color':['get','cor'],
           'line-width':['interpolate',['linear'],['zoom'],11,1.6,14,3,17,5], 'line-opacity':0.95 } });
-      const pl = await (await fetch('./brusque_rotas_placas.geojson')).json();
+      const pl = await (_pre['rotas-placas'] || pre('rotas-placas', fetchJson('./brusque_rotas_placas.geojson')));
+      if (!pl) return ['rotas-linha'];
       map.addSource('rotas-placas', { data:pl, type:'geojson' });
       map.addLayer({ id:'rotas-placas-pt', type:'circle', source:'rotas-placas', minzoom:13,
         paint:{ 'circle-radius':4,'circle-color':'#faee0a','circle-stroke-color':'#04121c','circle-stroke-width':1.2 } });
@@ -1162,7 +1323,8 @@ map.on('load', async () => {
     },
     // Cotas de cheia (2011 + 2023) — pontos com o valor da cota. Exibição PROVISÓRIA.
     cotas: async () => {
-      const d = await (await fetch('./brusque_cotas.geojson')).json();
+      const d = await (_pre.cotas || pre('cotas', fetchJson('./brusque_cotas.geojson')));
+      if (!d) return [];
       map.addSource('cotas', { data:d, type:'geojson' });
       map.addLayer({ id:'cotas-pt', type:'circle', source:'cotas', minzoom:8.5,
         paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],9,1.5,11,2,12.5,3,16,5],
@@ -1192,7 +1354,8 @@ map.on('load', async () => {
     // Tempo real — estações fixas (CEMADEN por bairro + CMID experimentais) + dados
     // ao vivo do worker. Também alimenta o hint dos bairros (window._RT).
     tempo_real: async () => {
-      const est = await (await fetch('./brusque_estacoes.geojson')).json();
+      const est = await (_pre.estacoes || pre('estacoes', fetchJson('./brusque_estacoes.geojson')));
+      if (!est) return [];
       map.addSource('estacoes', { data:est, type:'geojson' });
       map.addLayer({ id:'estacoes-pt', type:'circle', source:'estacoes',
         paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,4,16,7],
@@ -1234,7 +1397,8 @@ map.on('load', async () => {
     // Abrigos — lista ao vivo da Defesa Civil (via worker-realtime/abrigos.json).
     // Pontos verdes (ABERTO) ou vermelhos (FECHADO); hint em card com todos os dados.
     abrigos: async () => {
-      const d = await (await fetch(ABRIGOS_URL)).json();
+      const d = await (_pre.abrigos || pre('abrigos', fetchJson(ABRIGOS_URL, { cache:'no-store' })));
+      if (!d) return [];
       const feats = (d.abrigos||[]).map(a => ({
         type:'Feature',
         geometry:{ type:'Point', coordinates:[a.lon, a.lat] },
@@ -1270,11 +1434,69 @@ map.on('load', async () => {
       map.on('mouseleave','abrigos-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       return ['abrigos-pt','abrigos-label'];
     },
+    // CELESC — UC sem energia em TODAS as cidades de SC (via worker brusque-celesc,
+    // que espelha o painel "Informa CELESC" a cada 5 min). Fill colorido pela
+    // faixa de % (verde→amarelo→âmbar→laranja→vermelho), hint com os números da
+    // cidade, legenda no canto inferior esquerdo e tabela por regional à direita.
+    // As 90 cidades do raio de 100 km ganham contorno âmbar destacado (continuam
+    // evidenciadas no zoom out; o restante do estado fica visível ao navegar).
+    celesc: async () => {
+      if (!window._estado) {
+        window._estado = await (_pre.estado || pre('estado', fetchJson('./brusque_celesc_estado.geojson')));
+        window._raio100 = await (_pre.raio100 || pre('raio100', fetchJson('./brusque_raio100.geojson')));
+      }
+      if (!map.getSource('celesc')) {
+        map.addSource('celesc', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+      }
+      if (!map.getLayer('celesc-fill')) {
+        map.addLayer({ id:'celesc-fill', type:'fill', source:'celesc',
+          paint:{ 'fill-color':['match',['get','classe'],
+                    2,'#FFEB3B',3,'#FFB300',4,'#FF6D00',5,'#E53935',1,'#00E676','#8a97a8'],
+                  'fill-opacity':0.55 } });
+        map.addLayer({ id:'celesc-linha', type:'line', source:'celesc',
+          paint:{ 'line-color':'#FFB300', 'line-width':0.6, 'line-opacity':0.28 } });
+        // destaque das 90 cidades do raio (contorno âmbar tracejado)
+        map.addLayer({ id:'celesc-raio', type:'line', source:'celesc', filter:['==',['get','raio'],true],
+          paint:{ 'line-color':'#FFB300', 'line-width':1.1, 'line-opacity':0.6, 'line-dasharray':[2,1] } });
+      }
+      let _celHov = null;   // celesc_id em hover — só re-renderiza o card se mudar
+      map.on('mousemove','celesc-fill',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties;
+        const hc=showHint('celesc');
+        hc.style.left=e.point.x+'px'; hc.style.top=e.point.y+'px';
+        if (_celHov === p.celesc_id) return;   // mesmo município: só move o card
+        _celHov = p.celesc_id;
+        const cor=CELESC_CORES[p.classe]||'#8a97a8';
+        const pct=(p.pct!=null)?String(p.pct).replace('.',',')+'%':'—';
+        const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
+          +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+        const h=
+          '<div class="cel-head">'
+            +'<div><div class="cel-tit">'+p.nome+'</div>'
+              +'<span class="cel-faixa" style="background:'+cor+'">'+(CELESC_FAIXA[p.classe]||'')+'</span>'
+              +(p.regional?'<div style="font-size:8.5px;color:#8a97a8;margin-top:3px;letter-spacing:.2px">Regional '+p.regional+'</div>':'')
+            +'</div>'
+            +'<img class="cel-logo" src="./celesc_logo.png" alt="CELESC">'
+          +'</div>'
+          +'<div class="cel-big">'+pct+' <small>sem energia</small></div>'
+          + row('Unidades consumidoras sem energia', (p.sem_energia||0).toLocaleString('pt-BR'))
+          + row('Total de unidades consumidoras', (p.total||0).toLocaleString('pt-BR'), 'sub')
+          + row('Desligamentos acidentais', (p.acidentais||0).toLocaleString('pt-BR'), 'sub')
+          + row('Desligamentos programados', (p.programados||0).toLocaleString('pt-BR'), 'sub')
+          +'<div class="cel-foot"><span>'+( _celescUpdated||'')+'</span><span><b>CELESC</b> · tempo real</span></div>';
+        hc.innerHTML=h;
+      });
+      map.on('mouseleave','celesc-fill',()=>{ map.getCanvas().style.cursor=''; _celHov=null; hideAllHints(); });
+      refreshCelesc();
+      return ['celesc-fill','celesc-linha','celesc-raio'];
+    },
     // Nível do rio — Defesa Civil de SC (via worker brusque-rios → GraphQL).
     // Estações fluviométricas do Itajaí-Mirim (Brusque, Guabiruba, Botuverá).
     // Toda estação vira marcador; sem dado em tempo real → marcador cinza.
     rios: async () => {
-      const d = await (await fetch(RIOS_URL)).json();
+      const d = await (_pre.rios || pre('rios', fetchJson(RIOS_URL, { cache:'no-store' })));
+      if (!d) return [];
       const feats = (d.rios || []).map(r => ({
         type: 'Feature',
         geometry: { type:'Point', coordinates:[r.lon, r.lat] },
@@ -1320,7 +1542,7 @@ map.on('load', async () => {
       if (!map.getSource('voos-circulo')) {
         map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
-          paint:{ 'line-color':'#FFD54F', 'line-width':1.4, 'line-dasharray':[2,2], 'line-opacity':0.75 } });
+          paint:{ 'line-color':'#E53935', 'line-width':3, 'line-dasharray':[4,2], 'line-opacity':0.95 } });
         // varredura de radar (estética) — fonte + linha/esteira animadas (verde Matrix)
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
@@ -1473,7 +1695,8 @@ map.on('load', async () => {
         hv.innerHTML = h;
       };
       if (!map.getSource('voos-infra')) {
-        const infra = await (await fetch('./brusque_aerodromos.geojson')).json();
+        const infra = await (_pre.infra || pre('infra', fetchJson('./brusque_aerodromos.geojson')));
+        if (!infra) return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
         map.addSource('voos-infra', { data:infra, type:'geojson' });
         // guarda as posições da infra p/ a varredura pingar em branco (eco fixo)
         _infraPos = (infra.features || [])
@@ -1536,13 +1759,18 @@ map.on('load', async () => {
       return ['radar','regiao-linha'];
     },
     // Indicadores (5+ métricas em tempo real) — Open-Meteo, mesmo endpoint do selo.
-    indicadores: async () => { await loadWx(true); return []; },
+    // O clima já roda na abertura e a cada 5 min; aqui só pinta o painel.
+    indicadores: async () => {
+      if (_wx) { paintWeather(); paintWxPanel(); } else loadWx();
+      return [];
+    },
     // Índice ENSO (Niño 3.4) — NOAA CPC via worker brusque-clima. Gauge com
     // gradação La Niña → Neutro → El Niño e marcador na posição atual.
     enso: async () => {
       const val = document.getElementById('enso-val');
       try {
-        const d = await (await fetch(ENSO_URL)).json();
+        const d = await (_pre.enso || pre('enso', fetchJson(ENSO_URL, { cache:'no-store' })));
+        if (!d) throw 0;
         const pct = Math.max(0, Math.min(100, (d.valor + 3) / 6 * 100));
         const bar = document.getElementById('enso-bar');
         bar.style.background = 'linear-gradient(to right, #2471A3 0%, #5DADE2 22%, #2ECC71 40%, #F1C40F 50%, #E67E22 58%, #E74C3C 72%, #922B21 100%)';
@@ -1558,9 +1786,8 @@ map.on('load', async () => {
     chuvaacum: async () => {
       const val = document.getElementById('chuva-val');
       try {
-        const f = (x) => x.toISOString().slice(0,10);
-        const fim = new Date(), ini = new Date(Date.now() - 30*864e5);
-        const d = await (await fetch('https://archive-api.open-meteo.com/v1/archive?latitude=-27.1&longitude=-48.9&daily=precipitation_sum&start_date='+f(ini)+'&end_date='+f(fim))).json();
+        const d = await (_pre.chuvaacum || pre('chuvaacum', fetchJson('https://archive-api.open-meteo.com/v1/archive?latitude=-27.1&longitude=-48.9&daily=precipitation_sum&start_date='+f30(new Date(Date.now()-30*864e5))+'&end_date='+f30(new Date()))));
+        if (!d) throw 0;
         const total = (d.daily.precipitation_sum||[]).reduce((a,x)=>a+(x||0),0);
         const max = 300, pct = Math.max(0, Math.min(100, total/max*100));
         const bar = document.getElementById('chuva-bar');
@@ -1577,7 +1804,8 @@ map.on('load', async () => {
     soloum: async () => {
       const val = document.getElementById('solo-val');
       try {
-        const d = await (await fetch('https://api.open-meteo.com/v1/forecast?latitude=-27.1&longitude=-48.9&current=soil_moisture_0_to_1cm,soil_moisture_7_to_28cm')).json();
+        const d = await (_pre.soloum || pre('soloum', fetchJson('https://api.open-meteo.com/v1/forecast?latitude=-27.1&longitude=-48.9&current=soil_moisture_0_to_1cm,soil_moisture_7_to_28cm')));
+        if (!d) throw 0;
         const sup = d.current.soil_moisture_0_to_1cm, prof = d.current.soil_moisture_7_to_28cm;
         const pct = Math.max(0, Math.min(100, sup/0.5*100));
         const bar = document.getElementById('solo-bar');
@@ -1598,6 +1826,52 @@ map.on('load', async () => {
   const RIOS_URL = 'https://brusque-rios.marcososx.workers.dev/rios.json';
   const VOOS_URL = 'https://brusque-voos.marcososx.workers.dev/voos.json';
   const ENSO_URL = 'https://brusque-clima.marcososx.workers.dev/enso.json';
+  const CELESC_URL = 'https://brusque-celesc.marcososx.workers.dev/celesc.json';
+
+  // ── Pré-carga (cache) dos dados das camadas ─────────────────────────────────
+  // Tudo é buscado em background logo após o mapa pintar e os dados vivos são
+  // revalidados a cada 5 min — abrir qualquer camada (bairros, rio, cotas,
+  // CELESC, indicadores, abrigos, nível do rio…) fica instantâneo porque o dado
+  // já está em memória. Os builders fazem `await _pre.<chave>`.
+  const fetchJson = async (u, o) => (await fetch(u, o)).json();
+  const f30 = (x) => x.toISOString().slice(0,10);
+  const _pre = {};
+  const pre = (key, p) => {
+    _pre[key] = (p && p.catch) ? p.catch(() => null) : Promise.resolve(p);
+    return _pre[key];
+  };
+  const prefetchAll = () => {
+    // malhas/geoestáticos — baixados uma vez e reutilizados
+    pre('camadas',  fetchJson('./brusque_camadas.geojson'));
+    pre('estradas', fetchJson('./brusque_estradas.geojson'));
+    pre('rio',      fetchJson('./brusque_rio.geojson'));
+    pre('rede',     fetchJson('./brusque_rios.geojson'));
+    pre('vizinhas', fetchJson('./brusque_vizinhas.geojson'));
+    pre('raio100',  fetchJson('./brusque_raio100.geojson'));
+    pre('estado',   fetchJson('./brusque_celesc_estado.geojson'));
+    pre('cotas',    fetchJson('./brusque_cotas.geojson'));
+    pre('niveis',   fetchJson('./brusque_niveis_alagamento.geojson'));
+    pre('rotas',    fetchJson('./brusque_rotas_seguras.geojson'));
+    pre('rotas-placas', fetchJson('./brusque_rotas_placas.geojson'));
+    pre('pontes',   fetchJson('./brusque_pontes.geojson'));
+    pre('setores',  fetchJson('./brusque_setores_risco.geojson'));
+    pre('estacoes', fetchJson('./brusque_estacoes.geojson'));
+    pre('infra',    fetchJson('./brusque_aerodromos.geojson'));
+    // dados vivos (workers/APIs) — revalidados a cada 5 min
+    pre('abrigos',  fetchJson(ABRIGOS_URL, { cache:'no-store' }));
+    pre('rios',     fetchJson(RIOS_URL, { cache:'no-store' }));
+    pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
+    pre('chuvaacum', fetchJson('https://archive-api.open-meteo.com/v1/archive?latitude=-27.1&longitude=-48.9&daily=precipitation_sum&start_date='+f30(new Date(Date.now()-30*864e5))+'&end_date='+f30(new Date())));
+    pre('soloum',   fetchJson('https://api.open-meteo.com/v1/forecast?latitude=-27.1&longitude=-48.9&current=soil_moisture_0_to_1cm,soil_moisture_7_to_28cm'));
+  };
+  // roda logo após o mapa pintar (não compete com o render inicial)
+  setTimeout(prefetchAll, 800);
+  // revalida os dados vivos a cada 5 min (sempre prontos pra mostrar em tela)
+  setInterval(() => {
+    pre('abrigos',  fetchJson(ABRIGOS_URL, { cache:'no-store' }));
+    pre('rios',     fetchJson(RIOS_URL, { cache:'no-store' }));
+    pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
+  }, 5*60*1000);
   const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 
@@ -1746,7 +2020,9 @@ map.on('load', async () => {
         }
       } },
     { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros' },
-    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true },
+    // Clima: marcar mantém o zoom onde está; desmarcar volta à visão inicial.
+    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true,
+      onToggle: (on) => { if (!on) goHome(); } },
     { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'] },
     { id:'estradas', label:'Estradas', on:false, color:'#cbb287', build:'estradas' },
     { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', layers:['trafego'] },
@@ -1783,7 +2059,8 @@ map.on('load', async () => {
         if (on) {
           _radarStart();
           // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga
-          // o satélite JUNTO (contexto de imagem). Performance garantida por:
+          // o Esri World Topo JUNTO (mapa + relevo, sem satélite — como o
+          // FlightRadar24). Performance garantida por:
           //  1) radar usa cache em memória (_voosPos), não querySourceFeatures
           //     a cada frame; 2) fitBounds mais curto (1.6 s) = menos zooms
           //     intermediários baixando tiles do raster.
@@ -1791,6 +2068,7 @@ map.on('load', async () => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
+          // liga o satélite JUNTO (contexto de imagem)
           const sat = MAPA.find(m => m.id === 'satelite');
           if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
@@ -1825,9 +2103,30 @@ map.on('load', async () => {
         } else {
           _radarStop();
           hidePanel('voospanel'); hidePanel('voosleg');
-          // se o satélite foi ligado pelo atraso acima, desliga junto com o voos
+          // se o satélite foi ligado junto com o voos, desliga junto
           const sat = MAPA.find(m => m.id === 'satelite');
           if (sat && sat.on) { sat.on = false; if (sat.paint) sat.paint(); }
+          goHome();   // desmarcar Voos → volta à visão inicial
+        }
+      } },
+    // CELESC — UC sem energia nas 90 cidades do raio de 100 km (via worker).
+    // Atualiza a cada 5 min enquanto ligado (mesma cadência do painel da CELESC).
+    { id:'celesc', label:'CELESC', on:false, color:'#FFB300', build:'celesc',
+      onToggle: (on) => {
+        clearInterval(_celescTimer); _celescTimer = null;
+        if (on) {
+          showPanel('celelegend'); showPanel('celregpanel');
+          refreshCelesc();
+          _celescTimer = setInterval(refreshCelesc, 5*60*1000);
+          // enquadra o raio de 100 km (mesmo comportamento da camada de Voos);
+          // o usuário pode dar zoom out para ver o estado inteiro
+          const c = _cirFeat().geometry.coordinates[0];
+          const bb = new maplibregl.LngLatBounds();
+          c.forEach(([lo, la]) => bb.extend([lo, la]));
+          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
+        } else {
+          hidePanel('celelegend'); hidePanel('celregpanel');
+          goHome();   // desmarcar CELESC → volta à visão inicial
         }
       } },
     { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
@@ -1851,7 +2150,7 @@ map.on('load', async () => {
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
     { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
       onToggle: async (on) => {
-        if (on) { await ensureBuilt('niveis'); selectNivel(document.getElementById('nivelrange').value || '10'); }
+        if (on) { await ensureBuilt('niveis'); selectNivel(document.getElementById('nivelrange').value || '10'); goHome(); }
         else selectNivel('');
       } },
     { id:'rotas', label:'Rotas seguras', on:false, color:'#0F9D58', build:'rotas' },
@@ -2105,7 +2404,10 @@ map.on('load', async () => {
   const home = new maplibregl.LngLatBounds();
   const eachHome = c => Array.isArray(c[0]) ? c.forEach(eachHome) : home.extend(c);
   muni.features.forEach(f => eachHome(f.geometry.coordinates));
-  // contorno de Brusque surge junto com o zoom (fade-in da linha)
+  // contorno de Brusque surge junto com o zoom (fade-in da linha + casing preto)
+  map.setPaintProperty('municipio-casing', 'line-opacity', 0);
+  map.setPaintProperty('municipio-casing', 'line-opacity-transition', { duration: 2400, delay: 120 });
+  map.setPaintProperty('municipio-casing', 'line-opacity', 0.85);
   map.setPaintProperty('municipio-linha', 'line-opacity', 0);
   map.setPaintProperty('municipio-linha', 'line-opacity-transition', { duration: 2400, delay: 120 });
   map.setPaintProperty('municipio-linha', 'line-opacity', 1);
@@ -2118,9 +2420,12 @@ map.on('load', async () => {
     setTimeout(() => { _openDone = true; updateBadge(); }, 2500);
   }, 250);
 
-  // Zoom-out liberado: cobre SC quase inteiro (~1,6x o raio) — permite ver as
-  // cidades do raio de 100 km e navegar com folga sem travar.
-  map.setMaxBounds([[-53.2,-30.9],[-44.6,-23.2]]);
+  // Zoom-out liberado com MARGEM LARGA ao redor de SC. O maxBounds precisa ser
+  // bem mais largo que alto (maior que a proporção da tela) senão o MapLibre
+  // TRAVA o pan HORIZONTAL quando o estado inteiro cabe na vertical (a largura
+  // visível ultrapassa os limites). 27°×13° garante pan livre em todas as
+  // direções até em monitores grandes.
+  map.setMaxBounds([[-62,-33],[-35,-20]]);
 
   // Clique num bairro (só quando visível) → enquadra; clicar de novo / dar zoom no scroll → volta
   let focused = false;

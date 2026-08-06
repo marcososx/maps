@@ -1,0 +1,13 @@
+{
+  "name": "brusque-celesc",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: situação de energia da CELESC (UC sem energia) nas 90 cidades no raio de 100 km de Brusque",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

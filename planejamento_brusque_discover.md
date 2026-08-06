@@ -205,6 +205,24 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   cidades (`raio100-label`), sem badges de clima (seriam ~90 consultas Open-Meteo).
 - Base para a futura camada que o Marcos vai criar usando essas cidades.
 
+### 7.4d CELESC — UC sem energia em TODO o estado de SC (dropdown "Tempo Real")  (06/08/2026)
+- Worker **`brusque-celesc`** — **Informa CELESC** (`celgeoweb.celesc.com.br`, sem chave) via proxy
+  (o site não manda CORS). Lê `json/mapa.js` (por município: total + "sem energia") e
+  `json/tabelas.js` (acidentais/programados por cidade/bairro), calcula o **%** e devolve
+  **todos os ~325 municípios de SC** (e borda PR/RS). Endpoint: `/celesc.json` (cache 5 min, CORS).
+- Camada **"CELESC"** no dropdown Tempo Real:
+  - **Fill do estado inteiro** (`brusque_celesc_estado.geojson`, da malha oficial da CELESC com
+    `regional_id`) pintado por **faixa de % de UC sem energia**: verde 0–5% → amarelo 5–15% →
+    âmbar 15–30% → laranja 30–50% → vermelho >50%. **Círculo de 100 km** marca o raio de Brusque
+    e as **90 cidades do raio** têm contorno âmbar destacado — ao ativar, enquadra o raio; o
+    usuário dá zoom out e navega por todo o estado.
+  - **Tabela por regional** (`#celregpanel`): card compacto com as **16 regionais oficiais da
+    CELESC** (cidades, UCs, sem energia, %) com o % colorido pela escala verde→vermelho.
+  - **Hint** no hover com logo da CELESC, percentual em destaque, faixa, "Regional · ..." e
+    números com "unidades consumidoras" por extenso; **legenda** com as 5 faixas + resumo de SC.
+  - **Atualiza a cada 5 min** enquanto ligada (mesma cadência da fonte — **real-time não faz
+    sentido**: o painel da CELESC não muda mais rápido que isso).
+
 ### 7.4b Voos em tempo real — dropdown "Tempo Real" (05/08/2026)
 - Worker **`brusque-voos`** — **Airplanes.live** ADS-B (REST, sem chave, 1 req/s), consulta por
   ponto central (**Brusque** -27.0977/-48.9172) + raio e **filtro ≤ 100 km** (haversine).
@@ -260,6 +278,7 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 | brusque-trafego | `worker-trafego/` | `.../traffic/{z}/{x}/{y}.png` | trânsito TomTom |
 | **brusque-rios** | `worker-rios/` | `.../rios.json` | **Defesa Civil SC** (GraphQL público, sem segredo) — níveis de rio ao vivo |
 | **brusque-voos** | `worker-voos/` | `.../voos.json` | **Airplanes.live ADS-B** (sem chave) — voos em tempo real na região |
+| **brusque-celesc** | `worker-celesc/` | `.../celesc.json` | **Informa CELESC** (proxy; o site não manda CORS) — UC sem energia nas 90 cidades do raio |
 | **brusque-clima** | `worker-clima/` | `.../enso.json` | ENSO Niño 3.4 (NOAA CPC) |
 | brusque-crise / -admin | `worker-crise/`, `worker-crise-admin/` | — | feed de crise |
 
@@ -278,6 +297,10 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
    e NOAA via worker — todos gratuitos/sem API key (o NOAA não tem CORS → passa pelo `brusque-clima`).
 
 ### 7.7 Pendências conhecidas
+- ~~Monitoramento CELESC (UC sem energia)~~ → **feito (06/08/2026):** camada **"CELESC"** no
+  dropdown Tempo Real com **todo o estado de SC** via `worker-celesc` (Informa CELESC,
+  cache 5 min). Cores por faixa de % (verde 0–5% → vermelho >50%), **tabela por regional**,
+  círculo de 100 km e destaque das 90 cidades do raio.
 - ~~Telemetria da BRUSQUE (PCD) parada~~ → **resolvido (05/08/2026):** camada "Nível do rio"
   agora lê a rede da Defesa Civil de SC (Brusque 1,10 m, Guabiruba 24,76 m, Botuverá 2,52 m —
   última leitura horária, atualizada). O worker `brusque-rios` não depende mais da ANA.
