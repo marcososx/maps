@@ -931,15 +931,10 @@ map.on('load', async () => {
 
        // ── Cidades dentro do raio de 100 km de Brusque: contorno + badge de clima.
        const d100 = await (await fetch('./brusque_raio100.geojson')).json();
-       if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeLayer('raio100-label'), map.removeSource('raio100');
+       if (map.getSource('raio100')) map.removeLayer('raio100-linha'), map.removeSource('raio100');
        map.addSource('raio100', { type:'geojson', data:d100 });
        map.addLayer({ id:'raio100-linha', type:'line', source:'raio100',
          paint:{ 'line-color':'#8a97a8', 'line-width':0.9, 'line-dasharray':[2,4], 'line-opacity':0.4 } });
-       map.addLayer({ id:'raio100-label', type:'symbol', source:'raio100', minzoom:9,
-         layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
-                  'text-size':9, 'text-offset':[0,0.4], 'text-anchor':'center', 'text-optional':true,
-                  'text-allow-overlap':false },
-         paint:{ 'text-color':'#7f8da0','text-halo-color':'#0B0E14','text-halo-width':1.2 } });
 
        // clima de TODAS as cidades do raio (90) — 1 requisição ao worker agregador
        let wxMap = {};
@@ -1003,7 +998,7 @@ map.on('load', async () => {
        map.on('zoom', vizScale);
        vizScale();
        window._setVizWx = (on) => vizWx.forEach(v => { v.el.style.display = on ? '' : 'none'; });
-       return ['vizinhas-linha','raio100-linha','raio100-label'];
+       return ['vizinhas-linha','raio100-linha'];
      },
     // Pontes do Rio Itajaí-Mirim — pontos + label; clique/hover com dados.
     pontes: async () => {
@@ -1629,11 +1624,8 @@ map.on('load', async () => {
     { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas',
       onToggle: (on) => {
         if (window._setVizWx) window._setVizWx(on);
-        // o badge de clima já mostra o nome da cidade → esconde o label de texto
-        // do MapLibre (raio100-label) para não duplicar o nome ao lado do badge
-        if (map.getLayer('raio100-label')) {
-          map.setLayoutProperty('raio100-label', 'visibility', on ? 'none' : 'visible');
-        }
+        // (a camada de texto com o nome das cidades foi REMOVIDA — o badge de
+        // clima já mostra o nome; nenhum gatilho consegue religá-lo)
         // ao ATIVAR: enquadra as cidades que fazem divisa com Brusque, para o
         // usuário ver os limites e saber que pode navegar além (raio de 100 km).
         if (on && window._vizinhas) {
