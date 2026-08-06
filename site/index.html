@@ -209,6 +209,19 @@
   .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
   /* painel Voos: contagem + lista de aeronaves no raio de 100 km */
   #voospanel{ max-width:288px; }
+  /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
+  #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
+            width:max-content; max-width:calc(100vw - 28px); margin:0; }
+  #voosleg.show{ display:block; }
+  .vl-row{ display:flex; align-items:center; gap:9px; margin:7px 0; }
+  .vl-mk{ flex:0 0 22px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+  .vl-dot{ flex:0 0 auto; display:block; width:var(--r); height:var(--r); border-radius:50%; background:var(--c);
+           box-shadow:0 0 0 1.5px #04121c, 0 0 8px var(--c); }
+  .vl-plane{ color:#FFD54F; font-size:15px; line-height:1; text-shadow:0 0 6px rgba(255,213,79,.7); }
+  .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
+  .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
+  .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
+  .vl-sep{ height:1px; background:rgba(255,255,255,.08); margin:9px 0 4px; }
   .voo-count{ font-size:10px; color:#8a97a8; margin:6px 0 8px; }
   .voo-count b{ color:#ffd54f; font:700 14px ui-monospace,Space Mono,monospace; }
   .voo-list{ max-height:560px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
@@ -314,7 +327,7 @@
 <div id="hint-voos"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
-  <input id="nivelrange" type="range" min="7" max="15" step="1" value="10">
+  <input id="nivelrange" type="range" min="7" max="15" step="0.5" value="10">
   <span class="nb-cap">nível do rio</span>
 </div>
 
@@ -373,6 +386,15 @@
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
     <div class="voo-count" id="voos-count">carregando…</div>
     <div class="voo-list" id="voos-list"></div>
+  </div>
+
+  <!-- Legenda da infra aeronáutica (aparece junto com a camada Voos) -->
+  <div id="voosleg" class="wpanel">
+    <div class="p-head"><b>Legenda</b></div>
+    <div class="vl-row"><span class="vl-mk vl-plane">✈</span><span class="vl-txt"><b>Aeronave</b></span></div>
+    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#FFD54F;--r:9px"></i></span><span class="vl-txt"><b>Aeroporto</b></span></div>
+    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#ffb300;--r:7px"></i></span><span class="vl-txt"><b>Aeródromo</b></span></div>
+    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#8fd8a8;--r:5px"></i></span><span class="vl-txt"><b>Heliponto</b></span></div>
   </div>
 </div>
 
@@ -714,7 +736,7 @@ map.on('load', async () => {
     return [lo*180/Math.PI, la*180/Math.PI];
   };
   let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0, _sweepPrev = 0;
-  const _RADAR_ROT = 6400, _RADAR_TURNS = 1;   // 6,4 s/volta (20% mais rápida), só 1 volta
+  const _RADAR_ROT = 5120, _RADAR_TURNS = 1;   // 5,12 s/volta (20% mais rápida que os 6,4 s), só 1 volta
   // ângulo de um ponto qualquer em relação ao centro (0 = norte, sentido horário) —
   // mesmo critério do _radarPt, usado pra saber quando a varredura passa por um avião
   const _bearingTo = (lon, lat) => {
@@ -724,22 +746,45 @@ map.on('load', async () => {
     const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
     return (Math.atan2(y, x) + 2*Math.PI) % (2*Math.PI);
   };
-  let _blips = [];   // flashes de radar primário: { lon, lat, born }
+  let _blips = [];   // flashes de radar primário: { lon, lat, born, w } (w=1 → branco: infra fixa)
   const _BLIP_TTL = 1000, _BLIP_STEPS = 14;
   // posições atuais dos voos EM MEMÓRIA (atualizadas no setVoos) — o radar
   // usa isso em vez de querySourceFeatures('voos') a cada frame (que é caro
   // e engasgava a abertura junto com o raster do satélite)
   let _voosPos = [];
+  // posições fixas da infra aeronáutica (aeroportos/aeródromos/helipontos) —
+  // a varredura pinga elas em BRANCO (eco de radar secundário), igual faz com
+  // os aviões em verde. Preenchido uma vez ao carregar 'voos-infra'.
+  let _infraPos = [];
   const _radarStep = (ts) => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
     const t = ts - _sweepT0;
-    if (t > _RADAR_ROT * _RADAR_TURNS) { _radarStop(); return; }   // fim da varrida → para
+    // ── fase de SAÍDA: a régua completou a volta. Em vez de cortar tudo de uma
+    // vez (ficava "seco"), a linha some e os ecos restantes apagam no próprio
+    // tempo (TTL) — o rastro do radar respira até o último ping sumir.
+    if (t > _RADAR_ROT * _RADAR_TURNS) {
+      _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
+      if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0);
+      if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0);
+      const tail = _blips.map(x => ({ type:'Feature',
+        properties:{ a:(ts - x.born) / _BLIP_TTL, k: x.w ? 'i' : 'v' },
+        geometry:{ type:'Point', coordinates:[x.lon, x.lat] } }));
+      map.getSource('voos-radar').setData({ type:'FeatureCollection', features:tail });
+      if (!_blips.length) { _radarStop(); return; }
+      _sweepRaf = requestAnimationFrame(_radarStep);
+      return;
+    }
     const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
     const volta = Math.floor(t / _RADAR_ROT);
-    // radar primário: quando a varredura cruza o rumo de um avião → flash no ponto
+    // radar primário: quando a varredura cruza o rumo de um avião → flash VERDE no ponto
     for (const c of _voosPos) {
       const b = _bearingTo(c[0], c[1]);
       if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts });
+    }
+    // radar secundário: a varredura também pinga a infra fixa → flash BRANCO
+    for (const c of _infraPos) {
+      const b = _bearingTo(c[0], c[1]);
+      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, w:1 });
     }
     _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
     const edge = _radarPt(ang);
@@ -753,14 +798,17 @@ map.on('load', async () => {
     ];
     for (const x of _blips) {
       const age = (ts - x.born) / _BLIP_TTL;
-      feats.push({ type:'Feature', properties:{ a:age },
+      feats.push({ type:'Feature', properties:{ a:age, k: x.w ? 'i' : 'v' },
         geometry:{ type:'Point', coordinates:[x.lon, x.lat] } });
     }
     map.getSource('voos-radar').setData({ type:'FeatureCollection', features:feats });
-    // fade out no fim da volta: de 270° (1.5π) até 360°/topo (2π) a varredura some
+    // fade out no fim da volta: de 225° (1.25π) até 360°/topo (2π) a varredura
+    // some com curva ease-out (some devagar no começo e "assenta" no fim) —
+    // saída macia em vez de corte seco
     let op = 1;
-    if (volta === _RADAR_TURNS - 1 && ang > 1.5 * Math.PI) {
-      op = Math.max(0, (2 * Math.PI - ang) / (0.5 * Math.PI));
+    if (volta === _RADAR_TURNS - 1 && ang > 1.25 * Math.PI) {
+      const x = Math.max(0, (2 * Math.PI - ang) / (0.75 * Math.PI)); // 1→0
+      op = x * x; // ease-out no apagar
     }
     if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 1 * op);
     if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0.1 * op);
@@ -1279,13 +1327,13 @@ map.on('load', async () => {
       if (!map.getLayer('voos-blip-halo')) map.addLayer({ id:'voos-blip-halo', type:'circle', source:'voos-radar',
         filter:['==',['geometry-type'],'Point'],
         paint:{ 'circle-radius':['interpolate',['linear'],['get','a'],0,16,1,58],
-                'circle-color':'#00E676',
+                'circle-color':['match',['get','k'],'i','#FFFFFF','#00E676'],
                 'circle-opacity':['interpolate',['linear'],['get','a'],0,0.28,1,0],
                 'circle-blur':0.9 } });
       if (!map.getLayer('voos-blip')) map.addLayer({ id:'voos-blip', type:'circle', source:'voos-radar',
         filter:['==',['geometry-type'],'Point'],
         paint:{ 'circle-radius':['interpolate',['linear'],['get','a'],0,5,1,16],
-                'circle-color':'#00E676',
+                'circle-color':['match',['get','k'],'i','#FFFFFF','#00E676'],
                 'circle-opacity':['interpolate',['linear'],['get','a'],0,0.65,1,0],
                 'circle-blur':0.3 } });
       // hover no avião → hint no padrão das pontes (#hint-voos)
@@ -1384,6 +1432,10 @@ map.on('load', async () => {
       if (!map.getSource('voos-infra')) {
         const infra = await (await fetch('./brusque_aerodromos.geojson')).json();
         map.addSource('voos-infra', { data:infra, type:'geojson' });
+        // guarda as posições da infra p/ a varredura pingar em branco (eco fixo)
+        _infraPos = (infra.features || [])
+          .filter(f => f.geometry && f.geometry.type === 'Point')
+          .map(f => f.geometry.coordinates);
         // aeroportos públicos (maiores) — ponto maior + label
         map.addLayer({ id:'voos-infra-aeroporto', type:'circle', source:'voos-infra',
           filter:['==',['get','tipo'],'aeroporto'],
@@ -1538,9 +1590,10 @@ map.on('load', async () => {
   let _hovSetor = null;
   const ensureBuilt = async (key) => { if(!_built[key]) _built[key] = await BUILDERS[key](); return _built[key]; };
   // Níveis de alagamento: mostra UMA cota por vez (combo). '' = nenhuma.
+  // Os níveis agora têm meios-termos (7, 7.5, 8, …) — usa float, não int.
   async function selectNivel(v){
     await ensureBuilt('niveis');
-    const n = v ? parseInt(v,10) : -1;
+    const n = v ? parseFloat(String(v).replace(',', '.')) : -1;
     map.setFilter('niveis-fill', ['==',['get','nivel'],n]);
     map.setFilter('niveis-linha', ['==',['get','nivel'],n]);
     // sincroniza a UI: combo do dropdown + slider fixo (aparece só com nível escolhido)
@@ -1712,7 +1765,7 @@ map.on('load', async () => {
               renderVoosList(r);
             } catch(e) {}
           }, 2000);
-          showPanel('voospanel');
+          showPanel('voospanel'); showPanel('voosleg');
           // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela) —
           // mais curto para reduzir a janela de download do satélite
           const c = _cirFeat().geometry.coordinates[0];
@@ -1721,7 +1774,7 @@ map.on('load', async () => {
           map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
         } else {
           _radarStop();
-          hidePanel('voospanel');
+          hidePanel('voospanel'); hidePanel('voosleg');
           // se o satélite foi ligado pelo atraso acima, desliga junto com o voos
           const sat = MAPA.find(m => m.id === 'satelite');
           if (sat && sat.on) { sat.on = false; if (sat.paint) sat.paint(); }
