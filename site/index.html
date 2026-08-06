@@ -94,6 +94,7 @@
   #hint-voos .hv-logo{ display:flex; align-items:center; gap:8px; margin-bottom:7px;
         padding-bottom:6px; border-bottom:1px solid rgba(255,213,79,.18); }
   #hint-voos .hv-logo img{ height:22px; max-width:110px; object-fit:contain; }
+  #hint-voos .hv-logo svg{ width:28px; height:28px; flex:0 0 auto; }
   #hint-voos .hv-logo .hv-callsign{ font:700 12px ui-monospace,Space Mono,monospace; color:#eaf6ff;
         letter-spacing:.4px; margin-left:auto; text-align:right; }
   /* rota: origem ───► destino (neon) */
@@ -133,12 +134,12 @@
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .36s ease, transform .36s ease, visibility .36s; }
   #nivelbar.show{ opacity:1; visibility:visible; transform:translateX(-50%); pointer-events:auto; }
-  /* valor do nível — branco, alinhado à esquerda, largura FIXA */
-  #nivelbar #nivellbl{ font:700 16px Inter,system-ui; color:#fff; min-width:46px;
-        text-align:left; font-variant-numeric:tabular-nums; white-space:nowrap;
-        transition:color .2s ease; }
+  /* valor do nível — branco, alinhado à esquerda, largura FIXA (se variar,
+     o slider treme: o numeral cresce e empurra a bolinha debaixo do mouse) */
+  #nivelbar #nivellbl{ font:700 16px Inter,system-ui; color:#fff; width:60px; flex:0 0 auto;
+        text-align:left; font-variant-numeric:tabular-nums; white-space:nowrap; }
   #nivelbar .nb-atual{ display:flex; align-items:baseline; gap:6px; padding-left:14px;
-        border-left:1px solid var(--border); margin-left:2px; }
+        border-left:1px solid var(--border); margin-left:2px; flex:0 0 auto; }
   #nivelbar .nb-atual .nb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase;
         letter-spacing:.5px; white-space:nowrap; }
   #nivelbar .nb-atual .nb-val{ font:700 13px Inter,system-ui; color:#fff;
@@ -157,12 +158,11 @@
           #a7d8f1 0%, #63d0ee 12.5%, #2f69ee 25%, #2c2ce8 37.5%, #763adf 50%,
           #b43ad9 62.5%, #e232be 75%, #ee2b72 87.5%, #f91010 100%); }
   #nivelrange::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px;
-        border-radius:50%; background:#eaf6ff; border:3px solid var(--nivel-cor, #e12f2f);
-        margin-top:-5px; box-shadow:0 2px 6px rgba(0,0,0,.5);
-        transition:border-color .2s ease; }
-  #nivelrange::-moz-range-thumb{ width:14px; height:14px; border-radius:50%;
-        background:#eaf6ff; border:3px solid var(--nivel-cor, #e12f2f);
-        box-shadow:0 2px 6px rgba(0,0,0,.5); transition:border-color .2s ease; }
+        border-radius:50%; background:#fff; border:3px solid #2c2ce8;
+        margin-top:-5px; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+  #nivelrange::-moz-range-thumb{ width:18px; height:18px; border-radius:50%;
+        background:#fff; border:3px solid #2c2ce8;
+        box-shadow:0 2px 6px rgba(0,0,0,.5); }
   #nivelrange:focus{ outline:none; }
   /* chips de camadas (header flutuante) */
   #chips{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:3; display:flex;
@@ -241,9 +241,8 @@
   #voosleg.show{ display:block; }
   .vl-row{ display:flex; align-items:center; gap:9px; margin:7px 0; }
   .vl-mk{ flex:0 0 22px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
-  .vl-dot{ flex:0 0 auto; display:block; width:var(--r); height:var(--r); border-radius:50%; background:var(--c);
-           box-shadow:0 0 0 1.5px #04121c, 0 0 8px var(--c); }
-  .vl-plane{ color:#FFD54F; font-size:15px; line-height:1; text-shadow:0 0 6px rgba(255,213,79,.7); }
+  .vl-ico{ color:#FFD54F; }
+  .vl-ico svg{ flex:0 0 auto; display:block; }
   .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
   .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
   .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
@@ -420,10 +419,10 @@
   <!-- Legenda da infra aeronáutica (aparece junto com a camada Voos) -->
   <div id="voosleg" class="wpanel">
     <div class="p-head"><b>Legenda</b></div>
-    <div class="vl-row"><span class="vl-mk vl-plane">✈</span><span class="vl-txt"><b>Aeronave</b></span></div>
-    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#FFD54F;--r:9px"></i></span><span class="vl-txt"><b>Aeroporto</b></span></div>
-    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#ffb300;--r:7px"></i></span><span class="vl-txt"><b>Aeródromo</b></span></div>
-    <div class="vl-row"><span class="vl-mk"><i class="vl-dot" style="--c:#8fd8a8;--r:5px"></i></span><span class="vl-txt"><b>Heliponto</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#42A5F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#42A5F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17v4"/><path d="M14 3v8a2 2 0 0 0 2 2h5.865"/><path d="M17 17v4"/><path d="M18 17a4 4 0 0 0 4-4 8 6 0 0 0-8-6 6 5 0 0 0-6 5v3a2 2 0 0 0 2 2z"/><path d="M2 10v5"/><path d="M6 3h16"/><path d="M7 21h14"/><path d="M8 13H2"/></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
   </div>
 </div>
 
@@ -775,15 +774,15 @@ map.on('load', async () => {
     const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
     return (Math.atan2(y, x) + 2*Math.PI) % (2*Math.PI);
   };
-  let _blips = [];   // flashes de radar primário: { lon, lat, born, w } (w=1 → branco: infra fixa)
+  let _blips = [];   // flashes de radar primário: { lon, lat, born, k } (k='v' avião, k='i' infra) — todos VERDES
   const _BLIP_TTL = 1000, _BLIP_STEPS = 14;
   // posições atuais dos voos EM MEMÓRIA (atualizadas no setVoos) — o radar
   // usa isso em vez de querySourceFeatures('voos') a cada frame (que é caro
   // e engasgava a abertura junto com o raster do satélite)
   let _voosPos = [];
   // posições fixas da infra aeronáutica (aeroportos/aeródromos/helipontos) —
-  // a varredura pinga elas em BRANCO (eco de radar secundário), igual faz com
-  // os aviões em verde. Preenchido uma vez ao carregar 'voos-infra'.
+  // a varredura pinga elas em VERDE, igual faz com os aviões. Preenchido uma vez
+  // ao carregar 'voos-infra'.
   let _infraPos = [];
   const _radarStep = (ts) => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
@@ -796,7 +795,7 @@ map.on('load', async () => {
       if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0);
       if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0);
       const tail = _blips.map(x => ({ type:'Feature',
-        properties:{ a:(ts - x.born) / _BLIP_TTL, k: x.w ? 'i' : 'v' },
+        properties:{ a:(ts - x.born) / _BLIP_TTL, k:x.k },
         geometry:{ type:'Point', coordinates:[x.lon, x.lat] } }));
       map.getSource('voos-radar').setData({ type:'FeatureCollection', features:tail });
       if (!_blips.length) { _radarStop(); return; }
@@ -808,12 +807,12 @@ map.on('load', async () => {
     // radar primário: quando a varredura cruza o rumo de um avião → flash VERDE no ponto
     for (const c of _voosPos) {
       const b = _bearingTo(c[0], c[1]);
-      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts });
+      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'v' });
     }
-    // radar secundário: a varredura também pinga a infra fixa → flash BRANCO
+    // radar secundário: a varredura também pinga a infra fixa → flash VERDE
     for (const c of _infraPos) {
       const b = _bearingTo(c[0], c[1]);
-      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, w:1 });
+      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'i' });
     }
     _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
     const edge = _radarPt(ang);
@@ -827,7 +826,7 @@ map.on('load', async () => {
     ];
     for (const x of _blips) {
       const age = (ts - x.born) / _BLIP_TTL;
-      feats.push({ type:'Feature', properties:{ a:age, k: x.w ? 'i' : 'v' },
+      feats.push({ type:'Feature', properties:{ a:age, k:x.k },
         geometry:{ type:'Point', coordinates:[x.lon, x.lat] } });
     }
     map.getSource('voos-radar').setData({ type:'FeatureCollection', features:feats });
@@ -1317,21 +1316,19 @@ map.on('load', async () => {
     // aeronaves e propriedades. Ativa satélite e desmarca as demais camadas.
     voos: async () => {
       const d = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
-      // ── círculo de 100 km (estático) ───────────────────────────────────────
+      // ── círculo de 100 km (estático) — só o contorno tracejado, sem o amarelo interno
       if (!map.getSource('voos-circulo')) {
         map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
-        map.addLayer({ id:'voos-circulo-fill', type:'fill', source:'voos-circulo',
-          paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
           paint:{ 'line-color':'#FFD54F', 'line-width':1.4, 'line-dasharray':[2,2], 'line-opacity':0.75 } });
-        // varredura de radar (estética) — fonte + linha/esteira animadas (verde)
+        // varredura de radar (estética) — fonte + linha/esteira animadas (verde Matrix)
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
           filter:['==',['geometry-type'],'Polygon'],
-          paint:{ 'fill-color':'#00FF66', 'fill-opacity':0.12 } });
+          paint:{ 'fill-color':'#00FF41', 'fill-opacity':0.12 } });
         map.addLayer({ id:'voos-radar-line', type:'line', source:'voos-radar',
           filter:['==',['geometry-type'],'LineString'],
-          paint:{ 'line-color':'#00FF66', 'line-width':3.5, 'line-opacity':1 } });
+          paint:{ 'line-color':'#00FF41', 'line-width':3.5, 'line-opacity':1 } });
       }
       _radarStart();
       // ── aeronaves ──────────────────────────────────────────────────────────
@@ -1352,18 +1349,28 @@ map.on('load', async () => {
                  'text-allow-overlap':true, 'text-ignore-placement':true },
         paint:{ 'text-color':'#ffd54f','text-halo-color':'#04121c','text-halo-width':1.4 } });
       // flashes de radar primário (display analógico): núcleo + halo degradê —
-      // continuam pingando os aviões mesmo depois que a linha verde some
+      // continuam pingando os aviões mesmo depois que a linha verde some.
+      // k='v' (avião) pisca MAIOR e mais evidente; k='i' (infra fixa) menor e
+      // mais discreto — ambos em verde Matrix, com brilho mais contido.
       if (!map.getLayer('voos-blip-halo')) map.addLayer({ id:'voos-blip-halo', type:'circle', source:'voos-radar',
         filter:['==',['geometry-type'],'Point'],
-        paint:{ 'circle-radius':['interpolate',['linear'],['get','a'],0,16,1,58],
-                'circle-color':['match',['get','k'],'i','#FFFFFF','#00E676'],
-                'circle-opacity':['interpolate',['linear'],['get','a'],0,0.28,1,0],
+        paint:{ 'circle-radius':['match',['get','k'],'v',
+                  ['interpolate',['linear'],['get','a'],0,20,1,72],
+                  ['interpolate',['linear'],['get','a'],0,13,1,48]],
+                'circle-color':'#00FF41',
+                'circle-opacity':['match',['get','k'],'v',
+                  ['interpolate',['linear'],['get','a'],0,0.20,1,0],
+                  ['interpolate',['linear'],['get','a'],0,0.13,1,0]],
                 'circle-blur':0.9 } });
       if (!map.getLayer('voos-blip')) map.addLayer({ id:'voos-blip', type:'circle', source:'voos-radar',
         filter:['==',['geometry-type'],'Point'],
-        paint:{ 'circle-radius':['interpolate',['linear'],['get','a'],0,5,1,16],
-                'circle-color':['match',['get','k'],'i','#FFFFFF','#00E676'],
-                'circle-opacity':['interpolate',['linear'],['get','a'],0,0.65,1,0],
+        paint:{ 'circle-radius':['match',['get','k'],'v',
+                  ['interpolate',['linear'],['get','a'],0,6,1,22],
+                  ['interpolate',['linear'],['get','a'],0,4,1,15]],
+                'circle-color':'#00FF41',
+                'circle-opacity':['match',['get','k'],'v',
+                  ['interpolate',['linear'],['get','a'],0,0.5,1,0],
+                  ['interpolate',['linear'],['get','a'],0,0.35,1,0]],
                 'circle-blur':0.3 } });
       // hover no avião → hint no padrão das pontes (#hint-voos)
       map.on('mouseenter','voos-pt',()=>map.getCanvas().style.cursor='pointer');
@@ -1449,8 +1456,15 @@ map.on('load', async () => {
         hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
-        const tipoLbl = p.tipo==='aeroporto' ? 'Aeroporto' : p.tipo==='aerodromo' ? 'Aeródromo' : 'Heliponto';
-        let h='<div class="hp-row"><b style="color:#ffd54f">'+tipoLbl+'</b></div>';
+        const tipo = p.tipo==='aeroporto' ? 'Aeroporto' : p.tipo==='aerodromo' ? 'Aeródromo' : 'Heliponto';
+        // ícone por tipo: mesmo avião pro aeroporto (branco) e aeródromo (azul),
+        // helicóptero pro heliponto.
+        const ic = p.tipo==='aeroporto'
+          ? '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
+          : p.tipo==='aerodromo'
+          ? '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#42A5F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
+          : '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17v4"/><path d="M14 3v8a2 2 0 0 0 2 2h5.865"/><path d="M17 17v4"/><path d="M18 17a4 4 0 0 0 4-4 8 6 0 0 0-8-6 6 5 0 0 0-6 5v3a2 2 0 0 0 2 2z"/><path d="M2 10v5"/><path d="M6 3h16"/><path d="M7 21h14"/><path d="M8 13H2"/></svg>';
+        let h='<div class="hv-logo">'+ic+'<span class="hv-callsign">'+tipo+'</span></div>';
         if(p.nome) h+=row('Nome', p.nome);
         if(p.municipio) h+=row('Município', p.municipio);
         if(p.oaci) h+=row('Código OACI', p.oaci, 'sub');
@@ -1465,27 +1479,27 @@ map.on('load', async () => {
         _infraPos = (infra.features || [])
           .filter(f => f.geometry && f.geometry.type === 'Point')
           .map(f => f.geometry.coordinates);
-        // aeroportos públicos (maiores) — ponto maior + label
+        // aeroportos públicos (maiores) — ponto maior + label (brancos)
         map.addLayer({ id:'voos-infra-aeroporto', type:'circle', source:'voos-infra',
           filter:['==',['get','tipo'],'aeroporto'],
           paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],9,4,14,8],
-                  'circle-color':'#FFD54F','circle-stroke-color':'#04121c','circle-stroke-width':1.5 } });
-        // aeródromos privados
+                  'circle-color':'#FFFFFF','circle-stroke-color':'#04121c','circle-stroke-width':1.5 } });
+        // aeródromos privados (azuis)
         map.addLayer({ id:'voos-infra-aerodromo', type:'circle', source:'voos-infra',
           filter:['==',['get','tipo'],'aerodromo'],
           paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],10,3,14,6],
-                  'circle-color':'#ffb300','circle-stroke-color':'#04121c','circle-stroke-width':1.2 } });
-        // helipontos — pequenos, discretos (não poluem)
+                  'circle-color':'#42A5F5','circle-stroke-color':'#04121c','circle-stroke-width':1.2 } });
+        // helipontos — mesmo azul dos aeródromos, pequenos e discretos
         map.addLayer({ id:'voos-infra-heliponto', type:'circle', source:'voos-infra',
           filter:['==',['get','tipo'],'heliponto'],
           paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],10,2.2,14,4.5],
-                  'circle-color':'#8fd8a8','circle-stroke-color':'#04121c','circle-stroke-width':1 } });
-        // labels só dos aeroportos públicos
+                  'circle-color':'#42A5F5','circle-stroke-color':'#04121c','circle-stroke-width':1 } });
+        // labels só dos aeroportos públicos (brancos)
         map.addLayer({ id:'voos-infra-label', type:'symbol', source:'voos-infra', minzoom:9,
           filter:['==',['get','tipo'],'aeroporto'],
           layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
                    'text-offset':[0,1.3], 'text-anchor':'top', 'text-optional':true },
-          paint:{ 'text-color':'#ffd54f','text-halo-color':'#04121c','text-halo-width':1.4 } });
+          paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':1.4 } });
         // hover → hint com dados do aeroporto/heliponto
         map.on('mousemove','voos-infra-aeroporto',showInfraHint);
         map.on('mousemove','voos-infra-aerodromo',showInfraHint);
@@ -1497,7 +1511,7 @@ map.on('load', async () => {
         map.on('mouseleave','voos-infra-aerodromo',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
         map.on('mouseleave','voos-infra-heliponto',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       }
-      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto','voos-infra-label'];
+      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto','voos-infra-label'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -1618,36 +1632,13 @@ map.on('load', async () => {
   }
   let _hovSetor = null;
   const ensureBuilt = async (key) => { if(!_built[key]) _built[key] = await BUILDERS[key](); return _built[key]; };
-  // Níveis de alagamento: mostra UMA cota por vez (combo). '' = nenhuma.
-  // Os níveis agora têm meios-termos (7, 7.5, 8, …) — usa float, não int.
-  // Cor do nível → cor do slider (mesma escala das bandas no mapa).
-  const _NIVEL_STOPS = [[7,'#a7d8f1'],[8,'#63d0ee'],[9,'#2f69ee'],[10,'#2c2ce8'],[11,'#763adf'],
-    [12,'#b43ad9'],[13,'#e232be'],[14,'#ee2b72'],[15,'#f91010']];
-  const nivelCor = (n) => {
-    if (n == null) return '#e12f2f';
-    for (let i = 0; i < _NIVEL_STOPS.length; i++) {
-      const [s, c] = _NIVEL_STOPS[i];
-      if (n <= s) return c;
-      const [s2, c2] = _NIVEL_STOPS[i + 1] || _NIVEL_STOPS[i];
-      if (n < s2) {
-        // interpola hex entre s (c) e s2 (c2)
-        const t = (n - s) / (s2 - s);
-        const hx = (a, b) => {
-          const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
-          const ch = (v) => String(Math.round(pa + (pb - pa) * t).toString(16)).padStart(2, '0');
-          return '#' + ch(0) + ch(1) + ch(2);
-        };
-        return hx(c, c2);
-      }
-    }
-    return _NIVEL_STOPS[_NIVEL_STOPS.length - 1][1];
-  };
-  const _atualizaNivelUI = (v) => {
+   // Níveis de alagamento: mostra UMA cota por vez (combo). '' = nenhuma.
+   // Os níveis agora têm meios-termos (7, 7.5, 8, …) — usa float, não int.
+   const _atualizaNivelUI = (v) => {
     const bar=document.getElementById('nivelbar'), sl=document.getElementById('nivelrange'), lb=document.getElementById('nivellbl');
     if (v) {
       if (sl) sl.value = v;
-      if (lb) { lb.textContent = v+' m'; lb.style.color = nivelCor(parseFloat(v)); }
-      if (sl) sl.style.setProperty('--nivel-cor', nivelCor(parseFloat(v)));
+      if (lb) lb.textContent = v+' m';
       if (bar) bar.classList.add('show');
     }
     else if (bar) bar.classList.remove('show');
