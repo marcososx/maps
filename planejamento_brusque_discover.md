@@ -217,13 +217,17 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   - **Varredura de radar estética**: linha **verde grossa** (#00E676, 3 px) + esteira degradê
     seguindo a **circunferência** do círculo (não corta reta por dentro). Roda **só 1 volta**
     (8 s) ao ativar; na parte final faz **fade out de 270° até 360° (topo)** antes de sumir.
-  - **Radar primário (display analógico)**: quando a varredura cruza o rumo de um avião, uma
-    **bola degradê** acende sobre ele (núcleo + halo esfumado, camadas `voos-blip`/`voos-blip-halo`)
-    e expande/some. **Continua pingando os aviões mesmo depois que a linha verde acaba**
-    (o ângulo continua varrendo em silêncio). Filtros por geometria: linha só LineString,
-    esteira só Polygon, flash só Point.
-  - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
-    (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
+  - **Radar primário**: quando a varredura cruza o rumo de um avião, uma **bola degradê**
+    acende sobre ele (núcleo + halo esfumado, camadas `voos-blip`/`voos-blip-halo`) e
+    expande/some. **Para junto com a varrida** (não fica piscando depois). Filtros por
+    geometria: linha só LineString, esteira só Polygon, flash só Point.
+  - **Trajeto do voo (trail):** o **worker acumula a trajetória** de cada voo (a cada consulta,
+    ~2 s) dentro do raio de 100 km (até ~300 pontos ≈ 10 min) e devolve `v.trail` no JSON.
+    Ao ativar a camada, o front já desenha o **progresso que o voo correu antes** (não só o
+    que aparece depois), continuando a acumular em tempo real.
+  - **Varredura de radar estética**: linha verde saturada (#00FF66, 3,5 px) + esteira degradê
+    seguindo a circunferência. Roda **só 1 volta** (~6,4 s, 20% mais rápida) ao ativar e **para
+    de vez** (fade out de 270° até 360°/topo; sem ficar piscando depois).
   - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090
     desenhada em canvas via `Path2D`) girando pelo rumo real (`icon-rotate`), callsign como
     label; **hint no padrão das pontes** (`#hint-voos`) no hover. Busca com `cache:'no-store'`
