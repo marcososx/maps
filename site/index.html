@@ -104,12 +104,14 @@
   #legend{ bottom:14px; left:14px; padding:10px 12px; font-size:11px; line-height:1.7; }
   #legend .row{ display:flex; align-items:center; gap:8px; }
   #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
-  /* hint (hover) — placeholder, refinar depois */
+  /* hint (hover) — tooltip base alinhado ao design system */
   #hint{ position:absolute; z-index:3; pointer-events:none; display:none;
-         padding:6px 10px; font-size:12px; background:rgba(11,14,20,.92);
-         border:1px solid #faee0a; border-radius:8px; transform:translate(12px,12px);
-         white-space:nowrap; }
-  #hint .k{ color:#8a97a8; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+         padding:8px 12px; font-size:12px; line-height:1.45; color:var(--txt);
+         background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
+         border:1px solid var(--border-2); border-top:2px solid var(--neon);
+         border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.5);
+         transform:translate(12px,12px); white-space:nowrap; }
+  #hint .k{ color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
   #hint.rt-card{ white-space:normal; width:264px; padding:0; }
   #hint.rt-card .k{ font-size:11px; }
   /* hint de cotas — layout 2 colunas: texto à esquerda, cota grande à direita.
@@ -134,8 +136,9 @@
   /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
   #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ position:absolute; z-index:3; pointer-events:none; display:none;
          min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
-         background:rgba(11,14,20,.94); border:1px solid #faee0a; border-radius:8px;
-         transform:translate(12px,12px); box-shadow:0 6px 20px rgba(0,0,0,.45);
+         background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
+         border:1px solid var(--border-2); border-top:2px solid var(--neon); border-radius:10px;
+         transform:translate(12px,12px); box-shadow:0 8px 24px rgba(0,0,0,.5);
          line-height:1.4; }
   #hint-voos{ border-color:#FFD54F; }
   #hint-celesc{ border-color:#FFB300; }
@@ -238,6 +241,7 @@
          padding:0 11px; backdrop-filter:blur(10px) saturate(1.2); border-radius:999px;
          transition:background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease; }
   .chip:hover{ color:var(--txt); border-color:rgba(255,255,255,.22); background:rgba(31,38,51,.85); }
+  .chip:active{ transform:translateY(1px); }
   .cbx{ width:13px; height:13px; border-radius:4px; border:1.5px solid #5a6678;
         display:inline-flex; align-items:center; justify-content:center; flex:none;
         font-size:10px; line-height:1; color:#04121c;
@@ -257,25 +261,41 @@
   .chip-menu .combo-item{ justify-content:space-between; gap:10px; cursor:default; }
   .chip-menu select.combo{ background:var(--bg); color:var(--txt); border:1px solid rgba(255,255,255,.12);
         border-radius:8px; font:600 11px var(--font-ui); padding:3px 6px; cursor:pointer; }
-  .chip.on{ color:var(--hi); }  /* cor de destaque é setada inline por chip (cor da camada) */
-  /* widget de base estilo Google — grid 3×2 de miniaturas locais + toggle */
-  .mapbase-w{ width:344px; padding:2px 2px 8px; margin-bottom:7px; border-bottom:1px solid rgba(255,255,255,.08); }
-  .mapbase-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
-  .mapbase-th{ position:relative; min-width:0; padding:0; cursor:pointer; overflow:hidden;
-        border-radius:9px; border:2px solid rgba(255,255,255,.12); background:#0d1119;
-        transition:border-color .18s ease, box-shadow .18s ease; }
-  .mapbase-th:hover{ border-color:rgba(255,255,255,.30); }
-  .mapbase-th img{ display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
-  .mapbase-th .mb-label{ position:absolute; left:5px; bottom:4px; z-index:2; padding:1px 7px;
-        border-radius:999px; font:700 9px var(--font-ui); letter-spacing:.2px; color:#fff;
-        background:rgba(0,0,0,.55); text-shadow:0 1px 2px rgba(0,0,0,.9); }
-  /* rover de seleção: moldura acesa + seta na base do mapa ativo */
-  .mapbase-th.sel{ border-color:var(--info); box-shadow:0 0 0 1px var(--info), 0 0 14px -2px rgba(74,158,255,.5); }
-  .mapbase-th.sel::after{ content:''; position:absolute; left:50%; bottom:-2px; transform:translateX(-50%);
-        border:7px solid transparent; border-bottom-color:var(--info); z-index:3; }
+  .chip.on{ color:var(--hi); border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.9);
+        box-shadow:0 0 0 1px rgba(255,255,255,.05) inset; }  /* cor de destaque é setada inline por chip (cor da camada) */
+  /* ═══ Seletor de base (estilo Google Maps) — grid 3×2 de miniaturas 120×120 ═══ */
+  .mapbase-w{ width:340px; padding:4px 4px 10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .mapbase-head{ display:flex; align-items:center; gap:8px; padding:2px 4px 9px;
+        font:700 9.5px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+  .mapbase-head::after{ content:''; flex:1; height:1px;
+        background:linear-gradient(90deg, rgba(255,255,255,.14), transparent); }
+  .mapbase-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  /* miniatura SEMPRE quadrada (aspect-ratio na célula → robusto p/ qualquer imagem) */
+  .mapbase-th{ position:relative; aspect-ratio:1/1; min-width:0; padding:0; cursor:pointer; overflow:hidden;
+        border-radius:11px; border:1px solid rgba(255,255,255,.10); background:#0d1119;
+        box-shadow:0 1px 3px rgba(0,0,0,.3);
+        transition:border-color .18s ease, box-shadow .2s ease, transform .12s ease; }
+  .mapbase-th:hover{ border-color:rgba(255,255,255,.30); transform:translateY(-1px);
+        box-shadow:0 5px 14px rgba(0,0,0,.42); }
+  .mapbase-th:active{ transform:translateY(0); }
+  .mapbase-th img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+        transition:transform .35s ease; }
+  .mapbase-th:hover img{ transform:scale(1.06); }
+  /* legenda: faixa de gradiente na base (leitura garantida, sem pílula flutuante) */
+  .mapbase-th .mb-label{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:15px 9px 6px;
+        font:700 10px var(--font-ui); letter-spacing:.2px; color:#fff; text-align:left;
+        text-shadow:0 1px 3px rgba(0,0,0,.95);
+        background:linear-gradient(to top, rgba(0,0,0,.80) 0%, rgba(0,0,0,.34) 58%, transparent 100%); }
+  /* selecionado/ativo: anel aceso + selo de check no canto */
+  .mapbase-th.sel{ border-color:var(--info);
+        box-shadow:0 0 0 2px var(--info), 0 5px 16px -2px rgba(0,176,255,.5); }
+  .mapbase-th.sel::after{ content:'✓'; position:absolute; top:5px; right:5px; z-index:3;
+        width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+        font:800 11px var(--font-ui); color:#04121c; background:var(--info);
+        border-radius:50%; box-shadow:0 1px 5px rgba(0,0,0,.55); }
   /* toggle Claro/Escuro — padrão Uiverse (by arghyaBiswasDev), em PRETO */
-  .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:9px;
-        padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+  .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:10px;
+        padding:9px 12px; border-radius:11px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
         transition:opacity .2s ease; }
   .mapbase-tone .mbw-tone-label{ font:700 10px var(--font-ui); letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
   .mapbase-tone.disabled{ opacity:.4; pointer-events:none; filter:grayscale(.7); }
@@ -2261,15 +2281,16 @@ map.on('load', async () => {
         }
       } },
     { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros', inWidget:true, darkBase:true },
-    // Clima: marcar mantém o zoom onde está; desmarcar volta à visão inicial.
-    // darkBase: ao ligar, a base volta pra 'mapa' escuro sem rótulos (dark_nolabels).
-    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true, darkBase:true,
-      onToggle: (on) => { if (!on) goHome(); } },
     { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', inWidget:true, layers:['satelite'] },
     { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', inWidget:true, layers:['trafego'] },
   ];
   const TEMPOREAL = [   // dropdown "Tempo Real"
-    // ── Clima (overlays). Nuvens/Radar são EXCLUSIVOS entre si (marcar um
+    // Clima: selo de temperatura de Brusque. Marcar mantém o zoom onde está;
+    // desmarcar volta à visão inicial. darkBase: ao ligar, a base volta pra
+    // 'mapa' escuro sem rótulos (dark_nolabels).
+    { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true, darkBase:true,
+      onToggle: (on) => { if (!on) goHome(); } },
+    // ── Nuvens/Radar (overlays). EXCLUSIVOS entre si (marcar um
     //    desmarca o outro) p/ não sobrepor imagens. ─────────────────────────────
     { id:'nuvens', label:'Nuvens (satélite)', on:false, color:'#7b8cff', exclusive:'wx', build:'nuvens',
       onToggle: (on) => {
@@ -2516,7 +2537,7 @@ map.on('load', async () => {
 
   // ── Camada Clima (dropdown Mapa) — controla o selo de Brusque; desmarca
   //    automaticamente quando outra camada cobre a área de Brusque. ──────────
-  const climaI = MAPA.find(m => m.clima);
+  const climaI = TEMPOREAL.find(m => m.clima);
   let _climaPaint = null, _climaM = null;
   const uncheckClima = () => { if (_climaM && _climaM.on) { _climaM.on = false; _climaPaint && _climaPaint(); } };
   const isBrusqueCover = (id) => id !== 'clima' && id !== 'limites' && id !== 'satelite';
@@ -2652,7 +2673,8 @@ map.on('load', async () => {
   };
   const _baseW = document.createElement('div');
   _baseW.className = 'mapbase-w';
-  _baseW.innerHTML = '<div class="mapbase-grid"></div>'
+  _baseW.innerHTML = '<div class="mapbase-head">Base do mapa</div>'
+    + '<div class="mapbase-grid"></div>'
     + '<div class="mapbase-tone">'
     +   '<span class="mbw-tone-label">Claro</span>'
     +   '<label class="switch"><input type="checkbox" id="mbw-tone-cb" checked><span class="slider"></span></label>'
@@ -2682,7 +2704,7 @@ map.on('load', async () => {
     if (!th) return;
     if (th.dataset.base) {
       const b = th.dataset.base;
-      if (b !== 'mapa' && MAPA.find(m => m.id === 'clima').on) uncheckClima();   // clima vive no dark_nolabels
+      if (b !== 'mapa' && TEMPOREAL.find(m => m.id === 'clima').on) uncheckClima();   // clima vive no dark_nolabels
       selectBase(b);
     } else if (th.dataset.toggle === 'trafego') {
       setTrafego(!MAPA.find(m => m.id === 'trafego').on);
