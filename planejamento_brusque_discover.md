@@ -203,12 +203,13 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
 - Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
     ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds) e o usuário navega/zooms
-    livre. `maxBounds` do mapa ampliado p/ caber o círculo inteiro no zoom-out.
+    livre. `maxBounds` do mapa cobre ~2x o círculo (`[[-51.7,-29.5],[-46.1,-24.7]]`).
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
-    (até ~150 pontos ≈ 5 min).
-  - Aviões **no ar** com **silhueta clássica de topo estilo FlightRadar** (canvas 48×48)
-    girando pelo rumo real (`icon-rotate`), callsign como label; **hint no padrão das pontes**
-    (`#hint-voos`) no hover.
+    (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
+  - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090
+    desenhada em canvas via `Path2D`) girando pelo rumo real (`icon-rotate`), callsign como
+    label; **hint no padrão das pontes** (`#hint-voos`) no hover. Busca com `cache:'no-store'`
+    (nenhuma resposta antiga).
   - **Painel à esquerda** (`voospanel`): contagem + lista em **duas seções** — "VOOS SOBRE
     BRUSQUE" (≤ 25 km) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — títulos neon estilo PizzINT
     (mono + âmbar com glow). Cada aeronave: ícone do tipo em destaque, callsign, descrição,

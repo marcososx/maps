@@ -193,12 +193,13 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 - **No mapa (dropdown Tempo Real → Voos (ADS-B)):**
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
     ao **ativar a camada, a câmera se ajusta automaticamente** ao círculo (fitBounds) e o
-    usuário navega/zooms livre. O `maxBounds` do mapa cobre a área do círculo
-    (`[[-50.3,-28.4],[-47.5,-25.8]]`) pra não travar o zoom-out.
+    usuário navega/zooms livre. O `maxBounds` do mapa cobre ~2x o círculo
+    (`[[-51.7,-29.5],[-46.1,-24.7]]`) — zoom-out liberado com folga.
   - **Trajeto do voo (trail):** linha âmbar sob o avião acumulando as posições recentes de cada
-    aeronave (até ~150 pontos ≈ 5 min a 2 s de poll) — mostra por onde cada voo passou.
-  - Ícones de avião (silhueta clássica de topo estilo FlightRadar, canvas 48×48) girando pelo
-    rumo real (`icon-rotate`), callsign como label.
+    aeronave (até ~150 pontos ≈ 5 min a 2 s de poll; mínimo de deslocamento 0.001°).
+  - **Ícones de avião idênticos ao Airplanes.live** (silhueta 'unknown' do tar1090, desenhada
+    no canvas via `Path2D`) girando pelo rumo real (`icon-rotate`), callsign como label.
+    Front busca com `cache:'no-store'` (nenhuma resposta antiga do browser).
   - **Hint no padrão das pontes** (`#hint-voos`, card com `hp-row/hp-lbl/hp-val`): Voo, Aeronave,
     Altitude, Velocidade, Rumo, Subida, Posição — aparece ao passar o mouse sobre o avião.
   - **Painel à esquerda** (`voospanel`): contagem + lista separada em **duas seções** —

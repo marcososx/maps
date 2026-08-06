@@ -614,37 +614,13 @@ map.on('load', async () => {
   // A camada rotaciona via icon-rotate = rumo real do voo.
   const _planeCanvas = document.createElement('canvas'); _planeCanvas.width=48; _planeCanvas.height=48;
   {
-    const g=_planeCanvas.getContext('2d'); g.translate(24,24); g.scale(1,-1); // y p/ cima
-    const traco = () => { g.strokeStyle='#04121c'; g.lineWidth=1.8; g.lineJoin='round'; g.lineCap='round'; };
-    // silhueta clássica de avião de topo (estilo FlightRadar):
-    // corpo fino + asas grandes retas + cauda com estabilizadores
-    g.fillStyle='#ffd54f'; traco();
-    g.beginPath();
-    g.moveTo(0,-21);                 // nariz (ponta)
-    g.lineTo(2.2,-12);               // lado do nariz
-    g.lineTo(3.4,-7);                // raiz da asa
-    g.lineTo(19,-4);                 // borda dianteira da asa direita
-    g.lineTo(20,-1);
-    g.lineTo(5.5,-2.4);              // ponta → encaixe no corpo
-    g.lineTo(4.6,3.5);               // fim da asa dianteira no corpo
-    g.lineTo(11,15);                 // estabilizador horizontal direito
-    g.lineTo(11,18);
-    g.lineTo(2.6,11);                // volta pra cauda
-    g.lineTo(0,13);                  // cauda
-    g.lineTo(-2.6,11);
-    g.lineTo(-11,18);
-    g.lineTo(-11,15);
-    g.lineTo(-4.6,3.5);
-    g.lineTo(-5.5,-2.4);
-    g.lineTo(-20,-1);
-    g.lineTo(-19,-4);
-    g.lineTo(-3.4,-7);
-    g.lineTo(-2.2,-12);
-    g.closePath();
-    g.fill(); g.stroke();
-    // linha de fuselagem (detalhe central)
-    g.fillStyle='#b8860b'; g.strokeStyle='transparent';
-    g.fillRect(-1,-15,2,28);
+    // silhueta de avião idêntica à usada pelo Airplanes.live (tar1090 'unknown')
+    const g=_planeCanvas.getContext('2d');
+    const path=new Path2D('M 4.256,15.496 C 3.979,14.340 7.280,13.606 7.280,13.606 V 8.650 l -6,2 c -0.680,0 -1,-0.350 -1,-0.660 C 0.242,9.595 0.496,9.231 0.880,9.130 1.140,9 4.800,7 7.280,5.630 V 3 C 7.280,1.890 7.720,0.290 8.510,0.290 9.300,0.290 9.770,1.840 9.770,3 v 2.630 c 2.450,1.370 6.100,3.370 6.370,3.500 0.390,0.093 0.651,0.461 0.610,0.860 -0.050,0.310 -0.360,0.670 -1.050,0.670 l -5.930,-2 v 4.946 c 0,0 3.300,0.734 3.024,1.890 -0.331,1.384 -2.830,0.378 -4.254,0.378 -1.434,4.520e-4 -3.950,1.016 -4.284,-0.378 z');
+    // viewBox do site: -2.5 -2.5 22 22 (centro em 8.5, 8.5) → escala p/ caber no canvas
+    g.translate(24,24); g.scale(1.55,-1.55); g.translate(-8.5,-8.5);
+    g.fillStyle='#ffd54f'; g.fill(path);
+    g.strokeStyle='#04121c'; g.lineWidth=0.6; g.lineJoin='round'; g.lineCap='round'; g.stroke(path);
   }
   const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 48, 48);
   // worker /voos.json → features GeoJSON (aérea em ft; sem solo)
@@ -671,7 +647,7 @@ map.on('load', async () => {
       const arr = _trails[v.icao24] || (_trails[v.icao24] = []);
       const last = arr[arr.length - 1];
       // só acrescenta ponto se mudou de posição (evita empilhar o mesmo ponto)
-      if (!last || Math.abs(last[0] - v.lon) > 0.004 || Math.abs(last[1] - v.lat) > 0.004) {
+      if (!last || Math.abs(last[0] - v.lon) > 0.001 || Math.abs(last[1] - v.lat) > 0.001) {
         arr.push([v.lon, v.lat]);
         if (arr.length > _TRAIL_MAX) arr.shift();
       }
@@ -1120,7 +1096,7 @@ map.on('load', async () => {
     // dele, com ícone rotacionado pelo rumo. Lista lateral (voospanel) com as
     // aeronaves e propriedades. Ativa satélite e desmarca as demais camadas.
     voos: async () => {
-      const d = await (await fetch(VOOS_URL)).json();
+      const d = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
       // ── círculo de 100 km (estático) ───────────────────────────────────────
       if (!map.getSource('voos-circulo')) {
         map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
@@ -1187,7 +1163,7 @@ map.on('load', async () => {
       _voosTimer = setInterval(async () => {
         if (!map.getSource('voos')) return;
         try {
-          const r = await (await fetch(VOOS_URL)).json();
+          const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
       }, 2000);
@@ -1451,7 +1427,7 @@ map.on('load', async () => {
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
-              const r = await (await fetch(VOOS_URL)).json();
+              const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
@@ -1460,7 +1436,7 @@ map.on('load', async () => {
           _voosTimer = setInterval(async () => {
             if (!map.getSource('voos')) return;
             try {
-              const r = await (await fetch(VOOS_URL)).json();
+              const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
@@ -1729,9 +1705,9 @@ map.on('load', async () => {
   muni.features.forEach(f => eachHome(f.geometry.coordinates));
   map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:0 });  // top maior: livra a barra de chips
 
-  // Zoom-out não passa dos limites do círculo de 100 km de Brusque (camada Voos)
-  // — a área inteira monitorada cabe na tela; não deixa puxar recursos à toa.
-  map.setMaxBounds([[-50.3,-28.4],[-47.5,-25.8]]);
+  // Zoom-out liberado ~2x o círculo de 100 km de Brusque (camada Voos) — a
+  // área monitorada cabe folgada na tela e sobra margem pra navegar.
+  map.setMaxBounds([[-51.7,-29.5],[-46.1,-24.7]]);
 
   // Clique num bairro (só quando visível) → enquadra; clicar de novo / dar zoom no scroll → volta
   let focused = false;
