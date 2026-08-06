@@ -133,24 +133,17 @@
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .36s ease, transform .36s ease, visibility .36s; }
   #nivelbar.show{ opacity:1; visibility:visible; transform:translateX(-50%); pointer-events:auto; }
-  /* valor do nível — largura FIXA (não expande/retrai ao alternar int↔decimal) */
-  #nivelbar #nivellbl{ font:700 14px Inter,system-ui; color:#eaf6ff; min-width:52px;
-        text-align:center; font-variant-numeric:tabular-nums; white-space:nowrap;
+  /* valor do nível — branco, alinhado à esquerda, largura FIXA */
+  #nivelbar #nivellbl{ font:700 16px Inter,system-ui; color:#fff; min-width:46px;
+        text-align:left; font-variant-numeric:tabular-nums; white-space:nowrap;
         transition:color .2s ease; }
-  #nivelbar .nb-atual{ display:flex; align-items:center; gap:7px; padding-left:12px;
-        border-left:1px solid var(--border); }
+  #nivelbar .nb-atual{ display:flex; align-items:baseline; gap:6px; padding-left:14px;
+        border-left:1px solid var(--border); margin-left:2px; }
   #nivelbar .nb-atual .nb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase;
         letter-spacing:.5px; white-space:nowrap; }
-  #nivelbar .nb-atual .nb-val{ font:700 12px Inter,system-ui; color:#eaf6ff;
+  #nivelbar .nb-atual .nb-val{ font:700 13px Inter,system-ui; color:#fff;
         font-variant-numeric:tabular-nums; white-space:nowrap; }
   #nivelbar .nb-atual .nb-val.off{ color:#8a97a8; font-weight:400; }
-  #nivelbar .nb-atual button{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
-        color:#eaf6ff; font:600 9.5px Inter,system-ui; letter-spacing:.4px; border-radius:6px;
-        padding:3px 8px; cursor:pointer; text-transform:uppercase; white-space:nowrap;
-        transition:background .2s ease, border-color .2s ease; }
-  #nivelbar .nb-atual button:hover{ background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.3); }
-  #nivelbar .nb-cap{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px;
-        text-align:center; margin-left:auto; white-space:nowrap; }
   /* range horizontal — track com o GRADIENTE da escala (7 aqua → 15 vermelho) */
   #nivelrange{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
         -webkit-appearance:none; background:transparent; }
@@ -364,9 +357,7 @@
   <div class="nb-atual">
     <span class="nb-lbl">Nível atual</span>
     <span class="nb-val off" id="nivelatual-val">—</span>
-    <button id="nivelatual-btn" title="Usar o nível do rio retornado pela ANA">ANA</button>
   </div>
-  <span class="nb-cap">nível do rio</span>
 </div>
 
 <!-- Indicadores · painéis à ESQUERDA (dropdown "Indicadores") -->
@@ -2096,19 +2087,7 @@ map.on('load', async () => {
       _nvAtual.title = '';
     }
   };
-  const nvBtn = document.getElementById('nivelatual-btn');
-  if (nvBtn) nvBtn.onclick = async () => {
-    if (typeof fetchRealtime === 'function') await fetchRealtime();
-    atualizaNivelAtual();
-    const r = (typeof window._RIO !== 'undefined' && window._RIO) || null;
-    const n = r && r.nivel_m != null ? r.nivel_m : null;
-    if (n == null) { showToast('Nível do rio indisponível no momento'); return; }
-    // arredonda para o degrau do slider (0.5) e aplica
-    const v = Math.max(7, Math.min(15, Math.round(n * 2) / 2));
-    selectNivel(String(v));
-    showToast('Nível atual do rio: ' + n.toFixed(2).replace('.', ',') + ' m');
-  };
-  // mostra o valor assim que o tempo real chegar
+  // mostra o valor assim que o tempo real chegar (atualiza também a cada 5 min)
   if (typeof fetchRealtime === 'function') fetchRealtime().then(atualizaNivelAtual).catch(() => {});
   setInterval(() => { if (typeof fetchRealtime === 'function') fetchRealtime().then(atualizaNivelAtual).catch(() => {}); }, 5*60*1000);
 
