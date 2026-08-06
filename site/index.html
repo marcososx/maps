@@ -1681,13 +1681,18 @@ map.on('load', async () => {
         if (on) {
           _radarStart();
           // hierarquia: ativar Voos desmarca TODAS as outras camadas.
-          // (satélite NÃO é mais forçado aqui: o raster pesado baixa tiles em
-          // cada nível de zoom do fitBounds e engasgava a abertura; o usuário
-          // liga Satélite manualmente se quiser o contexto de imagem)
           [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
+          // satélite ligado, mas com atraso: o raster pesado baixaria tiles em
+          // CADA nível de zoom do fitBounds (engasgo). Espera a animação da
+          // câmera acabar (~2.6 s) e só então liga — carrega uma vez, suave.
+          const _ligarSat = () => {
+            const sat = MAPA.find(m => m.id === 'satelite');
+            if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
+          };
+          setTimeout(_ligarSat, 2600);
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
@@ -1717,6 +1722,9 @@ map.on('load', async () => {
         } else {
           _radarStop();
           hidePanel('voospanel');
+          // se o satélite foi ligado pelo atraso acima, desliga junto com o voos
+          const sat = MAPA.find(m => m.id === 'satelite');
+          if (sat && sat.on) { sat.on = false; if (sat.paint) sat.paint(); }
         }
       } },
     { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
