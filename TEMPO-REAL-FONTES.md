@@ -188,19 +188,24 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 - **Campos por voo:** `icao24`, `callsign`, `lat/lon`, `alt_m` (geométrica), `vel_kmh`,
   `rumo`, `subida_mps` (fpm→m/s), `tipo` (código ICAO, ex.: A320) + `desc` (ex.: "AIRBUS A-320"),
   `categoria` (A1/A3/A5…), `dist_km`, `ultima_atualizacao`.
-- **Cadência do worker:** cacheia **20 s** (posições frescas); o front re-valida a cada 30 s.
+- **Cadência do worker:** cacheia **2 s** (~0,5 req/s na Airplanes.live); o front re-valida a
+  cada **2 s** — posições quase em tempo real.
 - **No mapa (dropdown Tempo Real → Voos (ADS-B)):**
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
-    ao **ativar a camada, a câmera se ajusta automaticamente** ao círculo (fitBounds).
+    ao **ativar a camada, a câmera se ajusta automaticamente** ao círculo (fitBounds) e o
+    usuário navega/zooms livre. O `maxBounds` do mapa cobre a área do círculo
+    (`[[-50.3,-28.4],[-47.5,-25.8]]`) pra não travar o zoom-out.
   - **Trajeto do voo (trail):** linha âmbar sob o avião acumulando as posições recentes de cada
-    aeronave (até ~60 pontos) — mostra por onde cada voo passou.
-  - Ícones de avião (SVG de topo desenhado em canvas 48×48) girando pelo rumo real
-    (`icon-rotate`), callsign como label.
+    aeronave (até ~150 pontos ≈ 5 min a 2 s de poll) — mostra por onde cada voo passou.
+  - Ícones de avião (silhueta clássica de topo estilo FlightRadar, canvas 48×48) girando pelo
+    rumo real (`icon-rotate`), callsign como label.
   - **Hint no padrão das pontes** (`#hint-voos`, card com `hp-row/hp-lbl/hp-val`): Voo, Aeronave,
     Altitude, Velocidade, Rumo, Subida, Posição — aparece ao passar o mouse sobre o avião.
-  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (ícone do tipo em
-    destaque, callsign, descrição, altitude, velocidade, rumo); **clicar só foca o avião no
-    mapa** (sem popup — o hint aparece no hover da camada).
+  - **Painel à esquerda** (`voospanel`): contagem + lista separada em **duas seções** —
+    "VOOS SOBRE BRUSQUE" (≤ 25 km do centro) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — com
+    títulos em estilo neon (mono + âmbar com glow, inspirado no PizzINT). Cada aeronave:
+    ícone do tipo em destaque, callsign, descrição, altitude, velocidade, rumo; **clicar só
+    foca o avião no mapa** (sem popup — o hint aparece no hover da camada).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
     camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores).
 

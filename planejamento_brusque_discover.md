@@ -202,17 +202,20 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   Endpoint: `/voos.json` (cache 2 min, CORS), voos **ordenados por distância**.
 - Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
-    ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds) e o usuário navega/zooms livre.
+    ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds) e o usuário navega/zooms
+    livre. `maxBounds` do mapa ampliado p/ caber o círculo inteiro no zoom-out.
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
-    (até ~60 pontos).
-  - Aviões **no ar** com ícone SVG de topo (canvas 48×48) girando pelo rumo real
-    (`icon-rotate`), callsign como label; **hint no padrão das pontes** (`#hint-voos`) no hover.
-  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (ícone do tipo em
-    destaque, callsign, descrição, altitude, velocidade, rumo); **clicar só foca o avião no
-    mapa** (sem popup/hint).
+    (até ~150 pontos ≈ 5 min).
+  - Aviões **no ar** com **silhueta clássica de topo estilo FlightRadar** (canvas 48×48)
+    girando pelo rumo real (`icon-rotate`), callsign como label; **hint no padrão das pontes**
+    (`#hint-voos`) no hover.
+  - **Painel à esquerda** (`voospanel`): contagem + lista em **duas seções** — "VOOS SOBRE
+    BRUSQUE" (≤ 25 km) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — títulos neon estilo PizzINT
+    (mono + âmbar com glow). Cada aeronave: ícone do tipo em destaque, callsign, descrição,
+    altitude, velocidade, rumo; **clicar só foca o avião no mapa** (sem popup/hint).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
-    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada 30 s;
-    worker cacheia 20 s (posições frescas).
+    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada **2 s**;
+    worker cacheia **2 s** (posições quase em tempo real).
 - **Por que Airplanes.live:** OpenSky (522), ADSB.lol (429) e adsb.fi (403) **bloqueiam IPs de
   Workers Cloudflare** — testados em 05/08. Airplanes.live roda atrás de Cloudflare e funciona.
 
