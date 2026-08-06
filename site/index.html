@@ -1629,6 +1629,11 @@ map.on('load', async () => {
     { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas',
       onToggle: (on) => {
         if (window._setVizWx) window._setVizWx(on);
+        // o badge de clima já mostra o nome da cidade → esconde o label de texto
+        // do MapLibre (raio100-label) para não duplicar o nome ao lado do badge
+        if (map.getLayer('raio100-label')) {
+          map.setLayoutProperty('raio100-label', 'visibility', on ? 'none' : 'visible');
+        }
         // ao ATIVAR: enquadra as cidades que fazem divisa com Brusque, para o
         // usuário ver os limites e saber que pode navegar além (raio de 100 km).
         if (on && window._vizinhas) {
