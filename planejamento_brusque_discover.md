@@ -201,11 +201,15 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   ponto central (**Brusque** -27.0977/-48.9172) + raio e **filtro ≤ 100 km** (haversine).
   Endpoint: `/voos.json` (cache 2 min, CORS), voos **ordenados por distância**.
 - Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
-  - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar).
-  - Aviões **no ar** com ícone girando pelo rumo real (canvas 40×40 + `icon-rotate`), callsign
-    como label, hint/popup com altitude, velocidade, rumo, subida e categoria ICAO.
-  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (callsign, altitude,
-    velocidade, rumo, categoria, distância); clicar foca o avião no mapa.
+  - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
+    botão **"Ajustar ao círculo"** no painel dá zoom out até o círculo inteiro na tela.
+  - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
+    (até ~60 pontos).
+  - Aviões **no ar** com ícone SVG de topo (canvas 48×48) girando pelo rumo real
+    (`icon-rotate`), callsign como label, hint/popup com altitude, velocidade, rumo, tipo,
+    descrição e categoria ICAO.
+  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (ícone do tipo em
+    destaque, callsign, descrição, altitude, velocidade, rumo); clicar foca o avião no mapa.
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
     camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada 30 s.
 - **Por que Airplanes.live:** OpenSky (522), ADSB.lol (429) e adsb.fi (403) **bloqueiam IPs de

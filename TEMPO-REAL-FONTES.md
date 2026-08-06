@@ -186,14 +186,19 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 - **Como consulta:** centro em **Brusque** (-27.0977, -48.9172), raio de 60 NM na chamada
   e o Worker **filtra a ≤ 100 km** (haversine) → `voos` ordenados por `dist_km`.
 - **Campos por voo:** `icao24`, `callsign`, `lat/lon`, `alt_m` (geométrica), `vel_kmh`,
-  `rumo`, `subida_mps` (fpm→m/s), `categoria` (ICAO: A1/A3/A5…), `dist_km`, `ultima_atualizacao`.
+  `rumo`, `subida_mps` (fpm→m/s), `tipo` (código ICAO, ex.: A320) + `desc` (ex.: "AIRBUS A-320"),
+  `categoria` (A1/A3/A5…), `dist_km`, `ultima_atualizacao`.
 - **Cadência do worker:** busca e **cacheia 2 min**; o front re-valida a cada 30 s.
 - **No mapa (dropdown Tempo Real → Voos (ADS-B)):**
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar).
-  - Ícones de avião girando pelo rumo real (canvas 40×40, `icon-rotate`), callsign como label,
-    hint + popup com altitude/velocidade/rumo/subida/categoria.
-  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves com propriedades
-    (callsign, altitude, velocidade, rumo, categoria, distância); clicar foca o avião no mapa.
+  - **Trajeto do voo (trail):** linha âmbar sob o avião acumulando as posições recentes de cada
+    aeronave (até ~60 pontos) — mostra por onde cada voo passou.
+  - Ícones de avião (SVG de topo desenhado em canvas 48×48) girando pelo rumo real
+    (`icon-rotate`), callsign como label, hint + popup com dados do voo.
+  - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (ícone do tipo em
+    destaque, callsign, descrição, altitude, velocidade, rumo); clicar foca o avião no mapa.
+  - **Botão "Ajustar ao círculo"** no painel: `fitBounds` no círculo de 100 km (zoom out até
+    aparecer inteiro).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
     camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores).
 

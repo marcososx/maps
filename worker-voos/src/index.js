@@ -4,8 +4,8 @@
 // ≤ 100 km (haversine). Serve JSON limpo, ordenado por distância.
 //
 //   GET /voos.json -> { updated, fonte, centro, raio_km, voos:[{icao24,callsign,
-//                        lat,lon,alt_m,vel_kmh,rumo,subida_mps,no_solo,categoria,
-//                        dist_km,ultima_atualizacao}] }
+//                        lat,lon,alt_m,vel_kmh,rumo,subida_mps,no_solo,tipo,desc,
+//                        categoria,dist_km,ultima_atualizacao}] }
 //
 // Por que Airplanes.live e não OpenSky/ADSB.lol/adsb.fi: OpenSky bloqueia IPs
 // de datacenter/Workers (522), ADSB.lol rate-limita por IP (429) e adsb.fi
@@ -57,7 +57,9 @@ function build(d) {
         rumo: num(a.track),
         subida_mps: a.baro_rate != null ? Math.round(a.baro_rate / 196.85 * 10) / 10 : null, // fpm→m/s
         no_solo: a.alt_baro == null,
-        categoria: a.category || null,             // categoria ICAO (ex.: A3, B6)
+        tipo: a.t || null,                          // tipo ICAO (ex.: A332, E295)
+        desc: a.desc || null,                       // descrição (ex.: AIRBUS A-330-200)
+        categoria: a.category || null,              // categoria ADS-B (ex.: A3, B6)
         dist_km: Math.round(dist * 10) / 10,
         ultima_atualizacao: a.seen != null ? new Date(Date.now() - a.seen * 1000).toISOString() : null,
       };
@@ -72,7 +74,7 @@ async function handle(req, env, ctx) {
   if (url.pathname !== '/voos.json') {
     return new Response(JSON.stringify({ erro: 'use GET /voos.json' }), { status: 404, headers: CORS });
   }
-  const CACHE_V = '5';
+  const CACHE_V = '6';
   const ck = new URL(req.url); ck.searchParams.set('_v', CACHE_V);
   const cacheReq = new Request(ck);
   const cache = caches.default;

@@ -194,12 +194,17 @@
         border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:7px 9px; cursor:pointer;
         transition:background .18s ease, border-color .18s ease; }
   .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
-  .voo-row .voo-cs{ font:700 12px ui-monospace,Space Mono,monospace; color:#ffd54f; min-width:0;
+  .voo-tipo{ flex:0 0 auto; width:44px; height:44px; border-radius:10px; display:flex; align-items:center;
+        justify-content:center; background:rgba(255,213,79,.14); border:1px solid rgba(255,213,79,.4);
+        font:800 14px ui-monospace,Space Mono,monospace; color:#ffd54f; }
+  .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .voo-cs{ font:700 12px ui-monospace,Space Mono,monospace; color:#ffd54f; min-width:0;
         overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .voo-row .voo-d{ flex:1; min-width:0; display:flex; flex-wrap:wrap; gap:1px 8px;
-        font-size:9.5px; color:#8a97a8; }
-  .voo-row .voo-d b{ color:#eaf6ff; font-weight:600; }
-  .voo-row .voo-dst{ font:600 10px ui-monospace,Space Mono,monospace; color:#4FC3F7; }
+  .voo-desc{ font-size:9.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
+        white-space:nowrap; }
+  .voo-d{ display:flex; flex-wrap:wrap; gap:1px 8px; font-size:9.5px; color:#8a97a8;
+        align-items:center; justify-content:flex-end; }
+  .voo-d b{ color:#eaf6ff; font-weight:600; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -336,6 +341,9 @@
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
     <div class="voo-count" id="voos-count">carregando…</div>
     <div class="voo-list" id="voos-list"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:9px">
+      <button class="wbtn" id="voos-fit">Ajustar ao círculo</button>
+    </div>
   </div>
 </div>
 
@@ -594,26 +602,77 @@ map.on('load', async () => {
 
   // Timers periódicos das camadas de tempo (parados quando o chip desliga)
   let _nuvTimer = null, _radarRefreshTimer = null, _voosTimer = null;
-  // Ícone de avião (canvas 40×40, desenhado p/ a camada Voos) — apontando pra cima
-  // (rumo 0°); a camada rotaciona via icon-rotate = rumo real do voo.
-  const _planeCanvas = document.createElement('canvas'); _planeCanvas.width=40; _planeCanvas.height=40;
+  // Ícone de avião (vista de topo, apontando pra cima) desenhado em canvas 48×48.
+  // A camada rotaciona via icon-rotate = rumo real do voo.
+  const _planeCanvas = document.createElement('canvas'); _planeCanvas.width=48; _planeCanvas.height=48;
   {
-    const g=_planeCanvas.getContext('2d'); g.translate(20,20); g.rotate(Math.PI); // desenha pra cima
-    g.fillStyle='#ffd54f'; g.strokeStyle='#04121c'; g.lineWidth=1.6;
-    g.beginPath(); g.moveTo(0,-15); g.lineTo(4,-6); g.lineTo(15,8); g.lineTo(8,9); g.lineTo(4,2); g.lineTo(-4,2); g.lineTo(-8,9); g.lineTo(-15,8); g.lineTo(-4,-6); g.closePath(); g.fill(); g.stroke();
+    const g=_planeCanvas.getContext('2d'); g.translate(24,24); g.scale(1,-1); // y p/ cima
+    const traco = () => { g.strokeStyle='#04121c'; g.lineWidth=1.8; g.lineJoin='round'; g.lineCap='round'; };
+    // corpo + asas + cauda (silhueta de avião comercial)
+    g.fillStyle='#ffd54f'; traco();
+    g.beginPath();
+    g.moveTo(0,-18);              // nariz
+    g.lineTo(2.4,-9);             // lado do nariz
+    g.lineTo(5,-7);               // raiz da asa direita
+    g.lineTo(17,-1.5);            // ponta da asa direita
+    g.lineTo(17,2.5);
+    g.lineTo(5.5,0);
+    g.lineTo(3.8,6);
+    g.lineTo(9,14);               // estabilizador horizontal direito
+    g.lineTo(9,17);
+    g.lineTo(2.2,11.5);
+    g.lineTo(0,13);               // cauda
+    g.lineTo(-2.2,11.5);
+    g.lineTo(-9,17);
+    g.lineTo(-9,14);
+    g.lineTo(-3.8,6);
+    g.lineTo(-5.5,0);
+    g.lineTo(-17,2.5);
+    g.lineTo(-17,-1.5);
+    g.lineTo(-5,-7);
+    g.lineTo(-2.4,-9);
+    g.closePath();
+    g.fill(); g.stroke();
+    // linha de fuselagem (detalhe)
+    g.fillStyle='#b8860b'; g.strokeStyle='transparent';
+    g.fillRect(-1.1,-14,2.2,24);
   }
-  const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 40, 40);
+  const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 48, 48);
   // worker /voos.json → features GeoJSON (aérea em ft; sem solo)
   const voosFeats = (d) => (d.voos || []).map(v => ({
     type:'Feature',
     geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
     properties:{ icao24:v.icao24, callsign:v.callsign, origem:v.origem,
       alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null, vel_kmh:v.vel_kmh, rumo:v.rumo,
-      subida:v.subida_mps, categoria:v.categoria, dist_km:v.dist_km,
+      subida:v.subida_mps, tipo:v.tipo, desc:v.desc, categoria:v.categoria, dist_km:v.dist_km,
       ultima: fmtDt(v.ultima_atualizacao) }
   }));
   // círculo de 100 km ao redor de Brusque (GeoJSON de ~128 pontos)
   const _raioKm = 100, _cirLat = -27.0977, _cirLon = -48.9172;
+  // ── Trajeto dos voos: acumula as posições de cada aeronave ao longo do tempo
+  // e desenha uma linha (trail) mostrando por onde ela passou. ────────────────
+  const _trails = {};            // icao24 -> [ [lon,lat], ... ] (mais recente no fim)
+  const _TRAIL_MAX = 60;         // pontos máximos por voo (≈30 min a 30s de poll)
+  const trailFeatures = (d) => {
+    const seen = new Set();
+    const feats = [];
+    for (const v of (d.voos || [])) {
+      if (!v.icao24 || v.lat == null || v.lon == null) continue;
+      seen.add(v.icao24);
+      const arr = _trails[v.icao24] || (_trails[v.icao24] = []);
+      const last = arr[arr.length - 1];
+      // só acrescenta ponto se mudou de posição (evita empilhar o mesmo ponto)
+      if (!last || Math.abs(last[0] - v.lon) > 0.004 || Math.abs(last[1] - v.lat) > 0.004) {
+        arr.push([v.lon, v.lat]);
+        if (arr.length > _TRAIL_MAX) arr.shift();
+      }
+      if (arr.length > 1) feats.push({ type:'Feature', properties:{ icao24:v.icao24, callsign:v.callsign },
+        geometry:{ type:'LineString', coordinates:arr.slice() } });
+    }
+    // limpa trails de aeronaves que saíram da região (não são mais vistas)
+    for (const k in _trails) if (!seen.has(k)) delete _trails[k];
+    return feats;
+  };
   const _cirFeat = () => {
     const coords = [];
     const R = 6371, d = _raioKm / R;
@@ -643,16 +702,20 @@ map.on('load', async () => {
       const alt = v.alt_m!=null ? Math.round(v.alt_m).toLocaleString('pt-BR')+' m' : '—';
       const vel = v.vel_kmh!=null ? v.vel_kmh+' km/h' : '—';
       const rumo = v.rumo!=null ? v.rumo+'°' : '—';
-      const cat = v.categoria || '—';
-      row.innerHTML = '<span class="voo-cs">✈ '+(v.callsign||v.icao24||'—')+'</span>'
+      const tipo = v.tipo || v.categoria || '—';
+      row.innerHTML = '<span class="voo-tipo">'+tipo+'</span>'
+        + '<span class="voo-main"><span class="voo-cs">'+(v.callsign||v.icao24||'—')+'</span>'
+        + '<span class="voo-desc">'+(v.desc||'')+'</span></span>'
         + '<span class="voo-d"><span><b>'+alt+'</b> alt</span><span><b>'+vel+'</b></span>'
-        + '<span>rumo <b>'+rumo+'</b></span><span>'+cat+'</span></span>'
-        + '<span class="voo-dst">'+v.dist_km+' km</span>';
+        + '<span>rumo <b>'+rumo+'</b></span></span>';
       row.onclick = () => {
         map.easeTo({ center:[v.lon, v.lat], zoom: Math.max(map.getZoom(), 10) });
         const p = { callsign:v.callsign, icao24:v.icao24, alt_ft:v.alt_m!=null?v.alt_m*3.28084:null,
-          vel_kmh:v.vel_kmh, rumo:v.rumo, categoria:v.categoria, ultima:fmtDt(v.ultima_atualizacao) };
-        const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>','<span style="color:#8a97a8">Airplanes.live · ADS-B</span>'];
+          vel_kmh:v.vel_kmh, rumo:v.rumo, tipo:v.tipo, desc:v.desc, categoria:v.categoria,
+          ultima:fmtDt(v.ultima_atualizacao) };
+        const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>',
+          '<span style="color:#8a97a8">Airplanes.live · ADS-B</span>'];
+        if(p.tipo||p.desc) L.push((p.tipo||'')+(p.desc?' · '+p.desc:''));
         if(p.alt_ft!=null) L.push('Altitude: <b>'+Math.round(p.alt_ft).toLocaleString('pt-BR')+' ft</b>');
         if(p.vel_kmh!=null) L.push('Velocidade: '+p.vel_kmh+' km/h');
         if(p.rumo!=null) L.push('Rumo: '+p.rumo+'°');
@@ -1046,6 +1109,11 @@ map.on('load', async () => {
       }
       // ── aeronaves ──────────────────────────────────────────────────────────
       if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+      // trajeto (trail) — linha por baixo dos aviões, mostrando por onde passaram
+      if (!map.getSource('voos-trail')) map.addSource('voos-trail', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+      map.addLayer({ id:'voos-trail', type:'line', source:'voos-trail',
+        layout:{ 'line-cap':'round', 'line-join':'round' },
+        paint:{ 'line-color':'#FFD54F', 'line-width':1.2, 'line-opacity':0.35 } });
       map.addImage('aviao', _planeImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
         layout:{ 'icon-image':'aviao', 'icon-size':0.55, 'icon-allow-overlap':true,
@@ -1087,6 +1155,7 @@ map.on('load', async () => {
       });
       const setVoos = (data) => {
         map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(data) });
+        map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(data) });
         renderVoosList(data);
       };
       setVoos(d);
@@ -1098,7 +1167,7 @@ map.on('load', async () => {
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
       }, 30000);
-      return ['voos-pt','voos-label','voos-circulo','voos-circulo-fill'];
+      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -1360,6 +1429,7 @@ map.on('load', async () => {
             try {
               const r = await (await fetch(VOOS_URL)).json();
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+              if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
           }
@@ -1368,6 +1438,7 @@ map.on('load', async () => {
             try {
               const r = await (await fetch(VOOS_URL)).json();
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
+              if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
           }, 30000);
@@ -1622,6 +1693,15 @@ map.on('load', async () => {
   };
   const wxpRefresh = document.getElementById('wxp-refresh');
   if (wxpRefresh) wxpRefresh.onclick = () => { loadWx(true); showToast('Indicadores atualizados'); };
+  // Ajustar a câmera ao círculo de 100 km de Brusque (camada Voos)
+  const voosFit = document.getElementById('voos-fit');
+  if (voosFit) voosFit.onclick = () => {
+    const c = _cirFeat().geometry.coordinates[0];
+    const bb = new maplibregl.LngLatBounds();
+    c.forEach(([lo, la]) => bb.extend([lo, la]));
+    map.fitBounds(bb, { padding:40, duration:700 });
+    showToast('Ajustado ao círculo de 100 km de Brusque');
+  };
 
   // Abre focado em Brusque (home)
   const home = new maplibregl.LngLatBounds();

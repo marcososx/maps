@@ -6,8 +6,9 @@ Worker Cloudflare que serve, em JSON limpo e com CORS, os aviões no ar num
 
 - Endpoint: `GET /voos.json`
 - Cache: 2 min (Cache API do Worker)
-- Retorna: `{ updated, fonte, centro, raio_km, voos:[{icao24,callsign,lat,lon,alt_m,vel_kmh,rumo,subida_mps,categoria,dist_km,ultima_atualizacao}] }`
+- Retorna: `{ updated, fonte, centro, raio_km, voos:[{icao24,callsign,lat,lon,alt_m,vel_kmh,rumo,subida_mps,tipo,desc,categoria,dist_km,ultima_atualizacao}] }`
   — **ordenado por distância** (mais perto primeiro), filtrado a **≤ 100 km** (haversine).
+  `tipo` = código ICAO (ex.: A320) e `desc` = descrição (ex.: "AIRBUS A-320") da aeronave.
 
 ## Fonte dos dados
 
