@@ -558,11 +558,127 @@ map.on('load', async () => {
                              el.className=''; el.style.display='block'; return el; };
   map.getContainer().addEventListener('mouseleave', hideAllHints);
 
-  // ── Satélite (Esri World Imagery) — POR BAIXO de tudo; ligado pelo chip ──────
+  // ── Satélite (Esri World Imagery via WORKER de cache) — POR BAIXO de tudo ────
+  // O worker brusque-satelite baixa cada tile da Esri UMA vez e cacheia no edge
+  // (Cache API, 30 dias) — nas sessões seguintes o carregamento é instantâneo.
   map.addSource('satelite', { type:'raster', tileSize:256, maxzoom: 17,
-    tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    tiles:['https://brusque-satelite.marcososx.workers.dev/tile/{z}/{y}/{x}'],
     attribution:'Esri, Maxar, Earthstar Geographics' });
   map.addLayer({ id:'satelite', type:'raster', source:'satelite', layout:{ visibility:'none' } });
+
+  // ── Satélite: estática durante o movimento, refina no idle ──────────────────
+  // O chip e a fonte 'satelite' continuam como estão (mesmo processo). Durante
+  // pan/zoom a gente esconde os tiles hi-res e mostra a ÚLTIMA imagem estática
+  // do viewport (um único fetch de export da Esri); quando o mapa para, os tiles
+  // finos voltam e a estática é regenerada para a próxima interação. Isso corta o
+  // streaming de tiles a cada zoom intermediário — a origem do travamento.
+  // O estático é ancorado ANTES do contorno do município (sempre presente), então
+  // fica por baixo de todos os vetores — mesmo que camadas pesadas ainda não tenham
+  // carregado.
+  let _satMoving=false, _satStatic=false, _satHasImg=false, _satURL='';
+  const _toMerc = (lng,lat) => { const x=lng*20037508.342789244/180;
+    const y=Math.log(Math.tan((90+lat)*Math.PI/360))/(Math.PI/180)*20037508.342789244/180; return [x,y]; };
+  const _satVisible = () => map.getLayer('satelite') && map.getLayoutProperty('satelite','visibility')==='visible';
+  const satHideOverlay = () => { _satMoving = false;
+    if(_satStatic) map.setLayoutProperty('satelite-estatica','visibility','none'); };
+  // carrega a imagem de export via <img> (CORS ok com a Esri).
+  const loadSatImage = (u) => new Promise(res => { const im = new Image();
+    im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = u; });
+  const satSnapshot = async () => {
+    if(!_satVisible()) return;
+    const b = map.getBounds(), pad = 0.4;   // margem extra: cobre pan/zoom leve na interação
+    const dLng = b.getEast()-b.getWest(), dLat = b.getNorth()-b.getSouth();
+    const [x0,y0] = _toMerc(b.getWest()-dLng*pad, b.getSouth()-dLat*pad);
+    const [x1,y1] = _toMerc(b.getEast()+dLng*pad, b.getNorth()+dLat*pad);
+    const c = map.getCanvas();
+    const W = Math.min(Math.ceil(c.width),2048), H = Math.min(Math.ceil(c.height),2048);
+    const url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
+      +'?bbox='+x0+','+y0+','+x1+','+y1
+      +'&bboxSR=102100&imageSR=102100&size='+W+','+H
+      +'&format=jpg&f=image&transparent=false&layers=show:0';
+    if(url === _satURL) return; _satURL = url;
+    const img = await loadSatImage(url); if(!img) return;   // export falhou → mantém o que tinha
+    // Mesmo padrão do radar (setRadarImage): recria o ImageSource com a dataURL
+    // PRONTA — no MapLibre v4.7.1 o updateImage() não aplica a nova imagem.
+    const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+    cv.getContext('2d').drawImage(img, 0, 0);
+    const data = cv.toDataURL('image/jpeg', 0.85);
+    const coords = [[b.getWest()-dLng*pad, b.getNorth()+dLat*pad],
+                    [b.getEast()+dLng*pad, b.getNorth()+dLat*pad],
+                    [b.getEast()+dLng*pad, b.getSouth()-dLat*pad],
+                    [b.getWest()-dLng*pad, b.getSouth()-dLat*pad]];
+    if(map.getSource('satelite-estatica')){ map.removeLayer('satelite-estatica'); map.removeSource('satelite-estatica'); }
+    map.addSource('satelite-estatica', { type:'image', url:data, coordinates:coords });
+    map.addLayer({ id:'satelite-estatica', type:'raster', source:'satelite-estatica',
+      layout:{ visibility:_satMoving ? 'visible' : 'none' },
+      paint:{ 'raster-resampling':'linear' } }, 'municipio-linha');
+    _satStatic = true; _satHasImg = true;
+  };
+  // ── Círculo de 100 km ESTÁTICO (modo Voos) ───────────────────────────────────
+  // Uma única imagem de satélite do círculo (vinda do worker cacheado), com
+  // máscara circular: dentro do círculo é opaco e FIXO (nunca recarrega), fora é
+  // transparente — os tiles do redor aparecem por baixo. O zoom dentro do círculo
+  // fica performático e só carrega o que está fora dele.
+  const SAT_WORKER = 'https://brusque-satelite.marcososx.workers.dev';
+  let _voosSat = false, _circleImg = null;
+  let _cirB = null;
+  const _cirBoundsNow = () => {
+    if (_cirB) return _cirB;
+    const dLat = _raioKm / 111.32;
+    const dLon = _raioKm / (111.32 * Math.cos(_cirLat * Math.PI / 180));
+    _cirB = new maplibregl.LngLatBounds([_cirLon - dLon, _cirLat - dLat], [_cirLon + dLon, _cirLat + dLat]);
+    return _cirB;
+  };
+  const satCircleBuild = async () => {
+    if (map.getSource('satelite-circulo')) return;
+    const b = _cirBoundsNow();
+    const [x0,y0] = _toMerc(b.getWest(), b.getSouth());
+    const [x1,y1] = _toMerc(b.getEast(), b.getNorth());
+    const SIZE = 2048;
+    const url = SAT_WORKER + '/export?bbox=' + x0 + ',' + y0 + ',' + x1 + ',' + y1
+      + '&size=' + SIZE + ',' + SIZE;
+    if (!_circleImg) {
+      const img = await loadSatImage(url);
+      if (!img) return;
+      const cv = document.createElement('canvas'); cv.width = SIZE; cv.height = SIZE;
+      const g = cv.getContext('2d');
+      g.drawImage(img, 0, 0, SIZE, SIZE);
+      g.globalCompositeOperation = 'destination-in';
+      g.beginPath(); g.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2); g.fill();
+      _circleImg = cv.toDataURL('image/png');
+    }
+    const coords = [[b.getWest(), b.getNorth()], [b.getEast(), b.getNorth()],
+                    [b.getEast(), b.getSouth()], [b.getWest(), b.getSouth()]];
+    map.addSource('satelite-circulo', { type:'image', url:_circleImg, coordinates:coords });
+    map.addLayer({ id:'satelite-circulo', type:'raster', source:'satelite-circulo',
+      layout:{ visibility:'visible' }, paint:{ 'raster-resampling':'linear' } }, 'municipio-linha');
+  };
+  const satCircleHide = () => {
+    if (map.getSource('satelite-circulo')) { map.removeLayer('satelite-circulo'); map.removeSource('satelite-circulo'); }
+  };
+  map.on('move', () => {
+    if(!_satVisible() || _satMoving || !_satHasImg) return;
+    _satMoving = true;
+    map.setLayoutProperty('satelite','visibility','none');
+    map.setLayoutProperty('satelite-estatica','visibility','visible');
+  });
+  map.on('idle', () => {
+    if(_satMoving){ _satMoving = false;
+      // takeover só aconteceu porque o satélite estava visível → volta a mostrar.
+      map.setLayoutProperty('satelite','visibility','visible');
+      if(_satStatic) map.setLayoutProperty('satelite-estatica','visibility','none'); }
+    if(_satVisible()) satSnapshot();
+    else if(_satStatic) map.setLayoutProperty('satelite-estatica','visibility','none');
+    if(_voosSat){
+      // Dentro do círculo de 100 km → SÓ a imagem estática (nada de tiles no
+      // interior). A partir do momento em que a câmera sai do círculo → os tiles
+      // voltam e carregam o redor.
+      const b = map.getBounds(), cb = _cirBoundsNow();
+      const inside = b.getWest() >= cb.getWest() && b.getEast() <= cb.getEast() &&
+                     b.getSouth() >= cb.getSouth() && b.getNorth() <= cb.getNorth();
+      map.setLayoutProperty('satelite', 'visibility', inside ? 'none' : 'visible');
+    }
+  });
   // (trânsito futuro entra aqui também, como raster)
 
   // ── Contorno do município de Brusque — amarelo, por cima de tudo ──
@@ -2023,7 +2139,8 @@ map.on('load', async () => {
     // Clima: marcar mantém o zoom onde está; desmarcar volta à visão inicial.
     { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true,
       onToggle: (on) => { if (!on) goHome(); } },
-    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'] },
+    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', layers:['satelite'],
+      onToggle: (on) => { if(!on) satHideOverlay(); } },
     { id:'estradas', label:'Estradas', on:false, color:'#cbb287', build:'estradas' },
     { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', layers:['trafego'] },
   ];
@@ -2071,6 +2188,8 @@ map.on('load', async () => {
           // liga o satélite JUNTO (contexto de imagem)
           const sat = MAPA.find(m => m.id === 'satelite');
           if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
+          // círculo de 100 km estático: interior fixo, tiles só fora do círculo
+          _voosSat = true; satCircleBuild();
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
@@ -2103,6 +2222,8 @@ map.on('load', async () => {
         } else {
           _radarStop();
           hidePanel('voospanel'); hidePanel('voosleg');
+          // remove o círculo estático do satélite junto com o voos
+          _voosSat = false; satCircleHide();
           // se o satélite foi ligado junto com o voos, desliga junto
           const sat = MAPA.find(m => m.id === 'satelite');
           if (sat && sat.on) { sat.on = false; if (sat.paint) sat.paint(); }
