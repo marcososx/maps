@@ -782,11 +782,20 @@ map.on('load', async () => {
     if (map.getSource('voos-radar')) map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[] });
   };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
+  // Só reconstrói o DOM quando a lista MUDA (novo voo/saiu voo); nos ticks de
+  // refresh sem mudança mantém o DOM (evita reconstruir ~dezenas de nodes a cada 2 s).
+  let _voosListSig = null;
   const renderVoosList = (d) => {
     const count = document.getElementById('voos-count');
     const list = document.getElementById('voos-list');
     if (!list) return;
     const voos = d.voos || [];
+    const sig = voos.map(v => (v.icao24||'')+':'+Math.round(v.lat*100)+','+Math.round(v.lon*100)).join('|');
+    if (sig === _voosListSig) {
+      if (count) { /* mantém */ }
+      return;
+    }
+    _voosListSig = sig;
     if (count) count.innerHTML = voos.length
       ? '<b>'+voos.length+'</b> aeronave'+(voos.length!==1?'s':'')+' no raio de 100 km'
       : 'nenhuma aeronave no raio de 100 km no momento';
@@ -1345,15 +1354,14 @@ map.on('load', async () => {
         renderVoosList(data);
       };
       setVoos(d);
-      // checa a cada 1 s; o worker cacheia 2 s (rate limit da fonte) — dados
-      // frescos ~2 s, sem estourar o Airplanes.live (~1 req/2 s permitido)
+      // checa a cada 2 s (o worker cacheia 2 s — 1 s só dobra o trabalho)
       _voosTimer = setInterval(async () => {
         if (!map.getSource('voos')) return;
         try {
           const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
-      }, 1000);
+      }, 2000);
       // ── Helipontos e aeroportos no raio de 100 km (ANAC, dados abertos) ────
       // Fonte: sistemas.anac.gov.br/dadosabertos (Helipontos.csv +
       // AerodromosPrivados.csv + AerodromosPublicos.csv), filtrados a SC ≤100 km.
@@ -1672,13 +1680,14 @@ map.on('load', async () => {
         clearInterval(_voosTimer); _voosTimer = null;
         if (on) {
           _radarStart();
-          // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga satélite
+          // hierarquia: ativar Voos desmarca TODAS as outras camadas.
+          // (satélite NÃO é mais forçado aqui: o raster pesado baixa tiles em
+          // cada nível de zoom do fitBounds e engasgava a abertura; o usuário
+          // liga Satélite manualmente se quiser o contexto de imagem)
           [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
-          const sat = MAPA.find(m => m.id === 'satelite');
-          if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
@@ -1688,6 +1697,8 @@ map.on('load', async () => {
               renderVoosList(r);
             } catch(e) {}
           }
+          // poll a cada 2 s: o worker cacheia 2 s, então 1 s não traz dado mais
+          // fresco — só dobra o trabalho (fetch + setData + lista)
           _voosTimer = setInterval(async () => {
             if (!map.getSource('voos')) return;
             try {
@@ -1696,7 +1707,7 @@ map.on('load', async () => {
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
-          }, 1000);
+          }, 2000);
           showPanel('voospanel');
           // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela)
           const c = _cirFeat().geometry.coordinates[0];
