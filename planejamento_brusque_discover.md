@@ -202,16 +202,17 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   Endpoint: `/voos.json` (cache 2 min, CORS), voos **ordenados por distância**.
 - Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
-    botão **"Ajustar ao círculo"** no painel dá zoom out até o círculo inteiro na tela.
+    ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds) e o usuário navega/zooms livre.
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
     (até ~60 pontos).
   - Aviões **no ar** com ícone SVG de topo (canvas 48×48) girando pelo rumo real
-    (`icon-rotate`), callsign como label, hint/popup com altitude, velocidade, rumo, tipo,
-    descrição e categoria ICAO.
+    (`icon-rotate`), callsign como label; **hint no padrão das pontes** (`#hint-voos`) no hover.
   - **Painel à esquerda** (`voospanel`): contagem + lista de aeronaves (ícone do tipo em
-    destaque, callsign, descrição, altitude, velocidade, rumo); clicar foca o avião no mapa.
+    destaque, callsign, descrição, altitude, velocidade, rumo); **clicar só foca o avião no
+    mapa** (sem popup/hint).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
-    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada 30 s.
+    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada 30 s;
+    worker cacheia 20 s (posições frescas).
 - **Por que Airplanes.live:** OpenSky (522), ADSB.lol (429) e adsb.fi (403) **bloqueiam IPs de
   Workers Cloudflare** — testados em 05/08. Airplanes.live roda atrás de Cloudflare e funciona.
 

@@ -13,7 +13,7 @@
 // 1 req/s, sem chave) responde de Workers normalmente.
 
 const ADSB = 'https://api.airplanes.live/v2/point';
-const TTL = 120; // 2 min
+const TTL = 20; // 20 s — posições frescas p/ o front (que re-valida a cada 30 s)
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
 
@@ -74,7 +74,7 @@ async function handle(req, env, ctx) {
   if (url.pathname !== '/voos.json') {
     return new Response(JSON.stringify({ erro: 'use GET /voos.json' }), { status: 404, headers: CORS });
   }
-  const CACHE_V = '6';
+  const CACHE_V = '7';
   const ck = new URL(req.url); ck.searchParams.set('_v', CACHE_V);
   const cacheReq = new Request(ck);
   const cache = caches.default;

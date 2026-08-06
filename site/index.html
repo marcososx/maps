@@ -84,18 +84,19 @@
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
   #hint.cota-card .cota-big .n .m{ font-size:20px; font-weight:700; margin-left:2px; }
   /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
-  #hint-ponte, #hint-abrigo{ position:absolute; z-index:3; pointer-events:none; display:none;
+  #hint-ponte, #hint-abrigo, #hint-voos{ position:absolute; z-index:3; pointer-events:none; display:none;
          min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
          background:rgba(11,14,20,.94); border:1px solid #faee0a; border-radius:8px;
          transform:translate(12px,12px); box-shadow:0 6px 20px rgba(0,0,0,.45);
          line-height:1.4; }
-  #hint-ponte .hp-row, #hint-abrigo .hp-row{ margin-top:6px; }
-  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child{ margin-top:0; }
-  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
-  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after{ content:':'; }
-  #hint-ponte .hp-val, #hint-abrigo .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
-  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub{ color:#eaf6ff; font-weight:400; }
-  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info{ color:#00B0FF; }
+  #hint-voos{ border-color:#FFD54F; }
+  #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row{ margin-top:6px; }
+  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child{ margin-top:0; }
+  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
+  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after, #hint-voos .hp-lbl::after{ content:':'; }
+  #hint-ponte .hp-val, #hint-abrigo .hp-val, #hint-voos .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
+  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub, #hint-voos .hp-val.sub{ color:#eaf6ff; font-weight:400; }
+  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info, #hint-voos .hp-val.info{ color:#00B0FF; }
   /* símbolo de status do abrigo (verde = aberto, vermelho = fechado) */
   #hint-abrigo .hp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; }
   #hint-abrigo .hp-dot.aberto{ background:#00E676; box-shadow:0 0 8px rgba(0,230,118,.9); }
@@ -280,6 +281,7 @@
 <div id="hint"></div>
 <div id="hint-ponte"></div>
 <div id="hint-abrigo"></div>
+<div id="hint-voos"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="1" value="10">
@@ -341,9 +343,6 @@
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
     <div class="voo-count" id="voos-count">carregando…</div>
     <div class="voo-list" id="voos-list"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:9px">
-      <button class="wbtn" id="voos-fit">Ajustar ao círculo</button>
-    </div>
   </div>
 </div>
 
@@ -387,7 +386,8 @@ map.on('load', async () => {
   // ── Hints: helpers universais (um por vez; sair da camada/mapa esconde) ───────
   const _hintEls = { hint:document.getElementById('hint'),
                      ponte:document.getElementById('hint-ponte'),
-                     abrigo:document.getElementById('hint-abrigo') };
+                     abrigo:document.getElementById('hint-abrigo'),
+                     voos:document.getElementById('hint-voos') };
   const hideAllHints = () => { for (const k in _hintEls){ const el=_hintEls[k]; if(el) el.style.display='none'; } };
   const showHint = (id) => { hideAllHints(); const el=_hintEls[id]; if(!el) return null;
                              el.className=''; el.style.display='block'; return el; };
@@ -709,18 +709,10 @@ map.on('load', async () => {
         + '<span class="voo-d"><span><b>'+alt+'</b> alt</span><span><b>'+vel+'</b></span>'
         + '<span>rumo <b>'+rumo+'</b></span></span>';
       row.onclick = () => {
+        // clicar na lista: só foca o avião no mapa (sem popup/hint — o hint
+        // aparece ao passar o mouse sobre o avião na camada)
+        hideAllHints();
         map.easeTo({ center:[v.lon, v.lat], zoom: Math.max(map.getZoom(), 10) });
-        const p = { callsign:v.callsign, icao24:v.icao24, alt_ft:v.alt_m!=null?v.alt_m*3.28084:null,
-          vel_kmh:v.vel_kmh, rumo:v.rumo, tipo:v.tipo, desc:v.desc, categoria:v.categoria,
-          ultima:fmtDt(v.ultima_atualizacao) };
-        const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>',
-          '<span style="color:#8a97a8">Airplanes.live · ADS-B</span>'];
-        if(p.tipo||p.desc) L.push((p.tipo||'')+(p.desc?' · '+p.desc:''));
-        if(p.alt_ft!=null) L.push('Altitude: <b>'+Math.round(p.alt_ft).toLocaleString('pt-BR')+' ft</b>');
-        if(p.vel_kmh!=null) L.push('Velocidade: '+p.vel_kmh+' km/h');
-        if(p.rumo!=null) L.push('Rumo: '+p.rumo+'°');
-        if(p.categoria) L.push('Categoria: '+p.categoria);
-        new maplibregl.Popup({closeButton:false}).setLngLat([v.lon, v.lat]).setHTML(L.join('<br>')).addTo(map);
       };
       list.appendChild(row);
     });
@@ -1127,21 +1119,21 @@ map.on('load', async () => {
       map.on('mousemove','voos-pt',(e)=>{
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
-        showHint('hint'); hint.className='rt-card'; hint.style.borderColor='#FFD54F';
-        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
-        const fmt=(v,u)=> (v==null)?null:'<div style="flex:1;min-width:74px"><div style="font-size:11px;color:#8a97a8;text-transform:uppercase;letter-spacing:.3px">'+u+'</div><div style="font-size:15px;color:#eaf6ff">'+v+'</div></div>';
-        let m='<div style="display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px">'
-          + (fmt(p.alt_ft && Math.round(p.alt_ft).toLocaleString('pt-BR'),'Altitude')||'')
-          + (fmt(p.vel_kmh, 'Velocidade')||'') + (fmt(p.rumo, 'Rumo')||'')
-          + (p.subida!=null ? (fmt((p.subida>0?'▲':'▼')+Math.abs(p.subida), 'Subida')||'') : '') + '</div>';
-        if(p.categoria) m+='<div style="font-size:12px;color:#8a97a8;margin-top:7px">'+p.categoria+' · ADS-B</div>';
-        if(p.ultima) m+='<div style="font-size:11px;color:#8a97a8;margin-top:7px">posição '+p.ultima+'</div>';
-        hint.innerHTML='<div style="padding:14px 16px">'
-          + '<div class="k">✈️ '+(p.callsign||p.icao24)+'</div>'
-          + '<div style="font-size:12px;color:#ffd54f;margin-top:2px">TRÁFEGO AÉREO · ADS-B</div>'
-          + m + '</div>';
+        const hv=showHint('voos');
+        if(!hv) return;
+        hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
+        const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
+          +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+        let h=row('Voo', (p.callsign||p.icao24||'—'));
+        if(p.tipo||p.desc) h+=row('Aeronave', ((p.tipo||'')+(p.desc?' · '+p.desc:'')).trim(), 'sub');
+        if(p.alt_ft!=null) h+=row('Altitude', Math.round(p.alt_ft).toLocaleString('pt-BR')+' ft', 'info');
+        if(p.vel_kmh!=null) h+=row('Velocidade', p.vel_kmh+' km/h');
+        if(p.rumo!=null) h+=row('Rumo', p.rumo+'°');
+        if(p.subida!=null) h+=row('Subida', (p.subida>0?'▲ +':'▼ ')+Math.abs(p.subida)+' m/s', 'info');
+        if(p.ultima) h+=row('Posição', p.ultima, 'sub');
+        hv.innerHTML=h;
       });
-      map.on('mouseleave','voos-pt',()=>{ map.getCanvas().style.cursor=''; hint.className=''; hideAllHints(); });
+      map.on('mouseleave','voos-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       map.on('click','voos-pt',(e)=>{
         const p=e.features[0].properties;
         const L=['<b>✈️ '+(p.callsign||p.icao24)+'</b>',
@@ -1443,6 +1435,11 @@ map.on('load', async () => {
             } catch(e) {}
           }, 30000);
           showPanel('voospanel');
+          // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela)
+          const c = _cirFeat().geometry.coordinates[0];
+          const bb = new maplibregl.LngLatBounds();
+          c.forEach(([lo, la]) => bb.extend([lo, la]));
+          map.fitBounds(bb, { padding:30, duration:700 });
         } else {
           hidePanel('voospanel');
         }
@@ -1693,15 +1690,6 @@ map.on('load', async () => {
   };
   const wxpRefresh = document.getElementById('wxp-refresh');
   if (wxpRefresh) wxpRefresh.onclick = () => { loadWx(true); showToast('Indicadores atualizados'); };
-  // Ajustar a câmera ao círculo de 100 km de Brusque (camada Voos)
-  const voosFit = document.getElementById('voos-fit');
-  if (voosFit) voosFit.onclick = () => {
-    const c = _cirFeat().geometry.coordinates[0];
-    const bb = new maplibregl.LngLatBounds();
-    c.forEach(([lo, la]) => bb.extend([lo, la]));
-    map.fitBounds(bb, { padding:40, duration:700 });
-    showToast('Ajustado ao círculo de 100 km de Brusque');
-  };
 
   // Abre focado em Brusque (home)
   const home = new maplibregl.LngLatBounds();
