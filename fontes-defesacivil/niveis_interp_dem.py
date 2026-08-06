@@ -11,8 +11,12 @@ pelo relevo — não por distância euclidiana:
        eB = elevação média das k bordas mais próximas da banda maior
        fração = (elevação_da_célula - eA) / (eB - eA)   → 0 perto da banda menor,
                                                           1 perto da maior
-  3. A banda n+0.5 = banda menor ∪ (células da faixa com fração ≤ 0.5).
-  4. Contorno extraído com marching squares → MultiPolygon válido.
+   3. A banda n+0.5 = banda menor ∪ (células da faixa com fração ≤ 0.5).
+   4. Contorno extraído com marching squares → MultiPolygon válido.
+   5. UNIÃO CUMULATIVA ao final: cada nível vira a união com todos os menores.
+      O meio-termo nasce no grid do DEM (z14, ~9 m) e, ao voltar pra polígono,
+      pode perder bordas que a banda inteira já tinha — sem a união, uma área
+      alagada em 7 "secava" ao deslizar pra 7.5. Com ela, 7.5 ⊇ 7, 8 ⊇ 7.5, …
 
 Saída: out/brusque_niveis_alagamento.geojson com 17 bandas
 (7, 7.5, 8, 8.5, …, 15).
@@ -178,6 +182,17 @@ def main():
             anxt = round(bands[n + 1].area * 1e6 * 91 * 111 / 1e6, 2)
             print(f'  {n}+0.5 → {a} km² (entre {an} e {anxt})')
     feats.sort(key=lambda f: f['properties']['nivel'])
+    # UNIÃO CUMULATIVA: cada nível ⊇ todos os menores (7.5 ⊇ 7, 8 ⊇ 7.5, …).
+    # Garante que subir o slider NUNCA "desalaga" uma área já inundada.
+    acc = None
+    for f in feats:
+        g = make_valid(shape(f['geometry']))
+        if acc is not None:
+            g = make_valid(unary_union([g, acc]))
+        f['geometry'] = mapping(g)
+        acc = g
+        a = round(g.area * 1e6 * 91 * 111 / 1e6, 2)
+        print(f"  {f['properties']['nivel']:>4} → união cumulativa = {a} km²")
     json.dump({'type': 'FeatureCollection', 'features': feats},
               open('out/brusque_niveis_alagamento.geojson', 'w'), ensure_ascii=False)
     print('OK —', len(feats), 'bandas (7, 7.5, 8, 8.5, …, 15)')

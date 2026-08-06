@@ -92,6 +92,11 @@ Para cada par de bandas adjacentes (A = banda n, B = banda n+1, com A ⊆ B):
 4. **Banda n+0.5** = A ∪ {células da faixa com `f ≤ 0.5`}.
 5. Contorno extraído com **marching squares** (`skimage.find_contours`) e união
    (`shapely.unary_union`) → MultiPolygon válido.
+6. **União cumulativa** (passo final): cada nível vira a união com todos os menores
+   (`7.5 ⊇ 7`, `8 ⊇ 7.5`, …). O meio-termo nasce no grid do DEM (z14, ~9 m) e, ao
+   voltar pra polígono, podia perder bordas que a banda inteira já tinha — sem essa
+   etapa, uma área alagada em 7 "secava" ao deslizar pra 7.5 (impossível na física).
+   Agora subir o slider só AUMENTA a mancha, nunca desalaga.
 
 Saída: `out/brusque_niveis_alagamento.geojson` com **17 bandas**
 (7, 7.5, 8, 8.5, … 15). Áreas intermediárias ficam entre as bandas vizinhas
@@ -117,5 +122,5 @@ Requisitos do venv `.venv-niveis/`: `shapely`, `numpy`, `scipy`, `scikit-image`,
 - `Z` (zoom do DEM, hoje `14` ≈ 9 m/px) → `15` ≈ 4.7 m/px (mais preciso, mais lento
   e arquivo maior).
 - `TOL_MID` (simplificação do meio-termo, hoje `0.00009` ≈ 9 m — mesma ordem do DEM)
-  controla o peso do arquivo final (~3.7 MB para 17 bandas).
+  controla o peso do arquivo final (~7.7 MB para 17 bandas com a união cumulativa).
 
