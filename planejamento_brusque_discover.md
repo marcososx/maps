@@ -211,8 +211,12 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   Endpoint: `/voos.json` (cache 2 min, CORS), voos **ordenados por distância**.
 - Camada **"Voos (ADS-B)"** no dropdown Tempo Real:
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
-    ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds) e o usuário navega/zooms
-    livre. `maxBounds` do mapa cobre ~2x o círculo (`[[-51.7,-29.5],[-46.1,-24.7]]`).
+    ao **ativar a camada a câmera se ajusta ao círculo** (fitBounds, animação lenta ~2,6 s p/
+    dar tempo de carregar os aviões) e o usuário navega/zooms livre. `maxBounds` cobre SC
+    quase todo (`[[-53.2,-30.9],[-44.6,-23.2]]`).
+  - **Varredura de radar estética**: linha âmbar + esteira girando do centro até a borda do
+    círculo (1 volta/8 s, `requestAnimationFrame` sobre a fonte `voos-radar`); não interfere
+    nos aviões. Para quando a camada é desligada.
   - **Trajeto do voo (trail):** linha âmbar acumulando as posições recentes de cada aeronave
     (até ~150 pontos ≈ 5 min; mínimo de deslocamento 0.001°).
   - Aviões **no ar** com **ícone idêntico ao Airplanes.live** (silhueta 'unknown' do tar1090

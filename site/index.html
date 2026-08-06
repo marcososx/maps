@@ -696,6 +696,29 @@ map.on('load', async () => {
     return { type:'Feature', properties:{ raio_km:_raioKm },
       geometry:{ type:'Polygon', coordinates:[coords] } };
   };
+  // ── Varredura de radar estética: linha girando do centro até a borda do
+  // círculo de 100 km (não interfere nos aviões — só visual). 1 volta a cada 8 s.
+  const _radarPt = (br) => {   // ponto na borda do círculo num ângulo br (rad)
+    const R = 6371, d = _raioKm / R;
+    const la = Math.asin(Math.sin(_cirLat*Math.PI/180)*Math.cos(d) + Math.cos(_cirLat*Math.PI/180)*Math.sin(d)*Math.cos(br));
+    const lo = _cirLon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(_cirLat*Math.PI/180), Math.cos(d)-Math.sin(_cirLat*Math.PI/180)*Math.sin(la));
+    return [lo*180/Math.PI, la*180/Math.PI];
+  };
+  let _sweepOn = false, _sweepRaf = null;
+  const _radarStep = (ts) => {
+    if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
+    const ang = (ts % 8000) / 8000 * 2 * Math.PI;      // 1 volta / 8 s
+    const edge = _radarPt(ang);
+    const trail = _radarPt(ang - 0.4);                 // esteira ~23° atrás da linha
+    map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[
+      { type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:[[_cirLon,_cirLat], edge] } },
+      { type:'Feature', properties:{}, geometry:{ type:'Polygon',
+        coordinates:[[[_cirLon,_cirLat], edge, trail, [_cirLon,_cirLat]]] } }
+    ]});
+    _sweepRaf = requestAnimationFrame(_radarStep);
+  };
+  const _radarStart = () => { _sweepOn = true; if (!_sweepRaf) _sweepRaf = requestAnimationFrame(_radarStep); };
+  const _radarStop = () => { _sweepOn = false; if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; } };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
   const renderVoosList = (d) => {
     const count = document.getElementById('voos-count');
@@ -1142,7 +1165,14 @@ map.on('load', async () => {
           paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
           paint:{ 'line-color':'#FFD54F', 'line-width':1.4, 'line-dasharray':[2,2], 'line-opacity':0.75 } });
+        // varredura de radar (estética) — fonte + linha/esteira animadas
+        map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+        map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
+          paint:{ 'fill-color':'#FFD54F', 'fill-opacity':0.05 } });
+        map.addLayer({ id:'voos-radar-line', type:'line', source:'voos-radar',
+          paint:{ 'line-color':'#FFD54F', 'line-width':1.6, 'line-opacity':0.8 } });
       }
+      _radarStart();
       // ── aeronaves ──────────────────────────────────────────────────────────
       if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
       // trajeto (trail) — linha por baixo dos aviões, mostrando por onde passaram
@@ -1232,7 +1262,7 @@ map.on('load', async () => {
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
       }, 1000);
-      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill'];
+      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill','voos-radar-line','voos-radar-fill'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -1482,6 +1512,7 @@ map.on('load', async () => {
       onToggle: async (on) => {
         clearInterval(_voosTimer); _voosTimer = null;
         if (on) {
+          _radarStart();
           // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga satélite
           [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
             if (m.id === 'voos') return;
@@ -1514,6 +1545,7 @@ map.on('load', async () => {
           c.forEach(([lo, la]) => bb.extend([lo, la]));
           map.fitBounds(bb, { padding:30, duration:2600 });
         } else {
+          _radarStop();
           hidePanel('voospanel');
         }
       } },
