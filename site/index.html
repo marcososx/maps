@@ -1144,12 +1144,8 @@ map.on('load', async () => {
         paint:{ 'text-color':'#ffd54f','text-halo-color':'#04121c','text-halo-width':1.4 } });
       // hover no avião → hint no padrão das pontes (#hint-voos)
       map.on('mouseenter','voos-pt',()=>map.getCanvas().style.cursor='pointer');
-      map.on('mousemove','voos-pt',(e)=>{
-        map.getCanvas().style.cursor='pointer';
-        const p=e.features[0].properties;
-        const hv=showHint('voos');
-        if(!hv) return;
-        hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
+      let _hvKey = null, _hvAt = 0;   // cache p/ não reconstruir a <img> do logo a cada mousemove
+      const hvHTML = (p) => {
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
         let h='';
@@ -1185,7 +1181,22 @@ map.on('load', async () => {
         if(p.rumo!=null) h+=row('Rumo', p.rumo+'°');
         if(p.subida!=null) h+=row('Subida', (p.subida>0?'▲ +':'▼ ')+Math.abs(p.subida)+' m/s', 'info');
         if(p.ultima) h+=row('Posição', p.ultima, 'sub');
-        hv.innerHTML=h;
+        return h;
+      };
+      map.on('mousemove','voos-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
+        const p=e.features[0].properties;
+        const hv=showHint('voos');
+        if(!hv) return;
+        hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
+        // reconstrói o HTML só quando troca de avião (ou a cada 2 s) — senão a
+        // <img> do logo é recriada a cada mousemove e nunca termina de carregar
+        const key = p.icao24 || p.callsign || '';
+        const now = Date.now();
+        if (key !== _hvKey || now - _hvAt > 2000) {
+          _hvKey = key; _hvAt = now;
+          hv.innerHTML = hvHTML(p);
+        }
       });
       map.on('mouseleave','voos-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       const setVoos = (data) => {
