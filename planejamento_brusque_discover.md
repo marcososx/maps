@@ -215,8 +215,9 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
     (mono + âmbar com glow). Cada aeronave: ícone do tipo em destaque, callsign, descrição,
     altitude, velocidade, rumo; **clicar só foca o avião no mapa** (sem popup/hint).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras
-    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front re-valida a cada **2 s**;
-    worker cacheia **2 s** (posições quase em tempo real).
+    camadas** (Mapa, Tempo Real, Rio, Indicadores, Setores). Front checa a cada **1 s**;
+    worker cacheia **2 s** (limite da fonte: Airplanes.live ~1 req/2 s, acima dá 429).
+    Ícone do avião em `icon-size` 0.8.
 - **Por que Airplanes.live:** OpenSky (522), ADSB.lol (429) e adsb.fi (403) **bloqueiam IPs de
   Workers Cloudflare** — testados em 05/08. Airplanes.live roda atrás de Cloudflare e funciona.
 

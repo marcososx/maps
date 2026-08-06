@@ -188,8 +188,10 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
 - **Campos por voo:** `icao24`, `callsign`, `lat/lon`, `alt_m` (geométrica), `vel_kmh`,
   `rumo`, `subida_mps` (fpm→m/s), `tipo` (código ICAO, ex.: A320) + `desc` (ex.: "AIRBUS A-320"),
   `categoria` (A1/A3/A5…), `dist_km`, `ultima_atualizacao`.
-- **Cadência do worker:** cacheia **2 s** (~0,5 req/s na Airplanes.live); o front re-valida a
-  cada **2 s** — posições quase em tempo real.
+- **Cadência do worker:** cacheia **2 s** — é o máximo sustentável da fonte
+  (Airplanes.live limita a ~1 req/2 s por IP; acima disso retorna **429**). O front
+  re-valida a cada **1 s** (pega o cache do worker entre as atualizações) — aviões se
+  movem a cada ~2 s, quase em tempo real, sem estourar o rate limit.
 - **No mapa (dropdown Tempo Real → Voos (ADS-B)):**
   - **Círculo estático de 100 km** ao redor de Brusque (GeoJSON de 128 pontos, tracejado âmbar);
     ao **ativar a camada, a câmera se ajusta automaticamente** ao círculo (fitBounds) e o
@@ -198,8 +200,8 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
   - **Trajeto do voo (trail):** linha âmbar sob o avião acumulando as posições recentes de cada
     aeronave (até ~150 pontos ≈ 5 min a 2 s de poll; mínimo de deslocamento 0.001°).
   - **Ícones de avião idênticos ao Airplanes.live** (silhueta 'unknown' do tar1090, desenhada
-    no canvas via `Path2D`) girando pelo rumo real (`icon-rotate`), callsign como label.
-    Front busca com `cache:'no-store'` (nenhuma resposta antiga do browser).
+    no canvas via `Path2D`, `icon-size` 0.8) girando pelo rumo real (`icon-rotate`), callsign
+    como label. Front busca com `cache:'no-store'` (nenhuma resposta antiga do browser).
   - **Hint no padrão das pontes** (`#hint-voos`, card com `hp-row/hp-lbl/hp-val`): Voo, Aeronave,
     Altitude, Velocidade, Rumo, Subida, Posição — aparece ao passar o mouse sobre o avião.
   - **Painel à esquerda** (`voospanel`): contagem + lista separada em **duas seções** —

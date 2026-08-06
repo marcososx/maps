@@ -1114,7 +1114,7 @@ map.on('load', async () => {
         paint:{ 'line-color':'#FFD54F', 'line-width':1.2, 'line-opacity':0.35 } });
       map.addImage('aviao', _planeImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
-        layout:{ 'icon-image':'aviao', 'icon-size':0.55, 'icon-allow-overlap':true,
+        layout:{ 'icon-image':'aviao', 'icon-size':0.8, 'icon-allow-overlap':true,
                   'icon-ignore-placement':true,
                   'icon-rotate':['get','rumo'], 'icon-rotation-alignment':'map' } });
       map.addLayer({ id:'voos-label', type:'symbol', source:'voos', minzoom:9,
@@ -1159,14 +1159,15 @@ map.on('load', async () => {
         renderVoosList(data);
       };
       setVoos(d);
-      // atualiza a cada 2 s enquanto ligada (worker cacheia 2 s) — tempo quase real
+      // checa a cada 1 s; o worker cacheia 2 s (rate limit da fonte) — dados
+      // frescos ~2 s, sem estourar o Airplanes.live (~1 req/2 s permitido)
       _voosTimer = setInterval(async () => {
         if (!map.getSource('voos')) return;
         try {
           const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
           setVoos(r);
         } catch(e) { /* silencioso: mantém últimos dados */ }
-      }, 2000);
+      }, 1000);
       return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-circulo-fill'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
@@ -1441,7 +1442,7 @@ map.on('load', async () => {
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
-          }, 2000);
+          }, 1000);
           showPanel('voospanel');
           // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela)
           const c = _cirFeat().geometry.coordinates[0];
