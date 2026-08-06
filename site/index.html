@@ -1618,7 +1618,7 @@ map.on('load', async () => {
           const c = _cirFeat().geometry.coordinates[0];
           const bb = new maplibregl.LngLatBounds();
           c.forEach(([lo, la]) => bb.extend([lo, la]));
-          map.fitBounds(bb, { padding:30, duration:2600 });
+          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
         } else {
           _radarStop();
           hidePanel('voospanel');
