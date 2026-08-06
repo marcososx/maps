@@ -235,7 +235,9 @@ A interface adota um estilo inspiracional no *Pizza Index* (Dark Mode Operaciona
   - **Worker** enriquece rota por callsign via `api.adsbdb.com/v0/callsign/{cs}` com cache de
     1 h no worker (CORS `*`, sem rate limit visível).
   - **Painel à esquerda** (`voospanel`): contagem + lista em **duas seções** — "VOOS SOBRE
-    BRUSQUE" (≤ 25 km) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — títulos neon estilo PizzINT
+    BRUSQUE" (somente voos **dentro do polígono real do município**, ray casting em
+    `brusque_municipio.geojson` via `geomHas` — antes era círculo de 25 km e incluía
+    cidades vizinhas) e "VOOS NO RAIO DE 100 KM DE BRUSQUE" — títulos neon estilo PizzINT
     (mono + âmbar com glow). Cada aeronave: ícone do tipo em destaque, callsign, descrição,
     altitude, velocidade, rumo; **clicar só foca o avião no mapa** (sem popup/hint).
   - **Hierarquia:** ativar Voos **liga o satélite** por baixo e **desmarca todas as outras

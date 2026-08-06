@@ -817,8 +817,9 @@ map.on('load', async () => {
       h.appendChild(c);
       return h;
     };
-    // seção 1: voos que passam sobre Brusque (perto do centro da cidade)
-    const sobre = voos.filter(v => v.dist_km <= 25);
+    // seção 1: voos que passam SOBRE Brusque — dentro do polígono REAL do município
+    // (ray casting em brusque_municipio.geojson, não círculo de 25 km do centro)
+    const sobre = voos.filter(v => v.lat != null && v.lon != null && geomHas(muniGeom, v.lon, v.lat));
     const restante = voos.filter(v => v.dist_km > 25);
     if (sobre.length) {
       list.appendChild(sec('VOOS SOBRE BRUSQUE', sobre.length));
