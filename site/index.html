@@ -409,7 +409,7 @@ const map = new maplibregl.Map({
   // Estilo base = só um fundo sólido dark. Sem tiles externos (contorno puro).
   style:{ version:8, sources:{}, glyphs:'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
           layers:[{ id:'bg', type:'background', paint:{'background-color':'#0B0E14'} }] },
-  center:[-48.905,-27.11], zoom:11, maxZoom: 17, attributionControl:false
+  center:[-48.905,-27.11], zoom:9.3, maxZoom: 17, attributionControl:false
 });
 
 map.on('load', async () => {
@@ -1965,25 +1965,25 @@ map.on('load', async () => {
   const wxpRefresh = document.getElementById('wxp-refresh');
   if (wxpRefresh) wxpRefresh.onclick = () => { loadWx(true); showToast('Indicadores atualizados'); };
 
-  // Abre focado em Brusque (home) — zoom suave: parte de um zoom menos distante
-  // (≈50% da distância antiga) e "voa" até Brusque, DANDO TEMPO do clima carregar.
+  // Abre focado em Brusque (home) — UMA animação só: o mapa nasce em zoom 9.3
+  // (constructor) e o fitBounds anima direto até Brusque (sem flyTo + fitBounds
+  // em sequência = metade do trabalho de câmera). Contorno amarelo surge com
+  // fade-in junto; o clima só aparece quando tudo termina.
   const home = new maplibregl.LngLatBounds();
   const eachHome = c => Array.isArray(c[0]) ? c.forEach(eachHome) : home.extend(c);
   muni.features.forEach(f => eachHome(f.geometry.coordinates));
-  // começa mais perto (zoom ~9.3; antes era 7.2) — a metade do caminho até o home
-  map.flyTo({ center: home.getCenter(), zoom: 9.3, duration: 800, essential: true, speed: 0.4 });
   // contorno de Brusque surge junto com o zoom (fade-in da linha)
   map.setPaintProperty('municipio-linha', 'line-opacity', 0);
-  map.setPaintProperty('municipio-linha', 'line-opacity-transition', { duration: 3000, delay: 120 });
+  map.setPaintProperty('municipio-linha', 'line-opacity-transition', { duration: 2400, delay: 120 });
   map.setPaintProperty('municipio-linha', 'line-opacity', 1);
   // o mapa inteiro faz fade-in na tela
   setTimeout(() => map.getContainer().classList.add('ready'), 120);
   setTimeout(() => {
-    map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600, essential:true });
+    map.fitBounds(home, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2400, essential:true });
     // o selo de clima SÓ aparece (fade-in) quando a animação terminar E o dado
     // já tiver chegado — nada de clima surgindo no meio do zoom
-    setTimeout(() => { _openDone = true; updateBadge(); }, 2700);
-  }, 700);
+    setTimeout(() => { _openDone = true; updateBadge(); }, 2500);
+  }, 250);
 
   // Zoom-out liberado: cobre SC quase inteiro (~1,6x o raio) — permite ver as
   // cidades do raio de 100 km e navegar com folga sem travar.
