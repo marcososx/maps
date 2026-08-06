@@ -33,6 +33,12 @@ VENV=".venv-niveis"
 "$VENV/bin/pip" show shapely >/dev/null 2>&1 || "$VENV/bin/pip" install -q shapely
 "$VENV/bin/python" niveis_build.py
 
+echo "== níveis: meios-termos (7.5, 8.5, …) por RELEVO (DEM; ver niveis_interp_dem.py) =="
+# Interpola as bandas 7–15 para 17 níveis usando o modelo digital de elevação
+# (AWS Terrain Tiles / Mapzen Terrarium, z14). Requer scipy, scikit-image, pillow.
+"$VENV/bin/pip" show scipy >/dev/null 2>&1 || "$VENV/bin/pip" install -q scipy scikit-image pillow
+"$VENV/bin/python" niveis_interp_dem.py
+
 echo "== demais camadas (mapshaper) =="
 npx mapshaper raw/setores.geojson -simplify visvalingam 55% keep-shapes -clean \
   -o format=geojson precision=0.00001 out/brusque_setores_risco.geojson
