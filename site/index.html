@@ -726,6 +726,10 @@ map.on('load', async () => {
   };
   let _blips = [];   // flashes de radar primário: { lon, lat, born }
   const _BLIP_TTL = 1000, _BLIP_STEPS = 14;
+  // posições atuais dos voos EM MEMÓRIA (atualizadas no setVoos) — o radar
+  // usa isso em vez de querySourceFeatures('voos') a cada frame (que é caro
+  // e engasgava a abertura junto com o raster do satélite)
+  let _voosPos = [];
   const _radarStep = (ts) => {
     if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
     const t = ts - _sweepT0;
@@ -733,16 +737,9 @@ map.on('load', async () => {
     const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
     const volta = Math.floor(t / _RADAR_ROT);
     // radar primário: quando a varredura cruza o rumo de um avião → flash no ponto
-    if (map.getSource('voos')) {
-      try {
-        const feats = map.querySourceFeatures('voos');
-        for (const f of feats) {
-          const c = f.geometry && f.geometry.coordinates;
-          if (!c) continue;
-          const b = _bearingTo(c[0], c[1]);
-          if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts });
-        }
-      } catch(e) {}
+    for (const c of _voosPos) {
+      const b = _bearingTo(c[0], c[1]);
+      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts });
     }
     _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
     const edge = _radarPt(ang);
@@ -1349,6 +1346,8 @@ map.on('load', async () => {
       });
       map.on('mouseleave','voos-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       const setVoos = (data) => {
+        // cache p/ o radar (evita querySourceFeatures a cada frame)
+        _voosPos = (data.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
         map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(data) });
         map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(data) });
         renderVoosList(data);
@@ -1680,23 +1679,22 @@ map.on('load', async () => {
         clearInterval(_voosTimer); _voosTimer = null;
         if (on) {
           _radarStart();
-          // hierarquia: ativar Voos desmarca TODAS as outras camadas.
+          // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga
+          // o satélite JUNTO (contexto de imagem). Performance garantida por:
+          //  1) radar usa cache em memória (_voosPos), não querySourceFeatures
+          //     a cada frame; 2) fitBounds mais curto (1.6 s) = menos zooms
+          //     intermediários baixando tiles do raster.
           [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
-          // satélite ligado, mas com atraso: o raster pesado baixaria tiles em
-          // CADA nível de zoom do fitBounds (engasgo). Espera a animação da
-          // câmera acabar (~2.6 s) e só então liga — carrega uma vez, suave.
-          const _ligarSat = () => {
-            const sat = MAPA.find(m => m.id === 'satelite');
-            if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
-          };
-          setTimeout(_ligarSat, 2600);
+          const sat = MAPA.find(m => m.id === 'satelite');
+          if (sat && !sat.on) { sat.on = true; if (sat.paint) sat.paint(); }
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
               const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
+              _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
@@ -1708,17 +1706,19 @@ map.on('load', async () => {
             if (!map.getSource('voos')) return;
             try {
               const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
+              _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
           }, 2000);
           showPanel('voospanel');
-          // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela)
+          // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela) —
+          // mais curto para reduzir a janela de download do satélite
           const c = _cirFeat().geometry.coordinates[0];
           const bb = new maplibregl.LngLatBounds();
           c.forEach(([lo, la]) => bb.extend([lo, la]));
-          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
+          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
         } else {
           _radarStop();
           hidePanel('voospanel');
