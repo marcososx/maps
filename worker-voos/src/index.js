@@ -151,21 +151,24 @@ async function handle(req, env, ctx) {
       const r = rotas[v.callsign];
       if (r) {
         v.origem = r.origem; v.destino = r.destino; v.cia = r.cia;
-        // sanidade do destino: se a direção do voo aponta LONGE do destino da
-        // escala (>120°), a rota do adsbdb divergiu do voo real (flight number
-        // reutilizado em outra rota no dia) → remove o destino falso
+        // sanidade do destino: se a DIREÇÃO do voo aponta longe do destino da
+        // escala (>90°), a rota do adsbdb divergiu do voo real (flight number
+        // reutilizado em outra rota no dia) → remove o destino falso.
+        // A direção vem do rastro recente (ponto ~20 amostras atrás → atual),
+        // que é imune a curva pontual (ex: aproximação virando pra pista).
         if (v.destino && v.destino.lat != null) {
-          // direção efetiva: track do ADS-B, ou a direção real do movimento
-          // (posição anterior → atual) quando o track não vier
-          let hdg = v.rumo;
-          if (hdg == null) {
-            const arr = _trails[v.icao24];
-            if (arr && arr.length) hdg = bearingKm(arr[arr.length-1][1], arr[arr.length-1][0], v.lat, v.lon);
+          let hdg = null;
+          const arr = _trails[v.icao24];
+          if (arr && arr.length >= 2) {
+            const a = arr[Math.max(0, arr.length - 21)];
+            hdg = bearingKm(a[1], a[0], v.lat, v.lon);
+          } else if (v.rumo != null) {
+            hdg = v.rumo;
           }
           if (hdg != null) {
             const b = bearingKm(v.lat, v.lon, v.destino.lat, v.destino.lon);
             let dd = Math.abs(hdg - b) % 360; if (dd > 180) dd = 360 - dd;
-            if (dd > 120) v.destino = null;
+            if (dd > 90) v.destino = null;
           }
         }
       }
