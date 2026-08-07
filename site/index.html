@@ -1120,6 +1120,31 @@ map.on('load', async () => {
     for (const k in _trails) if (!seen.has(k)) delete _trails[k];
     return feats;
   };
+  // ── Linha reta na TRASEIRA de cada aeronave (vetor de rumo invertido) ──────
+  // Só para voos que NÃO decolaram de NVT (Navegantes) ou FLN (Florianópolis) —
+  // esses dois aeroportos locais já deixam o trail visual sujo. Comprimento
+  // proporcional à velocidade (voo mais rápido → cauda mais longa).
+  const _TAIL_ORIG_SKIP = { NVT:1, SBNF:1, FLN:1, SBFL:1 };
+  const _ptAt = (lon, lat, brDeg, km) => {
+    const R = 6371, d = km / R, br = brDeg * Math.PI / 180, la = lat * Math.PI / 180;
+    const la2 = Math.asin(Math.sin(la)*Math.cos(d) + Math.cos(la)*Math.sin(d)*Math.cos(br));
+    const lo2 = lon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(la),
+      Math.cos(d) - Math.sin(la)*Math.sin(la2));
+    return [lo2*180/Math.PI, la2*180/Math.PI];
+  };
+  const tailFeatures = (d) => {
+    const feats = [];
+    for (const v of (d.voos || [])) {
+      if (!v.icao24 || v.lat == null || v.lon == null || v.rumo == null) continue;
+      const o = v.origem || {};
+      const code = ((o.iata || o.icao) || '').toUpperCase();
+      if (_TAIL_ORIG_SKIP[code]) continue;
+      const L = Math.min(45, Math.max(12, (v.vel_kmh || 500) / 25));
+      feats.push({ type:'Feature', properties:{ icao24:v.icao24, callsign:v.callsign },
+        geometry:{ type:'LineString', coordinates:[[v.lon, v.lat], _ptAt(v.lon, v.lat, v.rumo + 180, L)] } });
+    }
+    return feats;
+  };
   const _cirFeat = () => {
     const coords = [];
     const R = 6371, d = _raioKm / R;
@@ -1212,17 +1237,23 @@ map.on('load', async () => {
       ctx.beginPath(); ctx.moveTo(C.x, C.y); ctx.lineTo(E.x, E.y); ctx.stroke();
       ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     }
-    // blips (ecos) — alpha próprio pelo TTL, independente do envelope da varredura
+    // blips (ecos) — alpha próprio pelo TTL, independente do envelope da varredura.
+    // Avião (k='v') pisca MUITO mais forte no momento da colisão: núcleo quente
+    // quase-branco + glow verde; infra (k='i') continua discreta.
     for (const x of _blips) {
       const age = (ts - x.born) / _BLIP_TTL;               // 0 → 1
       const isV = x.k === 'v';
-      const r  = (isV ? 6 : 4) + (isV ? 16 : 11) * age;    // cresce com a idade
-      const op = (isV ? 0.5 : 0.35) * (1 - age);           // apaga com a idade
+      const r  = (isV ? 8 : 5) + (isV ? 20 : 12) * age;    // cresce com a idade
+      const op = (isV ? 0.95 : 0.4) * (1 - age);           // apaga com a idade
       const p = map.project([x.lon, x.lat]);
-      const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*1.25);
-      rg.addColorStop(0, 'rgba(0,255,65,'+op+')'); rg.addColorStop(1, 'rgba(0,255,65,0)');
+      const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*1.35);
+      rg.addColorStop(0,   isV ? 'rgba(255,255,225,'+op+')' : 'rgba(0,255,65,'+op+')');
+      rg.addColorStop(0.4, 'rgba(0,255,65,'+(op*0.9)+')');
+      rg.addColorStop(1,   'rgba(0,255,65,0)');
       ctx.fillStyle = rg;
-      ctx.beginPath(); ctx.arc(p.x, p.y, r*1.25, 0, Math.PI*2); ctx.fill();
+      if (isV) { ctx.shadowColor = 'rgba(0,255,65,0.95)'; ctx.shadowBlur = 16; }  // glow forte no avião
+      ctx.beginPath(); ctx.arc(p.x, p.y, r*1.35, 0, Math.PI*2); ctx.fill();
+      if (isV) ctx.shadowBlur = 0;
     }
   };
   const _radarStep = (ts) => {
@@ -1856,7 +1887,7 @@ map.on('load', async () => {
       if (!map.getSource('voos-circulo')) {
         map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
-          paint:{ 'line-color':'#E53935', 'line-width':3, 'line-dasharray':[4,2], 'line-opacity':0.95 } });
+          paint:{ 'line-color':'#00E676', 'line-width':3, 'line-dasharray':[4,2], 'line-opacity':0.95 } });
         // varredura de radar (estética) — fonte + linha/esteira animadas (verde Matrix)
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
@@ -1875,6 +1906,12 @@ map.on('load', async () => {
       map.addLayer({ id:'voos-trail', type:'line', source:'voos-trail',
         layout:{ 'line-cap':'round', 'line-join':'round' },
         paint:{ 'line-color':'#FFD54F', 'line-width':1.2, 'line-opacity':0.35 } });
+      // linha reta na traseira (vetor de rumo invertido) — só p/ voos que não
+      // decolaram de NVT/FLN; preenchida pelo tailFeatures (ver trailFeatures)
+      if (!map.getSource('voos-tails')) map.addSource('voos-tails', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+      map.addLayer({ id:'voos-tails', type:'line', source:'voos-tails',
+        layout:{ 'line-cap':'round', 'line-join':'round' },
+        paint:{ 'line-color':'#00E676', 'line-width':1.8, 'line-opacity':0.75 } });
       map.addImage('aviao', _planeImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
         layout:{ 'icon-image':'aviao', 'icon-size':0.8, 'icon-allow-overlap':true,
@@ -2011,7 +2048,7 @@ map.on('load', async () => {
       };
       if (!map.getSource('voos-infra')) {
         const infra = await (_pre.infra || pre('infra', fetchJson('./brusque_aerodromos.geojson')));
-        if (!infra) return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
+        if (!infra) return ['voos-pt','voos-label','voos-trail','voos-tails','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
         map.addSource('voos-infra', { data:infra, type:'geojson' });
         // guarda as posições da infra p/ a varredura pingar em branco (eco fixo)
         _infraPos = (infra.features || [])
@@ -2049,7 +2086,7 @@ map.on('load', async () => {
         map.on('mouseleave','voos-infra-aerodromo',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
         map.on('mouseleave','voos-infra-heliponto',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       }
-      return ['voos-pt','voos-label','voos-trail','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto','voos-infra-label'];
+      return ['voos-pt','voos-label','voos-trail','voos-tails','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto','voos-infra-label'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -2398,6 +2435,7 @@ map.on('load', async () => {
               _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
+              if (map.getSource('voos-tails')) map.getSource('voos-tails').setData({ type:'FeatureCollection', features:tailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
           }
@@ -2410,6 +2448,7 @@ map.on('load', async () => {
               _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
               if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
+              if (map.getSource('voos-tails')) map.getSource('voos-tails').setData({ type:'FeatureCollection', features:tailFeatures(r) });
               renderVoosList(r);
             } catch(e) {}
           }, 2000);
