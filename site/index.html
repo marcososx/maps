@@ -2085,11 +2085,8 @@ map.on('load', async () => {
       //  círculo de 100 km está em tela; ver a rotina de abertura no onToggle)
       // ── aeronaves ──────────────────────────────────────────────────────────
       if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
-      // trajeto (trail) — linha por baixo dos aviões, mostrando por onde passaram
-      if (!map.getSource('voos-trail')) map.addSource('voos-trail', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
-      map.addLayer({ id:'voos-trail', type:'line', source:'voos-trail',
-        layout:{ 'line-cap':'round', 'line-join':'round' },
-        paint:{ 'line-color':'#FFD54F', 'line-width':1.2, 'line-opacity':0.35 } });
+      // (linha fina do trail removida — o rastro grosso 'voos-tails' já mostra o
+      //  caminho real; aqui só acumulamos os pontos via trailFeatures)
       // linha reta na traseira (vetor de rumo invertido) — só p/ voos que não
       // decolaram de NVT/FLN; preenchida pelo tailFeatures (ver trailFeatures)
       if (!map.getSource('voos-tails')) map.addSource('voos-tails', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
@@ -2201,7 +2198,7 @@ map.on('load', async () => {
         // cache p/ o radar (evita querySourceFeatures a cada frame)
         _voosPos = (data.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
         map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(data) });
-        map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(data) });
+        trailFeatures(data);   // acumula o caminho real pro rastro (sem layer própria)
         renderVoosList(data);
         _pulse();
       };
@@ -2242,7 +2239,7 @@ map.on('load', async () => {
       };
       if (!map.getSource('voos-infra')) {
         const infra = await (_pre.infra || pre('infra', fetchJson('./brusque_aerodromos.geojson')));
-        if (!infra) return ['voos-pt','voos-label','voos-trail','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
+        if (!infra) return ['voos-pt','voos-label','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
         map.addSource('voos-infra', { data:{ type:'FeatureCollection', features:(infra.features||[]).map(f =>
           ({ type:'Feature', geometry:f.geometry, properties:Object.assign({}, f.properties,
             { code:_AERO_CODE[f.properties.oaci] || f.properties.oaci || '' }) })) }, type:'geojson' });
@@ -2285,7 +2282,7 @@ map.on('load', async () => {
         map.on('mouseleave','voos-infra-aerodromo',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
         map.on('mouseleave','voos-infra-heliponto',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       }
-      return ['voos-pt','voos-label','voos-trail','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto'];
+      return ['voos-pt','voos-label','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -2633,7 +2630,7 @@ map.on('load', async () => {
               const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
               _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
-              if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
+              trailFeatures(r);   // acumula o caminho real pro rastro (sem layer própria)
               if (map.getSource('voos-tails')) map.getSource('voos-tails').setData({ type:'FeatureCollection', features:tailFeatures(r) });
               if (map.getSource('voos-tails-dest')) map.getSource('voos-tails-dest').setData({ type:'FeatureCollection', features:tailDestFeatures(r) });
               renderVoosList(r);
@@ -2647,7 +2644,7 @@ map.on('load', async () => {
               const r = await (await fetch(VOOS_URL,{cache:'no-store'})).json();
               _voosPos = (r.voos || []).filter(v => v.lat != null && v.lon != null).map(v => [v.lon, v.lat]);
               map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(r) });
-              if (map.getSource('voos-trail')) map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(r) });
+              trailFeatures(r);   // acumula o caminho real pro rastro (sem layer própria)
               if (map.getSource('voos-tails')) map.getSource('voos-tails').setData({ type:'FeatureCollection', features:tailFeatures(r) });
               if (map.getSource('voos-tails-dest')) map.getSource('voos-tails-dest').setData({ type:'FeatureCollection', features:tailDestFeatures(r) });
               renderVoosList(r);
