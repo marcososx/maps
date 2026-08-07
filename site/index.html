@@ -1074,10 +1074,23 @@ map.on('load', async () => {
     g.strokeStyle='#04121c'; g.lineWidth=0.6; g.lineJoin='round'; g.lineCap='round'; g.stroke(path);
   }
   const _planeImg = _planeCanvas.getContext('2d').getImageData(0, 0, 48, 48);
+  // proa (0= norte, sentido horário) entre dois pontos [lon,lat] — fallback do
+  // ícone quando o ADS-B não manda o track (rumo null → não pode apontar pro norte)
+  const _hdg = (a, b) => {
+    const f1 = a[1]*Math.PI/180, f2 = b[1]*Math.PI/180, dl = (b[0]-a[0])*Math.PI/180;
+    const y = Math.sin(dl)*Math.cos(f2);
+    const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+    return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
+  };
   // worker /voos.json → features GeoJSON (aérea em ft; sem solo). Rota/logo são
   // achatadas em campos planos (MapLibre pode perder objetos aninhados na query).
   const voosFeats = (d) => (d.voos || []).map(v => {
     const o=v.origem||{}, de=v.destino||{}, c=v.cia||{};
+    let rumo = v.rumo;
+    if (rumo == null && Array.isArray(v.trail) && v.trail.length >= 2) {   // ADS-B sem track → usa o rastro real
+      const a = v.trail[v.trail.length-2], b = v.trail[v.trail.length-1];
+      if (a && b && (a[0]!==b[0] || a[1]!==b[1])) rumo = _hdg(a, b);
+    }
     return { type:'Feature',
       geometry:{ type:'Point', coordinates:[v.lon, v.lat] },
       properties:{ icao24:v.icao24, callsign:v.callsign,
@@ -1085,7 +1098,7 @@ map.on('load', async () => {
         orig_iata:o.iata||null, orig_muni:o.municipio||null, orig_nome:o.nome||null,
         dest_iata:de.iata||null, dest_muni:de.municipio||null, dest_nome:de.nome||null,
         alt_m:v.alt_m, alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null,
-        vel_kmh:v.vel_kmh, rumo:v.rumo, subida:v.subida_mps, tipo:v.tipo, desc:v.desc,
+        vel_kmh:v.vel_kmh, rumo:rumo, subida:v.subida_mps, tipo:v.tipo, desc:v.desc,
         categoria:v.categoria, dist_km:v.dist_km, ultima: fmtDt(v.ultima_atualizacao) }
     };
   });
@@ -1964,12 +1977,12 @@ map.on('load', async () => {
       if (!map.getSource('voos-tails')) map.addSource('voos-tails', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
       map.addLayer({ id:'voos-tails', type:'line', source:'voos-tails',
         layout:{ 'line-cap':'round', 'line-join':'round' },
-        paint:{ 'line-color':'#00E676', 'line-width':1.8, 'line-opacity':0.75 } });
+        paint:{ 'line-color':'#FFD54F', 'line-width':1.8, 'line-opacity':0.75 } });
       // rastro TRACEJADO de DESTINO (FLN/NVT) — linha tracejada pro aeroporto
       if (!map.getSource('voos-tails-dest')) map.addSource('voos-tails-dest', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
       map.addLayer({ id:'voos-tails-dest', type:'line', source:'voos-tails-dest',
         layout:{ 'line-cap':'round', 'line-join':'round' },
-        paint:{ 'line-color':'#00E676', 'line-width':1.6, 'line-opacity':0.6, 'line-dasharray':[5,4] } });
+        paint:{ 'line-color':'#FFD54F', 'line-width':1.6, 'line-opacity':0.6, 'line-dasharray':[5,4] } });
       map.addImage('aviao', _planeImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
         layout:{ 'icon-image':'aviao', 'icon-size':0.8, 'icon-allow-overlap':true,
