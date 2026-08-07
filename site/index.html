@@ -2238,7 +2238,6 @@ map.on('load', async () => {
         if(p.municipio) h+=row('Município', p.municipio);
         if(p.oaci) h+=row('Código OACI', p.oaci, 'sub');
         if(p.ciad) h+=row('CIAD', p.ciad, 'sub');
-        if(p.dist_km!=null) h+=row('Distância de Brusque', p.dist_km+' km', 'info');
         hv.innerHTML = h;
       };
       if (!map.getSource('voos-infra')) {
@@ -2256,7 +2255,7 @@ map.on('load', async () => {
           filter:['==',['get','tipo'],'aeroporto'],
           layout:{ 'icon-image':'aviao-contorno-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,0.9,14,1.2],
                     'text-field':['get','code'], 'text-font':['Open Sans Bold'], 'text-size':['interpolate',['linear'],['zoom'],9,20,14,28],
-                    'text-offset':[0,2.4], 'text-anchor':'top', 'text-optional':true,
+                    'text-offset':[0,1.45], 'text-anchor':'top', 'text-optional':true,
                     'text-allow-overlap':true, 'text-ignore-placement':true,
                     'icon-allow-overlap':true, 'icon-ignore-placement':true },
           paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':2 } });
@@ -2265,7 +2264,7 @@ map.on('load', async () => {
           filter:['==',['get','tipo'],'aerodromo'],
           layout:{ 'icon-image':'aviao-contorno-ciano', 'icon-size':['interpolate',['linear'],['zoom'],9,0.72,14,0.98],
                     'text-field':['get','code'], 'text-font':['Open Sans Bold'], 'text-size':['interpolate',['linear'],['zoom'],9,17,14,24],
-                    'text-offset':[0,2.2], 'text-anchor':'top', 'text-optional':true,
+                    'text-offset':[0,1.35], 'text-anchor':'top', 'text-optional':true,
                     'text-allow-overlap':true, 'text-ignore-placement':true,
                     'icon-allow-overlap':true, 'icon-ignore-placement':true },
           paint:{ 'text-color':'#b2ebf2','text-halo-color':'#04121c','text-halo-width':1.8 } });
@@ -2274,12 +2273,7 @@ map.on('load', async () => {
           filter:['==',['get','tipo'],'heliponto'],
           layout:{ 'icon-image':'heliponto', 'icon-size':['interpolate',['linear'],['zoom'],10,0.26,14,0.36],
                     'icon-allow-overlap':true, 'icon-ignore-placement':true } });
-        // labels só dos aeroportos públicos (brancos)
-        map.addLayer({ id:'voos-infra-label', type:'symbol', source:'voos-infra', minzoom:9,
-          filter:['==',['get','tipo'],'aeroporto'],
-          layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
-                   'text-offset':[0,1.3], 'text-anchor':'top', 'text-optional':true },
-          paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':1.4 } });
+        // (nome por extenso dos aeroportos removido — o código FLN/NVT já identifica)
         // hover → hint com dados do aeroporto/heliponto
         map.on('mousemove','voos-infra-aeroporto',showInfraHint);
         map.on('mousemove','voos-infra-aerodromo',showInfraHint);
@@ -2291,7 +2285,7 @@ map.on('load', async () => {
         map.on('mouseleave','voos-infra-aerodromo',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
         map.on('mouseleave','voos-infra-heliponto',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       }
-      return ['voos-pt','voos-label','voos-trail','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto','voos-infra-label'];
+      return ['voos-pt','voos-label','voos-trail','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
