@@ -41,11 +41,11 @@ const NIVEL_POR_RGB = {
 
 // Cor + opacidade de exibição por nível (semáforo do radar, escala própria).
 const NIVEIS = [
-  { nivel: 1, cor: '#4FC3F7', opacidade: 0.32, rotulo: 'Fraca' },
-  { nivel: 2, cor: '#2196F3', opacidade: 0.45, rotulo: 'Moderada' },
-  { nivel: 3, cor: '#4CAF50', opacidade: 0.55, rotulo: 'Forte' },
-  { nivel: 4, cor: '#FFC107', opacidade: 0.68, rotulo: 'Muito forte' },
-  { nivel: 5, cor: '#F44336', opacidade: 0.82, rotulo: 'Extrema' },
+  { nivel: 1, cor: '#DCEBF7', opacidade: 0.14, rotulo: 'Fraca' },
+  { nivel: 2, cor: '#C9E0F2', opacidade: 0.16, rotulo: 'Moderada' },
+  { nivel: 3, cor: '#AED3EE', opacidade: 0.18, rotulo: 'Forte' },
+  { nivel: 4, cor: '#93C4E8', opacidade: 0.20, rotulo: 'Muito forte' },
+  { nivel: 5, cor: '#7FB8E8', opacidade: 0.22, rotulo: 'Extrema' },
 ];
 
 const CORS = {
@@ -232,17 +232,31 @@ function pontoNoAnel(p, ring) {
   return inR;
 }
 
+// suavização Chaikin (subdivide cada aresta 1x) — arredonda os contornos
+function chaikin(ring) {
+  if (ring.length < 4) return ring;
+  const out = [];
+  for (let i = 0; i < ring.length; i++) {
+    const p0 = ring[(i - 1 + ring.length) % ring.length];
+    const p1 = ring[i];
+    const p2 = ring[(i + 1) % ring.length];
+    out.push([p0[0] * 0.25 + p1[0] * 0.75, p0[1] * 0.25 + p1[1] * 0.75]);
+    out.push([p1[0] * 0.75 + p2[0] * 0.25, p1[1] * 0.75 + p2[1] * 0.25]);
+  }
+  return out;
+}
+
 function loopsParaMultiPolygon(loops, w, h, ext) {
   const [xw, ys, xe, yn] = ext;
   const toLonLat = (ring) => ring.map(([px, py]) => [
     xw + (px / (w - 1)) * (xe - xw),
     yn - (py / (h - 1)) * (yn - ys),
   ]);
-  const EPS = 2.2;                     // px de tolerância (≈2,7 km no COMP)
+  const EPS = 3.4;                     // px de tolerância (≈4,2 km no COMP) — contornos suaves
   const MIN_AREA_PX2 = 8;
   const feats = [];
   for (const loop of loops) {
-    const ring = rdp(loop, EPS);
+    const ring = chaikin(rdp(loop, EPS));
     if (ring.length < 4) continue;
     if (Math.abs(area2(ring)) < MIN_AREA_PX2) continue;
     const extRing = toLonLat(ring);

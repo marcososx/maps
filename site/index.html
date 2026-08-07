@@ -27,20 +27,25 @@
   html,body{ margin:0; height:100%; background:var(--bg); color:var(--txt);
              font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
   /* Padrão de componentes — toda caixa/box usa estes tokens */
+  /* --card-accent: cor da camada (= checkbox colorido do dropdown), setada por JS.
+     Fallback = âmbar neon da identidade. É a faixa de topo + a bolinha do título. */
   .wpanel{ pointer-events:auto; background:rgba(21,25,33,.93); border:1px solid var(--border);
-        border-top:2px solid rgba(255,213,79,.5);
+        border-top:2px solid var(--card-accent, rgba(255,213,79,.5));
         border-radius:var(--radius); padding:var(--box-pad); backdrop-filter:var(--blur);
         box-shadow:var(--shadow), 0 -1px 22px rgba(255,213,79,.05) inset; }
   .p-head{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
   .p-head b{ font:700 12px var(--font-ui); color:var(--hi); letter-spacing:.4px; }
   .p-upd{ font-size:9.5px; color:var(--muted); }
+  /* rodapé do card: info discreta (ex.: "Atualizado HH:MM") no fim da caixa */
+  .card-foot{ display:flex; justify-content:flex-end; margin-top:10px; padding-top:7px;
+        border-top:1px solid rgba(255,255,255,.08); font-size:9.5px; color:var(--muted); }
   /* ═══ Identidade unificada dos cards (estilo legenda de voos) ═══
      marcador neon âmbar antes de TODO título de caixa + brilho sutil */
   :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head) > b{
         display:inline-flex; align-items:center; gap:7px; }
   :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head) > b::before{
         content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
-        background:var(--neon); box-shadow:0 0 7px var(--neon); }
+        background:var(--card-accent, var(--neon)); box-shadow:0 0 7px var(--card-accent, var(--neon)); }
   .wbtn{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--txt);
         border-radius:var(--radius-xs); padding:4px 9px; font:600 10.5px var(--font-ui); cursor:pointer;
         transition:background .18s ease, border-color .18s ease; }
@@ -63,16 +68,17 @@
   .box-min .act-col svg{ transform:rotate(180deg); }
   .box--bottom .act-col svg{ transform:rotate(180deg); }
   .box--bottom.box-min .act-col svg{ transform:rotate(0deg); }
-  /* ─── Recolhido: vira um "chip" só com o título ─── */
+  /* ─── Recolhido: esconde o corpo, MANTÉM a largura expandida do card ───
+     (não usa max-content: senão cada chip ficava de um tamanho ao recolher). */
   .box-min > :not(.p-head):not(.wxp-title):not(.cel-head):not(.rc-head):not(.nc-head):not(.wl-head){ display:none !important; }
-  .box-min{ cursor:pointer; width:max-content !important; max-width:calc(100vw - 28px);
-        padding-top:7px !important; padding-bottom:7px !important; }
+  .box-min{ cursor:pointer; padding-top:7px !important; padding-bottom:7px !important; }
   .box-min .p-head, .box-min .wxp-title, .box-min .rc-head, .box-min .nc-head, .box-min .cel-head, .box-min .wl-head{ margin-bottom:0; }
-  /* título que só aparece quando a caixa está recolhida (ex.: legenda de voos sem título fixo) */
-  .only-min{ display:none; }
-  .box-min .only-min{ display:inline-flex; }
-  /* painéis flutuantes (não-.wpanel) herdam a mesma faixa neon + brilho da identidade */
-  #radarctl, #nuvctl, #celelegend{ border-top:2px solid rgba(255,213,79,.5) !important;
+  /* título que só aparece quando a caixa está recolhida (ex.: legenda de voos sem título fixo).
+     !important p/ vencer o display do marcador neon (:is(...) > b). */
+  .only-min{ display:none !important; }
+  .box-min .only-min{ display:inline-flex !important; }
+  /* painéis flutuantes (não-.wpanel) herdam a faixa da cor da camada + brilho */
+  #radarctl, #nuvctl, #celelegend{ border-top:2px solid var(--card-accent, rgba(255,213,79,.5)) !important;
         box-shadow:0 10px 26px rgba(0,0,0,.45), 0 -1px 22px rgba(255,213,79,.05) inset; }
   /* caixa sendo arrastada: à frente de tudo + sem transição pra acompanhar o mouse */
   .box-drag{ z-index:20 !important; transition:none !important; cursor:grabbing; }
@@ -294,23 +300,23 @@
   .chip.on{ color:var(--hi); border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.9);
         box-shadow:0 0 0 1px rgba(255,255,255,.05) inset; }  /* cor de destaque é setada inline por chip (cor da camada) */
   /* ═══ Seletor de base (estilo Google Maps) — grid 3×2 de miniaturas 120×120 ═══ */
-  .mapbase-w{ width:300px; padding:4px 4px 10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .mapbase-w{ width:300px; padding:4px 4px 6px; margin-bottom:6px; }
   .mapbase-head{ display:flex; align-items:center; gap:8px; padding:2px 4px 9px;
         font:700 9.5px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+  /* padrão visual novo: marcador neon âmbar antes do título "Base do mapa" */
+  .mapbase-head::before{ content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
+        background:var(--neon); box-shadow:0 0 7px var(--neon); }
   .mapbase-head::after{ content:''; flex:1; height:1px;
-        background:linear-gradient(90deg, rgba(255,255,255,.14), transparent); }
+        background:linear-gradient(90deg, rgba(255,213,79,.35), transparent); }
   .mapbase-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
   /* miniatura SEMPRE quadrada (aspect-ratio na célula → robusto p/ qualquer imagem) */
   .mapbase-th{ position:relative; aspect-ratio:1/1; min-width:0; padding:0; cursor:pointer; overflow:hidden;
         border-radius:11px; border:1px solid rgba(255,255,255,.10); background:#0d1119;
         box-shadow:0 1px 3px rgba(0,0,0,.3);
         transition:border-color .18s ease, box-shadow .2s ease, transform .12s ease; }
-  .mapbase-th:hover{ border-color:rgba(255,255,255,.30); transform:translateY(-1px);
-        box-shadow:0 5px 14px rgba(0,0,0,.42); }
-  .mapbase-th:active{ transform:translateY(0); }
-  .mapbase-th img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-        transition:transform .35s ease; }
-  .mapbase-th:hover img{ transform:scale(1.06); }
+  /* hover SEM movimento (não pula nem dá zoom) — só realça borda/sombra */
+  .mapbase-th:hover{ border-color:rgba(255,213,79,.55); box-shadow:0 4px 14px rgba(0,0,0,.42); }
+  .mapbase-th img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   /* miniaturas do tema claro ficam lavadas — satura p/ as ruas aparecerem */
   .mapbase-th img.mb-boost{ filter:saturate(2.8) contrast(1.24) brightness(1.0); }
   /* legenda: faixa de gradiente na base (leitura garantida, sem pílula flutuante) */
@@ -320,7 +326,7 @@
         background:linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.36) 60%, transparent 100%); }
   /* selecionado/ativo: anel aceso + selo de check no canto */
   .mapbase-th.sel{ border-color:var(--info);
-        box-shadow:0 0 0 2px var(--info), 0 5px 16px -2px rgba(0,176,255,.5); }
+        box-shadow:0 0 0 1px var(--info), 0 4px 14px -3px rgba(0,176,255,.45); }
   .mapbase-th.sel::after{ content:'✓'; position:absolute; top:5px; right:5px; z-index:3;
         width:18px; height:18px; display:flex; align-items:center; justify-content:center;
         font:800 11px var(--font-ui); color:#04121c; background:var(--info);
@@ -559,7 +565,6 @@
     #wlegend{ width:calc(100vw - 20px); }
     #nivelbar{ width:calc(100vw - 20px); }
     #hint, #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ max-width:calc(100vw - 24px); }
-    .box-restore{ right:10px !important; }
   }
   @media (max-width:420px){
     .chip{ padding:0 9px; }
@@ -572,7 +577,7 @@
 <!-- Selo "Brusque + clima" — aparece só quando NENHUMA camada está ligada -->
 <div id="title" style="display:none">
   <div id="wx-city">Brusque</div>
-  <div id="wx-cond"><span id="wx-icon" class="ic">·</span> <span id="wx-info">carregando…</span></div>
+  <div id="wx-cond"><span id="wx-icon" class="ic">·</span> <span id="wx-info">Carregando…</span></div>
   <div id="wx-temp">--°</div>
 </div>
 
@@ -600,7 +605,7 @@
 <div id="wxstack">
   <!-- Indicadores de tempo (Open-Meteo) -->
   <div id="wxpanel" class="wpanel" data-chip="indicadores">
-    <div class="wxp-title"><b>Brusque · Tempo agora</b><span class="wxp-upd">—</span></div>
+    <div class="wxp-title"><b>Brusque</b></div>
     <div class="wxp-grid">
       <div class="wxp-cell"><span class="k">Temperatura</span><span class="v" id="wxp-t">--°</span></div>
       <div class="wxp-cell"><span class="k">Sensação</span><span class="v" id="wxp-s">--°</span></div>
@@ -611,45 +616,46 @@
       <div class="wxp-cell"><span class="k">Nuvens</span><span class="v" id="wxp-n">--</span></div>
       <div class="wxp-cell"><span class="k">Condição</span><span class="v" id="wxp-cond" style="font-size:12px">--</span></div>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:9px">
-      <button class="wbtn" id="wxp-refresh">Atualizar agora</button>
-    </div>
+    <div class="card-foot"><span class="wxp-upd">—</span></div>
   </div>
 
   <!-- Índice ENSO · Niño 3.4 / ONI -->
   <div id="ensopanel" class="wpanel" data-chip="enso">
-    <div class="p-head"><b>Índice ENSO · Niño 3.4</b><span class="p-upd" id="enso-upd">—</span></div>
+    <div class="p-head"><b>Índice ENSO · Niño 3.4</b></div>
     <div class="gauge">
       <div class="g-bar" id="enso-bar"></div>
       <div class="g-labels"><span>La Niña</span><span>Neutro</span><span>El Niño</span></div>
-      <div class="g-val" id="enso-val">carregando…</div>
+      <div class="g-val" id="enso-val">Carregando…</div>
     </div>
+    <div class="card-foot"><span class="p-upd" id="enso-upd">—</span></div>
   </div>
 
   <!-- Chuva acumulada · 30 dias -->
   <div id="chuvapanel" class="wpanel" data-chip="chuvaacum">
-    <div class="p-head"><b>Chuva acumulada · 30 dias</b><span class="p-upd" id="chuva-upd">—</span></div>
+    <div class="p-head"><b>Chuva · 30 dias</b></div>
     <div class="gauge">
       <div class="g-bar" id="chuva-bar"></div>
-      <div class="g-labels"><span>seca</span><span>normal</span><span>muito chuvosa</span></div>
-      <div class="g-val" id="chuva-val">carregando…</div>
+      <div class="g-labels"><span>Seca</span><span>Normal</span><span>Chuvosa</span></div>
+      <div class="g-val" id="chuva-val">Carregando…</div>
     </div>
+    <div class="card-foot"><span class="p-upd" id="chuva-upd">—</span></div>
   </div>
 
   <!-- Umidade do solo -->
   <div id="solopanel" class="wpanel" data-chip="soloum">
-    <div class="p-head"><b>Umidade do solo</b><span class="p-upd" id="solo-upd">—</span></div>
+    <div class="p-head"><b>Umidade do solo</b></div>
     <div class="gauge">
       <div class="g-bar" id="solo-bar"></div>
-      <div class="g-labels"><span>seco</span><span>úmido</span><span>encharcado</span></div>
-      <div class="g-val" id="solo-val">carregando…</div>
+      <div class="g-labels"><span>Seco</span><span>Úmido</span><span>Encharcado</span></div>
+      <div class="g-val" id="solo-val">Carregando…</div>
     </div>
+    <div class="card-foot"><span class="p-upd" id="solo-upd">—</span></div>
   </div>
 
   <!-- Voos · aeronaves no raio de 100 km de Brusque (ADS-B) -->
   <div id="voospanel" class="wpanel" data-chip="voos">
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
-    <div class="voo-count" id="voos-count">carregando…</div>
+    <div class="voo-count" id="voos-count">Carregando…</div>
     <div class="voo-list" id="voos-list"></div>
   </div>
 
@@ -698,7 +704,7 @@
 <div id="wlegend" data-chip="radar">
   <div class="wl-head"><span id="wl-head-txt"></span><span id="wl-head-time" style="font-family:ui-monospace,Space Mono,monospace"></span></div>
   <div class="wl-bar" id="wl-bar"></div>
-  <div class="wl-labels"><span>fraca</span><span>moderada</span><span>forte</span><span>muito forte</span><span>extrema</span></div>
+  <div class="wl-labels"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Muito forte</span><span>Extrema</span></div>
 </div>
 
 <!-- Tempo Real · CELESC — legenda de UC sem energia (canto inferior ESQUERDO) -->
@@ -1041,11 +1047,11 @@ map.on('load', async () => {
   // Fallback SILENCIOSO: RainViewer (se o worker/EPAGRI cair).
   const RADAR_URL = 'https://brusque-radar.marcososx.workers.dev';
   const RADAR_NIVEIS = [
-    { nivel:1, cor:'#4FC3F7', opacidade:0.32, rotulo:'Fraca' },
-    { nivel:2, cor:'#2196F3', opacidade:0.45, rotulo:'Moderada' },
-    { nivel:3, cor:'#4CAF50', opacidade:0.55, rotulo:'Forte' },
-    { nivel:4, cor:'#FFC107', opacidade:0.68, rotulo:'Muito forte' },
-    { nivel:5, cor:'#F44336', opacidade:0.82, rotulo:'Extrema' },
+    { nivel:1, cor:'#DCEBF7', opacidade:0.14, rotulo:'Fraca' },
+    { nivel:2, cor:'#C9E0F2', opacidade:0.16, rotulo:'Moderada' },
+    { nivel:3, cor:'#AED3EE', opacidade:0.18, rotulo:'Forte' },
+    { nivel:4, cor:'#93C4E8', opacidade:0.20, rotulo:'Muito forte' },
+    { nivel:5, cor:'#7FB8E8', opacidade:0.22, rotulo:'Extrema' },
   ];
   let _radarOn = false;
   let _radarSourceName = 'radar';          // 'radar' | 'rainviewer'
@@ -1877,7 +1883,7 @@ map.on('load', async () => {
          const wrap=document.createElement('div'); wrap.className='vizwx-wrap';
          const el=document.createElement('div'); el.className='vizwx';
          el.innerHTML='<div class="vw-city">'+f.properties.nome+'</div>'
-           +'<div class="vw-cond"><span class="ic">·</span> <span class="vw-info">carregando…</span></div>'
+           +'<div class="vw-cond"><span class="ic">·</span> <span class="vw-info">Carregando…</span></div>'
            +'<div class="vw-temp">--°</div>';
          wrap.appendChild(el);
          new maplibregl.Marker({ element: wrap, anchor:'center' }).setLngLat([lon,lat]).addTo(map);
@@ -1894,7 +1900,7 @@ map.on('load', async () => {
            : 'Sem chuva acumulada hoje');
        };
        d100.features.forEach((f,i) => {
-         const c=wxMap[f.properties.nome]||{ t:null, ic:'·', desc:'carregando…' };
+         const c=wxMap[f.properties.nome]||{ t:null, ic:'·', desc:"Carregando…" };
          paintVizBadge({ el:vizWx[i].el, ...c });
          vizWx[i].el.classList.add('show');
        });
@@ -3032,7 +3038,7 @@ map.on('load', async () => {
     set('wxp-p', _wx.pressao!=null ? Math.round(_wx.pressao)+' hPa' : '--');
     set('wxp-n', _wx.nuvens!=null ? Math.round(_wx.nuvens)+'%' : '--');
     set('wxp-cond', (_wx.ic||'')+' '+( _wx.desc||'--'));
-    const ue = document.querySelector('#wxpanel .wxp-upd'); if(ue) ue.textContent = 'atualizado '+fmtH(new Date());
+    const ue = document.querySelector('#wxpanel .wxp-upd'); if(ue) ue.textContent = 'Atualizado '+fmtH(new Date());
   };
   const loadWx = async (force) => {
     try {
@@ -3346,6 +3352,9 @@ map.on('load', async () => {
     const head = box.querySelector(HEAD_SEL);
     if (!head || head.querySelector('.box-acts')) return;
     box.dataset.title = box.querySelector('.p-head b, .wxp-title b, .cel-head b, .rc-head b, .nc-head b')?.textContent || box.id;
+    // cor de destaque do card = cor da camada (= checkbox colorido do dropdown)
+    const _M = (window._chips || {})[box.dataset.chip];
+    if (_M && _M.color) box.style.setProperty('--card-accent', _M.color);
     // caixa ancorada no rodapé? → recolhe pra baixo (chevron invertido)
     const cs = getComputedStyle(box);
     if (cs.bottom !== 'auto' && cs.top === 'auto') box.classList.add('box--bottom');
