@@ -34,8 +34,8 @@
         border-radius:var(--radius); padding:var(--box-pad); backdrop-filter:var(--blur);
         box-shadow:var(--shadow), 0 -1px 22px rgba(255,213,79,.05) inset; }
   .p-head{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
-  .p-head b{ font:700 12px var(--font-ui); color:var(--hi); letter-spacing:.4px; }
-  .p-upd{ font-size:9.5px; color:var(--muted); }
+  .p-head b{ font:700 13.5px var(--font-ui); color:var(--hi); letter-spacing:.4px; }
+  .p-upd{ font-size:11px; color:var(--muted); }
   /* rodapé do card: info discreta (ex.: "Atualizado HH:MM") no fim da caixa */
   .card-foot{ display:flex; justify-content:flex-end; margin-top:10px; padding-top:7px;
         border-top:1px solid rgba(255,255,255,.08); font-size:9.5px; color:var(--muted); }
@@ -130,7 +130,7 @@
   .vizwx .vw-cond .ic{ font-size:12px; vertical-align:-2px; }
   .vizwx .vw-temp{ margin-top:1px; font:700 20px/1 Inter,system-ui; color:#fff;
           text-shadow:0 2px 8px rgba(0,0,0,.9); }
-  #legend{ bottom:14px; left:14px; padding:10px 12px; font-size:11px; line-height:1.7; }
+  #legend{ bottom:14px; left:14px; padding:11px 13px; font-size:12.5px; line-height:1.7; }
   #legend .row{ display:flex; align-items:center; gap:8px; }
   #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
   /* hint (hover) — tooltip base alinhado ao design system */
@@ -306,13 +306,13 @@
   #nivelbar.show{ opacity:1; visibility:visible; transform:translateX(-50%); pointer-events:auto; }
   /* valor do nível — branco, alinhado à esquerda, largura FIXA (se variar,
      o slider treme: o numeral cresce e empurra a bolinha debaixo do mouse) */
-  #nivelbar #nivellbl{ font:700 16px Inter,system-ui; color:#fff; width:60px; flex:0 0 auto;
+  #nivelbar #nivellbl{ font:700 18px Inter,system-ui; color:#fff; width:64px; flex:0 0 auto;
         text-align:left; font-variant-numeric:tabular-nums; white-space:nowrap; }
   #nivelbar .nb-atual{ display:flex; align-items:baseline; gap:6px; padding-left:14px;
         border-left:1px solid var(--border); margin-left:2px; flex:0 0 auto; }
-  #nivelbar .nb-atual .nb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase;
+  #nivelbar .nb-atual .nb-lbl{ font-size:10.5px; color:#8a97a8; text-transform:uppercase;
         letter-spacing:.5px; white-space:nowrap; }
-  #nivelbar .nb-atual .nb-val{ font:700 13px Inter,system-ui; color:#fff;
+  #nivelbar .nb-atual .nb-val{ font:700 14.5px Inter,system-ui; color:#fff;
         font-variant-numeric:tabular-nums; white-space:nowrap; }
   #nivelbar .nb-atual .nb-val.off{ color:#8a97a8; font-weight:400; }
   /* range horizontal — track com o GRADIENTE da escala (7 aqua → 15 vermelho) */
@@ -382,7 +382,7 @@
         cursor:pointer; font:600 12.5px var(--font-ui); color:var(--muted); transition:background .15s ease, color .15s ease; }
   .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:var(--txt); }
   .chip-menu .item.on{ color:var(--hi); }
-  .chip-menu .item .it-hint{ margin-left:auto; font:400 9px var(--font-ui); color:#5a6678;
+  .chip-menu .item .it-hint{ margin-left:auto; font:400 10.5px var(--font-ui); color:#5a6678;
         letter-spacing:.3px; white-space:nowrap; padding-left:14px; }
   .chip-menu .combo-item{ justify-content:space-between; gap:10px; cursor:default; }
   .chip-menu select.combo{ background:var(--bg); color:var(--txt); border:1px solid rgba(255,255,255,.12);
@@ -392,7 +392,7 @@
   /* ═══ Seletor de base (estilo Google Maps) — grid 3×2 de miniaturas 120×120 ═══ */
   .mapbase-w{ width:300px; padding:4px 4px 4px; margin-bottom:0; }
   .mapbase-head{ display:flex; align-items:center; gap:8px; padding:2px 4px 9px;
-        font:700 9.5px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+        font:700 11px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
   /* padrão visual novo: marcador neon âmbar antes do título "Base do mapa" */
   .mapbase-head::before{ content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
         background:var(--neon); box-shadow:0 0 7px var(--neon); }
@@ -411,7 +411,7 @@
   .mapbase-th img.mb-boost{ filter:saturate(2.8) contrast(1.24) brightness(1.0); }
   /* legenda: faixa de gradiente na base (leitura garantida, sem pílula flutuante) */
   .mapbase-th .mb-label{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:18px 6px 8px;
-        font:700 12.5px var(--font-ui); letter-spacing:.2px; color:#fff; text-align:center;
+        font:700 13.5px var(--font-ui); letter-spacing:.2px; color:#fff; text-align:center;
         text-shadow:0 1px 3px rgba(0,0,0,.95);
         background:linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.36) 60%, transparent 100%); }
   /* selecionado/ativo: anel aceso + selo de check no canto */
@@ -425,7 +425,7 @@
   .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px;
         padding:9px 12px; border-radius:11px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
         transition:opacity .2s ease; }
-  .mapbase-tone .mbw-tone-label{ font:700 10px var(--font-ui); letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
+  .mapbase-tone .mbw-tone-label{ font:700 11.5px var(--font-ui); letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
   .mapbase-tone.disabled{ opacity:.4; pointer-events:none; filter:grayscale(.7); }
   .mapbase-tone .switch{ font-size:15px; position:relative; display:inline-block; width:3.5em; height:2em; }
   .mapbase-tone .switch input{ opacity:0; width:0; height:0; }
@@ -463,13 +463,13 @@
   .g-bar{ position:relative; height:14px; border-radius:7px; border:1px solid rgba(255,255,255,.15); }
   .g-marker{ position:absolute; top:-3px; bottom:-3px; width:3px; margin-left:-1.5px;
         background:#fff; border-radius:2px; box-shadow:0 0 6px rgba(0,0,0,.7); }
-  .g-labels{ display:flex; justify-content:space-between; font-size:9px; color:#8a97a8; margin-top:3px; }
-  .g-val{ margin-top:6px; font-size:11.5px; color:#eaf6ff; line-height:1.35; }
-  .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
+  .g-labels{ display:flex; justify-content:space-between; font-size:10.5px; color:#8a97a8; margin-top:4px; }
+  .g-val{ margin-top:6px; font-size:13px; color:#eaf6ff; line-height:1.4; }
+  .g-val b{ font:700 15.5px ui-monospace,Space Mono,monospace; }
   /* painel Voos: contagem + lista de aeronaves no raio de 100 km.
      Escapa da largura fixa (252px) do #wxstack — mais largo p/ os detalhes
      (Altitude/Velocidade/…) caberem em 1 linha; alinhado à esquerda do stack. */
-  #voospanel{ width:380px; max-width:calc(100vw - 28px); align-self:flex-start; }
+  #voospanel{ width:340px; max-width:calc(100vw - 28px); align-self:flex-start; }
   /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
   #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
             width:max-content; max-width:calc(100vw - 28px); margin:0; padding-top:6px;
@@ -483,8 +483,8 @@
   .vl-ico{ color:#FFD54F; }
   .vl-ico svg{ flex:0 0 auto; display:block; }
   .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
-  .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
-  .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
+  .vl-txt b{ font:700 13px Inter,system-ui; color:#eaf6ff; }
+  .vl-txt small{ font-size:10.5px; color:#8a97a8; margin-top:1px; }
   /* duas colunas: infraestrutura (esq.) + status de aeroportos (dir.).
      align-items:stretch iguala a altura das duas → a coluna curta (esq., 4 itens)
      distribui seus itens (space-between) p/ enquadrar na altura da outra (5 itens),
@@ -494,7 +494,7 @@
   .vl-col{ display:flex; flex-direction:column; }
   .vl-items{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
   /* subtítulo estilo PizzINT: mono âmbar com glow + marcador neon e régua fina */
-  .vl-sub{ font:700 10px var(--font-mono); text-transform:none; letter-spacing:.4px;
+  .vl-sub{ font:700 11.5px var(--font-mono); text-transform:none; letter-spacing:.4px;
            color:var(--neon); margin:0 0 9px; padding-bottom:6px;
            display:flex; align-items:center; gap:7px;
            border-bottom:1px solid rgba(255,213,79,.22);
@@ -504,27 +504,28 @@
   .vl-col + .vl-col{ border-top:1px solid rgba(255,255,255,.09); padding-top:10px; }
   .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
   .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
-  .vl-note{ font-size:8.5px; color:#8a97a8; margin-top:6px; padding-top:5px;
+  .vl-note{ font-size:10px; color:#8a97a8; margin-top:6px; padding-top:5px;
             border-top:1px solid rgba(255,255,255,.08); }
   @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; align-items:stretch; }
     .vl-items{ gap:9px; }
     .vl-col + .vl-col{ border-left:0; padding-left:0; border-top:1px solid rgba(255,255,255,.09); padding-top:8px; } }
   /* legenda CELESC (UC sem energia) — canto inferior ESQUERDO */
-  #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:232px;
+  #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:236px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
         backdrop-filter:blur(8px); box-shadow:0 10px 26px rgba(0,0,0,.45);
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .3s ease, visibility .3s; }
   #celelegend.show{ opacity:1; visibility:visible; pointer-events:auto; }
-  #celelegend .cel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; }
-  #celelegend .cel-head b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
-  #celelegend .cel-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#FFB300; }
-  #celelegend .cel-sub{ font-size:9px; color:#8a97a8; margin:-2px 0 6px; }
-  #celelegend .cel-row{ display:flex; align-items:center; gap:9px; margin:5.5px 0; font-size:10.5px; color:#cfd8e3; }
-  #celelegend .cel-mk{ flex:0 0 auto; width:12px; height:12px; border-radius:3px; border:1px solid rgba(255,255,255,.18); }
-  #celelegend .cel-sum{ font-size:9px; color:#8a97a8; line-height:1.45; margin-top:8px; padding-top:7px;
+  /* alinhado pela linha central (o mono da hora não fica mais fora de eixo) */
+  #celelegend .cel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px; }
+  #celelegend .cel-head b{ font:700 13.5px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
+  #celelegend .cel-time{ font:600 12.5px ui-monospace,Space Mono,monospace; color:#FFB300; line-height:1; }
+  #celelegend .cel-sub{ font-size:10.5px; color:#8a97a8; margin:0 0 7px; }
+  #celelegend .cel-row{ display:flex; align-items:center; gap:9px; margin:5px 0; font-size:12px; color:#cfd8e3; }
+  #celelegend .cel-mk{ flex:0 0 auto; width:13px; height:13px; border-radius:3px; border:1px solid rgba(255,255,255,.18); }
+  #celelegend .cel-sum{ font-size:10.5px; color:#8a97a8; line-height:1.5; margin-top:8px; padding-top:7px;
         border-top:1px solid rgba(255,255,255,.08); }
-  #celelegend .cel-sum b{ color:#eaf6ff; font-weight:600; }
+  #celelegend .cel-sum b{ color:#eaf6ff; font-weight:700; }
   /* painel CELESC por regional — tabela compacta, canto superior DIREITO */
   #celregpanel{ position:fixed; right:14px; top:64px; left:auto; bottom:auto; z-index:5;
         width:312px; max-width:calc(100vw - 28px); padding:11px 13px; display:none;
@@ -549,25 +550,25 @@
   .vl-sep{ height:1px; background:rgba(255,255,255,.08); margin:9px 0 4px; }
   .voo-count{ font-size:10px; color:#8a97a8; margin:6px 0 8px; }
   .voo-count b{ color:#ffd54f; font:700 14px ui-monospace,Space Mono,monospace; }
-  .voo-list{ max-height:560px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+  .voo-list{ max-height:calc(100vh - 150px); overflow-y:auto; display:flex; flex-direction:column; gap:5px;
         scrollbar-width:thin; scrollbar-color:#3a4b63 transparent; }
   /* seções do card de voos — título estilo neon (PizzINT): mono, âmbar com glow */
   .voo-sec{ margin:4px 0 2px; padding:6px 9px; border:1px solid rgba(255,213,79,.45);
         border-radius:8px; background:rgba(255,213,79,.06);
         box-shadow:0 0 12px rgba(255,213,79,.12), inset 0 0 8px rgba(255,213,79,.06); }
-  .voo-sec-t{ font:700 11px ui-monospace,Space Mono,monospace; letter-spacing:.9px;
+  .voo-sec-t{ font:700 12px ui-monospace,Space Mono,monospace; letter-spacing:.9px;
         color:#ffd54f; text-shadow:0 0 8px rgba(255,213,79,.55); }
-  .voo-sec-n{ font:600 9px ui-monospace,Space Mono,monospace; color:#8a97a8; margin-top:2px;
+  .voo-sec-n{ font:600 10.5px ui-monospace,Space Mono,monospace; color:#8a97a8; margin-top:2px;
         letter-spacing:.3px; }
-  .voo-row{ display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,.045);
-        border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:8px 10px; cursor:pointer;
+  .voo-row{ display:flex; flex-direction:column; gap:4px; background:rgba(255,255,255,.045);
+        border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:7px 9px; cursor:pointer;
         transition:background .18s ease, border-color .18s ease; }
   .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
   .voo-top{ display:flex; align-items:center; gap:9px; }
-  .voo-tipo{ flex:0 0 auto; min-width:60px; height:38px; padding:0 10px; border-radius:9px; display:flex;
+  .voo-tipo{ flex:0 0 auto; min-width:56px; height:32px; padding:0 9px; border-radius:8px; display:flex;
         align-items:center; justify-content:center; background:rgba(255,213,79,.14);
-        border:1px solid rgba(255,213,79,.4); font:800 14px ui-monospace,Space Mono,monospace;
-        color:#ffd54f; white-space:nowrap; letter-spacing:.4px; text-shadow:0 0 8px rgba(255,213,79,.4); }
+        border:1px solid rgba(255,213,79,.4); font:800 13px ui-monospace,Space Mono,monospace;
+        color:#ffd54f; white-space:nowrap; letter-spacing:.3px; text-shadow:0 0 8px rgba(255,213,79,.4); }
   .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
   .voo-logo{ height:20px; max-width:150px; object-fit:contain; }
   .voo-rota{ display:flex; align-items:center; gap:8px; width:100%; }
@@ -580,30 +581,30 @@
   .voo-seta::after{ content:''; position:absolute; right:0; top:-3px; border:3px solid transparent;
         border-left-color:rgba(255,213,79,.9); }
   /* selo de classificação (COM/MIL/PART) no topo da linha */
-  .voo-tag{ flex:0 0 auto; align-self:flex-start; font:800 8.5px var(--font-ui); letter-spacing:.5px;
-        color:#04121c; padding:2px 7px; border-radius:999px; }
+  .voo-tag{ flex:0 0 auto; align-self:flex-start; font:800 9.5px var(--font-ui); letter-spacing:.5px;
+        color:#04121c; padding:2px 8px; border-radius:999px; }
   /* modelo da aeronave — legenda discreta em 1 linha */
-  .voo-model{ font-size:11px; color:#9fb0c3; margin-top:7px; overflow:hidden; text-overflow:ellipsis;
+  .voo-model{ font-size:10.5px; color:#9fb0c3; margin-top:4px; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  /* 3 tiles principais: número GRANDE (menos dado miúdo) */
-  .voo-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:8px;
-        border-top:1px solid rgba(255,255,255,.06); padding-top:9px; }
-  .voo-tile{ background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07);
-        border-radius:9px; padding:6px 8px; min-width:0; }
-  .voo-tile .k{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
-  .voo-tile .v{ font:700 16px ui-monospace,Space Mono,monospace; color:#eaf6ff; margin-top:3px;
+  /* 3 tiles principais — compactos, número legível (nem miúdo, nem enorme) */
+  .voo-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px;
+        border-top:1px solid rgba(255,255,255,.06); padding-top:7px; }
+  .voo-tile{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);
+        border-radius:7px; padding:4px 7px; min-width:0; }
+  .voo-tile .k{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.4px; }
+  .voo-tile .v{ font:700 13.5px ui-monospace,Space Mono,monospace; color:#eaf6ff; margin-top:2px;
         line-height:1; white-space:nowrap; font-variant-numeric:tabular-nums; }
-  .voo-tile .v small{ font-size:9.5px; font-weight:600; color:#8a97a8; margin-left:3px; }
+  .voo-tile .v small{ font-size:9px; font-weight:600; color:#8a97a8; margin-left:2px; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
-  #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
-  #wxpanel .wxp-upd{ font-size:9.5px; color:#8a97a8; }
+  #wxpanel .wxp-title b{ font:700 13.5px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
+  #wxpanel .wxp-upd{ font-size:11px; color:#8a97a8; }
   .wxp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:7px 9px; }
   .wxp-cell{ background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07);
-        border-radius:9px; padding:6px 8px; min-height:44px; display:flex; flex-direction:column; justify-content:center; }
-  .wxp-cell .k{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
-  .wxp-cell .v{ font:700 15px Inter,system-ui; color:#eaf6ff; margin-top:2px; white-space:nowrap; }
-  .wxp-cell .v small{ font-size:10px; font-weight:600; color:#8a97a8; }
+        border-radius:9px; padding:7px 9px; min-height:46px; display:flex; flex-direction:column; justify-content:center; }
+  .wxp-cell .k{ font-size:10px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
+  .wxp-cell .v{ font:700 16.5px Inter,system-ui; color:#eaf6ff; margin-top:3px; white-space:nowrap; }
+  .wxp-cell .v small{ font-size:11px; font-weight:600; color:#8a97a8; }
   /* controle do radar (leve: 1 PNG por cima do mapa + legenda) */
   #radarctl{ position:absolute; z-index:4; right:14px; top:64px; width:232px; padding:11px 13px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px;
@@ -612,10 +613,10 @@
         transition:opacity .3s ease, visibility .3s; }
   #radarctl.show{ opacity:1; visibility:visible; pointer-events:auto; }
   #radarctl .rc-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
-  #radarctl .rc-head b{ font:700 12px Inter,system-ui; color:#eaf6ff; }
-  #radarctl .rc-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#2fbf71; }
+  #radarctl .rc-head b{ font:700 13.5px Inter,system-ui; color:#eaf6ff; }
+  #radarctl .rc-time{ font:600 12.5px ui-monospace,Space Mono,monospace; color:#2fbf71; }
   #radarctl .rc-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:4px; gap:6px; }
-  #radarctl .rc-note{ font-size:9px; color:#8a97a8; line-height:1.35; }
+  #radarctl .rc-note{ font-size:10.5px; color:#8a97a8; line-height:1.4; }
   /* timeline do radar — barra INFERIOR, mesmo design do slider de níveis (espaçoso) */
   #radarbar{ position:absolute; z-index:4; bottom:14px; left:50%;
         transform:translateX(-50%) translateY(-6px);
@@ -630,8 +631,8 @@
         font-size:13px; line-height:1; }
   #radarbar .rb-mid{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   #radarbar .rb-top{ display:flex; justify-content:space-between; align-items:baseline; }
-  #radarbar .rb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
-  #radarbar #radar-fr{ font:700 13px Inter,system-ui; color:#fff;
+  #radarbar .rb-lbl{ font-size:10.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
+  #radarbar #radar-fr{ font:700 14.5px Inter,system-ui; color:#fff;
         font-variant-numeric:tabular-nums; white-space:nowrap; }
   #radarbar #radar-tl{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
         -webkit-appearance:none; background:transparent; margin:0; }
@@ -659,12 +660,12 @@
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .3s ease, visibility .3s; }
   #wlegend.show{ opacity:1; visibility:visible; pointer-events:auto; }
-  #wlegend .wl-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px;
-        font-size:10.5px; color:#8a97a8; }
+  #wlegend .wl-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+        font-size:12px; color:#8a97a8; }
   #wlegend .wl-head b{ color:#eaf6ff; font-weight:700; }
-  #wlegend .wl-bar{ display:flex; height:14px; border-radius:7px; border:1px solid rgba(255,255,255,.15); overflow:hidden; }
+  #wlegend .wl-bar{ display:flex; height:15px; border-radius:7px; border:1px solid rgba(255,255,255,.15); overflow:hidden; }
   #wlegend .wl-seg{ flex:1; height:100%; }
-  #wlegend .wl-labels{ display:flex; justify-content:space-between; font-size:9.5px; color:#8a97a8; margin-top:4px; }
+  #wlegend .wl-labels{ display:flex; justify-content:space-between; font-size:11px; color:#8a97a8; margin-top:5px; }
   /* controle do satélite (nuvens) */
   #nuvctl{ position:absolute; z-index:4; right:14px; top:64px; width:232px; padding:11px 13px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px;
@@ -673,9 +674,9 @@
         transition:opacity .3s ease, visibility .3s; }
   #nuvctl.show{ opacity:1; visibility:visible; pointer-events:auto; }
   #nuvctl .nc-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  #nuvctl .nc-head b{ font:700 12px Inter,system-ui; color:#eaf6ff; }
-  #nuvctl .nc-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#7b8cff; }
-  #nuvctl .nc-note{ font-size:9.5px; color:#8a97a8; line-height:1.45; margin-top:8px; }
+  #nuvctl .nc-head b{ font:700 13.5px Inter,system-ui; color:#eaf6ff; }
+  #nuvctl .nc-time{ font:600 12.5px ui-monospace,Space Mono,monospace; color:#7b8cff; }
+  #nuvctl .nc-note{ font-size:11px; color:#8a97a8; line-height:1.5; margin-top:8px; }
   /* painel do vento (Windy embed) — REMOVIDO (Marcos não curtiu; fica p/ reavaliar) */
   /* ═══ Mobile — tela vertical (todas as funções) ═══ */
   @media (max-width:700px){
@@ -684,17 +685,16 @@
             scrollbar-width:none; -ms-overflow-style:none; }
     #chips::-webkit-scrollbar{ display:none; }
     #chips #title{ order:-1; flex:0 0 auto; margin-right:6px; }
-    .chip{ height:32px; padding:0 10px; font-size:10.5px; flex:0 0 auto; }
+    .chip{ height:34px; padding:0 12px; font-size:12px; flex:0 0 auto; }
     #wxstack{ left:10px; top:56px; width:calc(100vw - 20px); }
     #radarctl, #nuvctl{ left:10px; right:10px; top:56px; width:auto; margin-left:0; }
     #radarbar{ width:calc(100vw - 20px); }
     #voosleg{ right:10px; bottom:10px; }
     #voospanel{ width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
-    #celregpanel{ right:10px; top:56px; width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
     #celelegend{ left:10px; bottom:10px; width:calc(100vw - 20px); }
     #wlegend{ left:10px; top:96px; width:calc(100vw - 20px); }
     #nivelbar{ width:calc(100vw - 20px); }
-    #hint, #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ max-width:calc(100vw - 24px); }
+    #hint, #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc, #hint-rio{ max-width:calc(100vw - 24px); }
   }
   @media (max-width:420px){
     .chip{ padding:0 9px; }
@@ -859,15 +859,7 @@
   <div class="cel-sum" id="celesc-sum">—</div>
 </div>
 
-<!-- Tempo Real · CELESC por regional — tabela compacta (canto superior DIREITO) -->
-<div id="celregpanel" class="wpanel" data-chip="celesc">
-  <div class="p-head"><b>CELESC · por regional</b><span class="p-upd" id="celreg-upd">—</span></div>
-  <table class="celreg-t">
-    <thead><tr><th>Regional</th><th>Cid</th><th>UC</th><th>Sem</th><th>%</th></tr></thead>
-    <tbody id="celreg-rows"></tbody>
-  </table>
-  <div class="celreg-ft" id="celreg-ft">—</div>
-</div>
+<!-- (painel regional da CELESC removido — só a legenda embaixo à esquerda) -->
 
 <!-- Tempo Real · satélite / nuvens (NASA GIBS GOES-East) -->
 <div id="nuvctl" data-chip="nuvens">
@@ -3199,7 +3191,7 @@ map.on('load', async () => {
           // (o Voos, por sua vez, já desmarca o CELESC no forEach de "uncheck all")
           const V = TEMPOREAL.find(m => m.id === 'voos');
           if (V && V.on) { V.on = false; if (V.onToggle) V.onToggle(false); if (V.paint) V.paint(); }
-          showPanel('celelegend'); showPanel('celregpanel');
+          showPanel('celelegend');
           refreshCelesc();
           _celescTimer = setInterval(refreshCelesc, 5*60*1000);
           // CELESC = estado de SC INTEIRO em tela cheia, ajustado à largura e à
@@ -3207,10 +3199,9 @@ map.on('load', async () => {
           // o geojson de SC ainda não carregou).
           const sc = _scBoundsNow();
           if (sc) {
-            // margens pequenas, MAS abrindo espaço à direita p/ a tabela de
-            // regionais (#celregpanel: right 14 + width 312) e embaixo/à esquerda
-            // p/ a legenda (#celelegend, canto inferior esquerdo).
-            map.fitBounds(sc, { padding:{ top:70, right:340, bottom:60, left:40 }, duration:1200 });
+            // margens pequenas; só a legenda embaixo/à esquerda (#celelegend)
+            // ocupa espaço agora (painel regional removido).
+            map.fitBounds(sc, { padding:{ top:70, right:60, bottom:70, left:60 }, duration:1200 });
           } else {
             const c = _cirFeat().geometry.coordinates[0];
             const bb = new maplibregl.LngLatBounds();
@@ -3218,7 +3209,7 @@ map.on('load', async () => {
             map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1200 });
           }
         } else {
-          hidePanel('celelegend'); hidePanel('celregpanel');
+          hidePanel('celelegend');
           goHome();   // desmarcar CELESC → volta à visão inicial
         }
       } },
@@ -3617,7 +3608,7 @@ map.on('load', async () => {
   // Recolher = vira um "chip" só com o título (pra cima nas caixas de topo, pra
   // baixo nas de rodapé). Caixas flutuantes podem ser ARRASTADAS pelo cabeçalho.
   const HEAD_SEL = '.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head';
-  const DRAGGABLE = new Set(['radarctl','nuvctl','celregpanel','celelegend','voosleg']);
+  const DRAGGABLE = new Set(['radarctl','nuvctl','celelegend','voosleg']);
   const ICON_COL = '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>';
   const ICON_X   = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   const boxOff = (box, chipId) => {   // fechar → desliga o chip/camada
