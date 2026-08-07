@@ -105,7 +105,7 @@
   #legend .row{ display:flex; align-items:center; gap:8px; }
   #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
   /* hint (hover) — tooltip base alinhado ao design system */
-  #hint{ position:absolute; z-index:3; pointer-events:none; display:none;
+  #hint{ position:absolute; z-index:8; pointer-events:none; display:none;
          padding:8px 12px; font-size:12px; line-height:1.45; color:var(--txt);
          background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
          border:1px solid var(--border-2); border-top:2px solid var(--neon);
@@ -134,7 +134,7 @@
                    font-variant-numeric:tabular-nums; white-space:nowrap; }
   #hint.cota-card .cota-big .n .m{ font-size:20px; font-weight:700; margin-left:2px; }
   /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
-  #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ position:absolute; z-index:3; pointer-events:none; display:none;
+  #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ position:absolute; z-index:8; pointer-events:none; display:none;
          min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
          background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
          border:1px solid var(--border-2); border-top:2px solid var(--neon); border-radius:10px;
@@ -663,6 +663,18 @@ map.on('load', async () => {
   const showHint = (id) => { hideAllHints(); const el=_hintEls[id]; if(!el) return null;
                              el.className=''; el.style.display='block'; return el; };
   map.getContainer().addEventListener('mouseleave', hideAllHints);
+  // Posiciona o hint CLAMPADO dentro da área do mapa: prefere o lado direito/
+  // abaixo do cursor, vira pro lado oposto perto da borda e nunca sai da tela.
+  // Os hints têm transform:translate(12px,12px), então o cálculo soma esse offset.
+  const _posHint = (el, x, y) => {
+    const r = map.getContainer().getBoundingClientRect();
+    const w = el.offsetWidth, h = el.offsetHeight, off = 12, pad = 8;
+    let l = x + off, t = y + off;
+    if (l + w > r.width - pad && x - w - off > pad) l = x - w - off;
+    if (t + h > r.height - pad && y - h - off > pad) t = y - h - off;
+    el.style.left = Math.max(pad, Math.min(l, r.width - w - pad)) + 'px';
+    el.style.top  = Math.max(pad, Math.min(t, r.height - h - pad)) + 'px';
+  };
 
   // ── Base do mapa: CARTO (OpenStreetMap) em 4 variantes + Satélite (Esri) ────
   // 'mapa'      = sem rótulos  → dark_nolabels / light_nolabels (segue o claro/escuro)
@@ -1169,7 +1181,7 @@ map.on('load', async () => {
   const _radarClear = () => { if (_radarCtx && _radarCanvas)
     _radarCtx.setTransform(1,0,0,1,0,0), _radarCtx.clearRect(0, 0, _radarCanvas.width, _radarCanvas.height); };
   const _radarDraw = (A, ts, sweepVisible) => {
-    const cont = map.getCanvasContainer();
+    const cont = map.getContainer();
     const w = cont.clientWidth, h = cont.clientHeight, dpr = window.devicePixelRatio || 1;
     if (_radarCanvas.width !== Math.round(w*dpr) || _radarCanvas.height !== Math.round(h*dpr)) {
       _radarCanvas.width = Math.round(w*dpr); _radarCanvas.height = Math.round(h*dpr);
@@ -1565,7 +1577,7 @@ map.on('load', async () => {
         const p=e.features[0].properties;
         const hp=showHint('ponte');
         if(!hp) return;
-        hp.style.left=e.point.x+'px'; hp.style.top=e.point.y+'px';
+        _posHint(hp, e.point.x, e.point.y);
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
         let h='';
@@ -1635,7 +1647,7 @@ map.on('load', async () => {
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
         showHint('hint');
-        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        _posHint(hint, e.point.x, e.point.y);
         const local = p.rua || p.bairro || '—';
         const cota = (p.cota!=null && p.cota!=='') ? String(p.cota).replace('.',',') : null;
         hint.className='cota-card';
@@ -1671,7 +1683,7 @@ map.on('load', async () => {
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties; const rt=(window._RT||{})[normNome(p.nome)];
         showHint('hint'); hint.className='rt-card';
-        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        _posHint(hint, e.point.x, e.point.y);
         const c=rtCond(rt); hint.style.borderColor=c.cor;
         const chov = rt && rt.chuva_atual!=null && rt.chuva_atual>0;
         let m='';
@@ -1718,7 +1730,7 @@ map.on('load', async () => {
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
         const ha=showHint('abrigo');
-        ha.style.left=e.point.x+'px'; ha.style.top=e.point.y+'px';
+        _posHint(ha, e.point.x, e.point.y);
         const aberto = p.situacao==='ABERTO';
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
@@ -1766,7 +1778,7 @@ map.on('load', async () => {
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
         const hc=showHint('celesc');
-        hc.style.left=e.point.x+'px'; hc.style.top=e.point.y+'px';
+        _posHint(hc, e.point.x, e.point.y);
         if (_celHov === p.celesc_id) return;   // mesmo município: só move o card
         _celHov = p.celesc_id;
         const cor=CELESC_CORES[p.classe]||'#8a97a8';
@@ -1943,7 +1955,7 @@ map.on('load', async () => {
         const p=e.features[0].properties;
         const hv=showHint('voos');
         if(!hv) return;
-        hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
+        _posHint(hv, e.point.x, e.point.y);
         // reconstrói o HTML só quando troca de avião (ou a cada 2 s) — senão a
         // <img> do logo é recriada a cada mousemove e nunca termina de carregar
         const key = p.icao24 || p.callsign || '';
@@ -1978,7 +1990,7 @@ map.on('load', async () => {
         const p=e.features[0].properties;
         const hv=showHint('voos');
         if(!hv) return;
-        hv.style.left=e.point.x+'px'; hv.style.top=e.point.y+'px';
+        _posHint(hv, e.point.x, e.point.y);
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
         const tipo = p.tipo==='aeroporto' ? 'Aeroporto' : p.tipo==='aerodromo' ? 'Aeródromo' : 'Heliponto';
@@ -2251,7 +2263,7 @@ map.on('load', async () => {
         const f=e.features[0]; if(_hovSetor!==null) map.setFeatureState({source:'setores',id:_hovSetor},{hover:false});
         _hovSetor=f.id; map.setFeatureState({source:'setores',id:_hovSetor},{hover:true});
         const p=f.properties; showHint('hint');
-        hint.style.left=e.point.x+'px'; hint.style.top=e.point.y+'px';
+        _posHint(hint, e.point.x, e.point.y);
         hint.innerHTML='<div class="k">'+(p.risco||'Setor de risco')+'</div>'+(p.bairro||p.setor||'')
           +(p.ruas?'<div style="font-size:10px;color:#8a97a8">'+p.ruas+'</div>':'')
           +(p.n_pessoas?'<div style="font-size:10px;color:#8a97a8">≈ '+p.n_pessoas+' pessoas</div>':'');
@@ -2997,8 +3009,7 @@ map.on('load', async () => {
     map.setFeatureState({source:'brusque', id:hovered}, {hover:true});
     const nome = f.properties.nome, cam = f.properties.camada.replace('_',' ');
     showHint('hint');
-    hint.style.left = e.point.x + 'px';
-    hint.style.top  = e.point.y + 'px';
+    _posHint(hint, e.point.x, e.point.y);
     let extra = '';
     const rt = (window._RT || {})[normNome(nome)];   // estação CEMADEN nesse bairro?
     if (rt) {
