@@ -1086,6 +1086,19 @@ map.on('load', async () => {
   const _planeImg  = _makePlane('#ffd54f');   // aeronave em voo (amarelo)
   const _planeImgW = _makePlane('#ffffff');   // aeroporto (branco)
   const _planeImgO = _makePlane('#26C6DA');   // aeródromo (ciano — não bate com branco/amarelo)
+  // Ícone de avião em CONTORNO (só o traço, sem núcleo) — o mesmo do SVG da
+  // legenda. Não confunde com o avião em voo (silhueta sólida amarela).
+  const _PLANE_OUTLINE = new Path2D('M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z');
+  const _makeOutlinePlane = (color) => {
+    const c = document.createElement('canvas'); c.width = 48; c.height = 48;
+    const g = c.getContext('2d');
+    g.translate(24,24); g.scale(2.0,2.0); g.translate(-12,-12);
+    g.strokeStyle = color; g.lineWidth = 1.15; g.lineJoin='round'; g.lineCap='round';
+    g.stroke(_PLANE_OUTLINE);
+    return g.getImageData(0,0,48,48);
+  };
+  const _planeImgW2 = _makeOutlinePlane('#ffffff');   // aeroporto (contorno branco)
+  const _planeImgO2 = _makeOutlinePlane('#26C6DA');   // aeródromo (contorno ciano)
   // Ícone genérico de heliponto: círculo escuro com anel azul + "H" (os dados da
   // ANAC que temos aqui não trazem categoria de heliponto, então é genérico).
   const _helipontoCanvas = document.createElement('canvas'); _helipontoCanvas.width=48; _helipontoCanvas.height=48;
@@ -1206,16 +1219,19 @@ map.on('load', async () => {
       const coords = arr.slice(-_TAIL_BODY).map(p => [p[0], p[1]]);
       const last = coords[coords.length-1];
       if (Math.abs(last[0]-v.lon) > 1e-6 || Math.abs(last[1]-v.lat) > 1e-6) coords.push([v.lon, v.lat]);
-      // padrão RETO (2 últimos trechos na mesma proa)? → estende só pra TRÁS até a borda
-      if (coords.length >= 3) {
-        const p0=coords[coords.length-3], p1=coords[coords.length-2], p2=coords[coords.length-1];
-        const s1 = p0[0]!==p1[0]||p0[1]!==p1[1], s2 = p1[0]!==p2[0]||p1[1]!==p2[1];
-        if (s1 && s2) {
-          const b12 = _bearingOf(p1, p2), b01 = _bearingOf(p0, p1);
-          let dd = Math.abs(b12 - b01) % 360; if (dd > 180) dd = 360 - dd;
-          if (dd < 12) {
-            const bak = _rayCircle(p2[0], p2[1], (b12 + 180) % 360);   // borda atrás (por onde entrou)
-            if (bak && (Math.abs(bak[0]-coords[0][0]) > 1e-4 || Math.abs(bak[1]-coords[0][1]) > 1e-4)) coords.unshift(bak);
+      // estende até a BORDA pelo ponto mais ANTIGO do rastro, na direção REAL em
+      // que o voo chegou (não pelo rumo atual — que desconecta a linha de voos
+      // em curva/mudando de proa). Só quando o ponto antigo está perto da borda
+      // (o voo entrou recentemente no raio de 100 km).
+      if (coords.length >= 2) {
+        const p0 = coords[0], p1 = coords[1];
+        if (p0[0]!==p1[0] || p0[1]!==p1[1]) {
+          const kx = 111.32*Math.cos(_cirLat*Math.PI/180), ky = 111.32;
+          const dist0 = Math.hypot((p0[0]-_cirLon)*kx, (p0[1]-_cirLat)*ky);
+          if (dist0 >= _raioKm - 20) {                    // perto da borda
+            const enterB = _bearingOf(p1, p0);            // direção em que veio até p0
+            const bak = _rayCircle(p0[0], p0[1], enterB);
+            if (bak && (Math.abs(bak[0]-p0[0]) > 1e-4 || Math.abs(bak[1]-p0[1]) > 1e-4)) coords.unshift(bak);
           }
         }
       }
@@ -2088,6 +2104,8 @@ map.on('load', async () => {
       map.addImage('aviao', _planeImg);
       map.addImage('aviao-branco', _planeImgW);
       map.addImage('aviao-laranja', _planeImgO);
+      map.addImage('aviao-contorno-branco', _planeImgW2);
+      map.addImage('aviao-contorno-ciano', _planeImgO2);
       map.addImage('heliponto', _helipontoImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
         layout:{ 'icon-image':'aviao', 'icon-size':0.8, 'icon-allow-overlap':true,
@@ -2233,24 +2251,24 @@ map.on('load', async () => {
         _infraPos = (infra.features || [])
           .filter(f => f.geometry && f.geometry.type === 'Point')
           .map(f => f.geometry.coordinates);
-        // aeroportos públicos — avião BRANCO (3x) + código do aeroporto (FLN/NVT…)
+        // aeroportos públicos — avião em CONTORNO branco (mesmo da legenda) + código
         map.addLayer({ id:'voos-infra-aeroporto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aeroporto'],
-          layout:{ 'icon-image':'aviao-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,1.26,14,1.86],
-                    'text-field':['get','code'], 'text-font':['Open Sans Regular'], 'text-size':11,
-                    'text-offset':[0,1.15], 'text-anchor':'top', 'text-optional':true,
+          layout:{ 'icon-image':'aviao-contorno-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,0.9,14,1.2],
+                    'text-field':['get','code'], 'text-font':['Open Sans Bold'], 'text-size':['interpolate',['linear'],['zoom'],9,20,14,28],
+                    'text-offset':[0,2.4], 'text-anchor':'top', 'text-optional':true,
                     'text-allow-overlap':true, 'text-ignore-placement':true,
                     'icon-allow-overlap':true, 'icon-ignore-placement':true },
-          paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':1.5 } });
-        // aeródromos privados — avião CIANO (3x) + código OACI
+          paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':2 } });
+        // aeródromos privados — avião em CONTORNO ciano + código OACI
         map.addLayer({ id:'voos-infra-aerodromo', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aerodromo'],
-          layout:{ 'icon-image':'aviao-laranja', 'icon-size':['interpolate',['linear'],['zoom'],9,1.05,14,1.56],
-                    'text-field':['get','code'], 'text-font':['Open Sans Regular'], 'text-size':10,
-                    'text-offset':[0,1.15], 'text-anchor':'top', 'text-optional':true,
+          layout:{ 'icon-image':'aviao-contorno-ciano', 'icon-size':['interpolate',['linear'],['zoom'],9,0.72,14,0.98],
+                    'text-field':['get','code'], 'text-font':['Open Sans Bold'], 'text-size':['interpolate',['linear'],['zoom'],9,17,14,24],
+                    'text-offset':[0,2.2], 'text-anchor':'top', 'text-optional':true,
                     'text-allow-overlap':true, 'text-ignore-placement':true,
                     'icon-allow-overlap':true, 'icon-ignore-placement':true },
-          paint:{ 'text-color':'#eaf6ff','text-halo-color':'#04121c','text-halo-width':1.4 } });
+          paint:{ 'text-color':'#b2ebf2','text-halo-color':'#04121c','text-halo-width':1.8 } });
         // helipontos — ícone genérico de heliponto (círculo + "H"), menor
         map.addLayer({ id:'voos-infra-heliponto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'heliponto'],
