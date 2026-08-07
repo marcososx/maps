@@ -350,8 +350,10 @@
   .g-labels{ display:flex; justify-content:space-between; font-size:9px; color:#8a97a8; margin-top:3px; }
   .g-val{ margin-top:6px; font-size:11.5px; color:#eaf6ff; line-height:1.35; }
   .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
-  /* painel Voos: contagem + lista de aeronaves no raio de 100 km */
-  #voospanel{ max-width:460px; }
+  /* painel Voos: contagem + lista de aeronaves no raio de 100 km.
+     Escapa da largura fixa (252px) do #wxstack — mais largo p/ os detalhes
+     (Altitude/Velocidade/…) caberem em 1 linha; alinhado à esquerda do stack. */
+  #voospanel{ width:380px; max-width:calc(100vw - 28px); align-self:flex-start; }
   /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
   #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
             width:max-content; max-width:calc(100vw - 28px); margin:0; }
@@ -446,11 +448,12 @@
         border-left-color:rgba(255,213,79,.9); }
   .voo-desc{ font-size:10.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  .voo-rows{ display:grid; grid-template-columns:1fr 1fr; gap:2px 14px; font-size:10.5px;
-        border-top:1px solid rgba(255,255,255,.06); padding-top:5px; }
-  .voo-cell{ display:flex; justify-content:space-between; gap:6px; min-width:0; }
+  .voo-rows{ display:grid; grid-template-columns:1fr 1fr; gap:4px 18px; font-size:10.5px;
+        border-top:1px solid rgba(255,255,255,.06); padding-top:6px; margin-top:2px; }
+  .voo-cell{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; min-width:0; }
   .voo-lbl{ color:#8a97a8; flex:0 0 auto; }
-  .voo-val{ color:#eaf6ff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .voo-val{ color:#eaf6ff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        text-align:right; font-variant-numeric:tabular-nums; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -624,8 +627,8 @@
         <div class="vl-sub">Status da pista · METAR</div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot" style="color:#00E676;background:#00E676"></span></span><span class="vl-txt"><b>VFR</b><small>Opera normal</small></span></div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#4FC3F7;background:#4FC3F7"></span></span><span class="vl-txt"><b>MVFR</b><small>Marginal</small></span></div>
-        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF5252;background:#FF5252"></span></span><span class="vl-txt"><b>IFR</b><small>Restrição · atrasos</small></span></div>
-        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#E040FB;background:#E040FB"></span></span><span class="vl-txt"><b>LIFR</b><small>Pista fecha</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF9500;background:#FF9500"></span></span><span class="vl-txt"><b>IFR</b><small>Restrição · atrasos</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF3B30;background:#FF3B30"></span></span><span class="vl-txt"><b>LIFR</b><small>Pista fecha</small></span></div>
       </div>
     </div>
   </div>
@@ -2508,8 +2511,8 @@ map.on('load', async () => {
     if (!q) return null;
     const P = { vfr:['VFR','#00E676','Céu bom — opera normal',false,'Sem teto significativo','≥ 10 km','Chuva'],
                 mvfr:['MVFR','#4FC3F7','Marginal — começa a apertar',true,'2500 ft','7,0 km','Névoa úmida'],
-                ifr:['IFR','#FF5252','Só por instrumentos — atrasos',true,'800 ft','3,2 km','Nevoeiro'],
-                lifr:['LIFR','#E040FB','Teto/vis. no chão — pista fecha',true,'200 ft','0,5 km','Nevoeiro'] };
+                ifr:['IFR','#FF9500','Só por instrumentos — atrasos',true,'800 ft','3,2 km','Nevoeiro'],
+                lifr:['LIFR','#FF3B30','Teto/vis. no chão — pista fecha',true,'200 ft','0,5 km','Nevoeiro'] };
     const p = P[q.toLowerCase()] || P.ifr;
     const mk = (oaci) => ({ oaci, categoria:p[0], cor:p[1], rotulo:p[0], situacao:p[2], pisca:p[3],
       teto_txt:p[4], vis_txt:p[5], vento:'200° / 12 kt', temp_c:17, orvalho_c:16, fenomeno:p[6],

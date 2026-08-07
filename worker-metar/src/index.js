@@ -23,8 +23,8 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods
 const CAT = {
   VFR:  { rotulo: 'VFR',  cor: '#00E676', desc: 'Céu bom — opera normal',        pisca: false },
   MVFR: { rotulo: 'MVFR', cor: '#4FC3F7', desc: 'Marginal — começa a apertar',   pisca: true  },
-  IFR:  { rotulo: 'IFR',  cor: '#FF5252', desc: 'Só por instrumentos — atrasos', pisca: true  },
-  LIFR: { rotulo: 'LIFR', cor: '#E040FB', desc: 'Teto/vis. no chão — pista fecha', pisca: true },
+  IFR:  { rotulo: 'IFR',  cor: '#FF9500', desc: 'Só por instrumentos — atrasos', pisca: true  },
+  LIFR: { rotulo: 'LIFR', cor: '#FF3B30', desc: 'Teto/vis. no chão — pista fecha', pisca: true },
 };
 
 // Fenômenos de tempo mais comuns que travam pista (tradução do wxString).
