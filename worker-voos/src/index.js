@@ -151,13 +151,22 @@ async function handle(req, env, ctx) {
       const r = rotas[v.callsign];
       if (r) {
         v.origem = r.origem; v.destino = r.destino; v.cia = r.cia;
-        // sanidade do destino: se o rumo do avião aponta LONGE do destino da
+        // sanidade do destino: se a direção do voo aponta LONGE do destino da
         // escala (>120°), a rota do adsbdb divergiu do voo real (flight number
         // reutilizado em outra rota no dia) → remove o destino falso
-        if (v.destino && v.destino.lat != null && v.rumo != null) {
-          const b = bearingKm(v.lat, v.lon, v.destino.lat, v.destino.lon);
-          let dd = Math.abs(v.rumo - b) % 360; if (dd > 180) dd = 360 - dd;
-          if (dd > 120) v.destino = null;
+        if (v.destino && v.destino.lat != null) {
+          // direção efetiva: track do ADS-B, ou a direção real do movimento
+          // (posição anterior → atual) quando o track não vier
+          let hdg = v.rumo;
+          if (hdg == null) {
+            const arr = _trails[v.icao24];
+            if (arr && arr.length) hdg = bearingKm(arr[arr.length-1][1], arr[arr.length-1][0], v.lat, v.lon);
+          }
+          if (hdg != null) {
+            const b = bearingKm(v.lat, v.lon, v.destino.lat, v.destino.lon);
+            let dd = Math.abs(hdg - b) % 360; if (dd > 180) dd = 360 - dd;
+            if (dd > 120) v.destino = null;
+          }
         }
       }
     }
