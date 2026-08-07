@@ -403,21 +403,32 @@
         color:#ffd54f; text-shadow:0 0 8px rgba(255,213,79,.55); }
   .voo-sec-n{ font:600 9px ui-monospace,Space Mono,monospace; color:#8a97a8; margin-top:2px;
         letter-spacing:.3px; }
-  .voo-row{ display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.045);
-        border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:7px 9px; cursor:pointer;
+  .voo-row{ display:flex; flex-direction:column; gap:6px; background:rgba(255,255,255,.045);
+        border:1px solid rgba(255,255,255,.07); border-radius:9px; padding:8px 10px; cursor:pointer;
         transition:background .18s ease, border-color .18s ease; }
   .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
-  .voo-tipo{ flex:0 0 auto; width:44px; height:44px; border-radius:10px; display:flex; align-items:center;
-        justify-content:center; background:rgba(255,213,79,.14); border:1px solid rgba(255,213,79,.4);
-        font:800 14px ui-monospace,Space Mono,monospace; color:#ffd54f; }
-  .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
-  .voo-cs{ font:700 12px ui-monospace,Space Mono,monospace; color:#ffd54f; min-width:0;
-        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .voo-top{ display:flex; align-items:center; gap:9px; }
+  .voo-tipo{ flex:0 0 auto; min-width:46px; height:32px; padding:0 7px; border-radius:8px; display:flex;
+        align-items:center; justify-content:center; background:rgba(255,213,79,.14);
+        border:1px solid rgba(255,213,79,.4); font:800 10.5px ui-monospace,Space Mono,monospace;
+        color:#ffd54f; white-space:nowrap; letter-spacing:.3px; }
+  .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; align-items:flex-start; }
+  .voo-logo{ height:16px; max-width:130px; object-fit:contain; }
+  .voo-rota{ display:flex; align-items:center; gap:7px; width:100%; }
+  .voo-aero{ font:800 12px ui-monospace,Space Mono,monospace; color:#ffd54f; line-height:1.1; text-align:center; }
+  .voo-aero small{ display:block; font:500 8px ui-monospace,Space Mono,monospace; color:#8a97a8;
+        letter-spacing:.2px; }
+  .voo-seta{ flex:1; height:2px; min-width:16px;
+        background:linear-gradient(90deg,rgba(255,213,79,.9),rgba(255,213,79,.3));
+        position:relative; align-self:center; }
+  .voo-seta::after{ content:''; position:absolute; right:0; top:-3px; border:3px solid transparent;
+        border-left-color:rgba(255,213,79,.9); }
   .voo-desc{ font-size:9.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  .voo-d{ display:flex; flex-wrap:wrap; gap:1px 8px; font-size:9.5px; color:#8a97a8;
-        align-items:center; justify-content:flex-end; }
-  .voo-d b{ color:#eaf6ff; font-weight:600; }
+  .voo-rows{ display:grid; grid-template-columns:auto 1fr; gap:1px 10px; font-size:9.5px;
+        border-top:1px solid rgba(255,255,255,.06); padding-top:5px; }
+  .voo-lbl{ color:#8a97a8; }
+  .voo-val{ color:#eaf6ff; font-weight:600; text-align:right; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -1388,16 +1399,41 @@ map.on('load', async () => {
     if (upd) upd.textContent = d.updated ? fmtDt(d.updated)+' · ADS-B' : '—';
     list.innerHTML = '';
     const rowHTML = (v) => {
-      const alt = v.alt_m!=null ? Math.round(v.alt_m).toLocaleString('pt-BR')+' m' : '—';
-      const vel = v.vel_kmh!=null ? v.vel_kmh+' km/h' : '—';
-      const rumo = v.rumo!=null ? v.rumo+'°' : '—';
+      const o=v.origem||{}, de=v.destino||{}, c=v.cia||{};
+      const cs = v.callsign || v.icao24 || '—';
       const tipo = v.tipo || v.categoria || '—';
+      const desc = v.desc || '';
+      const altM  = v.alt_m != null ? Math.round(v.alt_m).toLocaleString('pt-BR') : null;
+      const altFt = v.alt_m != null ? Math.round(v.alt_m*3.28084).toLocaleString('pt-BR') : null;
+      const velKmh = v.vel_kmh != null ? Math.round(v.vel_kmh) : null;
+      const velKt  = v.vel_kmh != null ? Math.round(v.vel_kmh/1.852) : null;
+      const rumo = v.rumo != null ? Math.round(v.rumo)+'°' : null;
+      const sub  = v.subida_mps != null
+        ? (v.subida_mps>0?'▲ +':'▼ ')+Math.abs(v.subida_mps).toFixed(1).replace('.',',')+' m/s' : null;
+      const pos  = v.ultima_atualizacao ? fmtDt(v.ultima_atualizacao) : null;
+      const logo = c.icao
+        ? '<img class="voo-logo" src="https://static.airplanes.live/airline_banners/'
+          +encodeURIComponent(c.icao)+'.png" onerror="this.style.display=\'none\'" alt="">' : '';
+      const rota = (o.iata && de.iata)
+        ? '<div class="voo-rota"><span class="voo-aero">'+o.iata
+          +(o.municipio?'<small>'+o.municipio+'</small>':'')
+          +'</span><span class="voo-seta"></span><span class="voo-aero">'+de.iata
+          +(de.municipio?'<small>'+de.municipio+'</small>':'')
+          +'</span></div>' : '';
+      const rows = [];
+      if (altM) rows.push('<div><span class="voo-lbl">Altitude</span><span class="voo-val">'+altM+' m · '+altFt+' ft</span></div>');
+      if (velKmh) rows.push('<div><span class="voo-lbl">Velocidade</span><span class="voo-val">'+velKmh+' km/h · '+velKt+' kt</span></div>');
+      if (rumo) rows.push('<div><span class="voo-lbl">Rumo</span><span class="voo-val">'+rumo+'</span></div>');
+      if (sub) rows.push('<div><span class="voo-lbl">Subida</span><span class="voo-val">'+sub+'</span></div>');
+      if (pos) rows.push('<div><span class="voo-lbl">Posição</span><span class="voo-val">'+pos+'</span></div>');
       const row = document.createElement('div'); row.className = 'voo-row';
-      row.innerHTML = '<span class="voo-tipo">'+tipo+'</span>'
-        + '<span class="voo-main"><span class="voo-cs">'+(v.callsign||v.icao24||'—')+'</span>'
-        + '<span class="voo-desc">'+(v.desc||'')+'</span></span>'
-        + '<span class="voo-d"><span><b>'+alt+'</b> alt</span><span><b>'+vel+'</b></span>'
-        + '<span>rumo <b>'+rumo+'</b></span></span>';
+      row.innerHTML =
+        '<div class="voo-top">'
+          +'<span class="voo-tipo">'+cs+'</span>'
+          +'<div class="voo-main">'+logo+rota
+          +'<div class="voo-desc">'+tipo+(desc?' · '+desc:'')+'</div></div>'
+        +'</div>'
+        +(rows.length ? '<div class="voo-rows">'+rows.join('')+'</div>' : '');
       row.onclick = () => {
         // clicar na lista: só foca o avião no mapa (sem popup/hint — o hint
         // aparece ao passar o mouse sobre o avião na camada)
