@@ -341,7 +341,7 @@
   .g-val{ margin-top:6px; font-size:11.5px; color:#eaf6ff; line-height:1.35; }
   .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
   /* painel Voos: contagem + lista de aeronaves no raio de 100 km */
-  #voospanel{ max-width:380px; }
+  #voospanel{ max-width:460px; }
   /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
   #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
             width:max-content; max-width:calc(100vw - 28px); margin:0; }
@@ -425,10 +425,11 @@
         border-left-color:rgba(255,213,79,.9); }
   .voo-desc{ font-size:10.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  .voo-rows{ display:grid; grid-template-columns:auto 1fr; gap:1px 10px; font-size:10.5px;
+  .voo-rows{ display:grid; grid-template-columns:1fr 1fr; gap:2px 14px; font-size:10.5px;
         border-top:1px solid rgba(255,255,255,.06); padding-top:5px; }
-  .voo-lbl{ color:#8a97a8; }
-  .voo-val{ color:#eaf6ff; font-weight:600; text-align:right; }
+  .voo-cell{ display:flex; justify-content:space-between; gap:6px; min-width:0; }
+  .voo-lbl{ color:#8a97a8; flex:0 0 auto; }
+  .voo-val{ color:#eaf6ff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -1148,13 +1149,16 @@ map.on('load', async () => {
   // ── Trajeto dos voos: acumula as posições de cada aeronave ao longo do tempo
   // e desenha uma linha (trail) mostrando por onde ela passou. ────────────────
   const _trails = {};            // icao24 -> [ [lon,lat], ... ] (mais recente no fim)
+  const _trailLast = {};         // icao24 -> ms da última vez visto (p/ não apagar em gap de dados)
   const _TRAIL_MAX = 300;        // pontos máximos por voo (≈10 min a 2s de poll)
   const trailFeatures = (d) => {
     const seen = new Set();
+    const now = Date.now();
     const feats = [];
     for (const v of (d.voos || [])) {
       if (!v.icao24 || v.lat == null || v.lon == null) continue;
       seen.add(v.icao24);
+      _trailLast[v.icao24] = now;
       // usa o histórico que o worker já acumulou (dentro do raio de 100 km) como
       // ponto de partida, pra ver a trajetória que o voo correu antes de ligar
       if (!_trails[v.icao24] && Array.isArray(v.trail) && v.trail.length) {
@@ -1170,8 +1174,10 @@ map.on('load', async () => {
       if (arr.length > 1) feats.push({ type:'Feature', properties:{ icao24:v.icao24, callsign:v.callsign },
         geometry:{ type:'LineString', coordinates:arr.slice() } });
     }
-    // limpa trails de aeronaves que saíram da região (não são mais vistas)
-    for (const k in _trails) if (!seen.has(k)) delete _trails[k];
+    // limpa trails de aeronaves que sumiram há mais de ~3 min (dá tolerância a
+    // gaps de dados de 1-2 polls — senão um avião que some por instante perde o
+    // rastro completo)
+    for (const k in _trails) if (!seen.has(k) && (now - (_trailLast[k]||0)) > 180000) delete _trails[k];
     return feats;
   };
   // ── Rastro dos aviões ───────────────────────────────────────────────────────
@@ -1204,7 +1210,7 @@ map.on('load', async () => {
     if (t < 0) return null;
     return [ (ox + t*ux)/kx + _cirLon, (oy + t*uy)/ky + _cirLat ];
   };
-  const _TAIL_BODY = 120;   // corpo do rastro: últimos N pontos reais (≈4 min a 2 s)
+  const _TAIL_BODY = 300;   // corpo do rastro: todo o histórico real (≈10 min a 2 s)
   const tailFeatures = (d) => {   // rastro SÓLIDO
     const feats = [];
     for (const v of (d.voos || [])) {
@@ -1491,11 +1497,11 @@ map.on('load', async () => {
           +(de.municipio?'<small>'+de.municipio+'</small>':'')
           +'</span></div>' : '';
       const rows = [];
-      if (altM) rows.push('<div><span class="voo-lbl">Altitude</span><span class="voo-val">'+altM+' m · '+altFt+' ft</span></div>');
-      if (velKmh) rows.push('<div><span class="voo-lbl">Velocidade</span><span class="voo-val">'+velKmh+' km/h · '+velKt+' kt</span></div>');
-      if (rumo) rows.push('<div><span class="voo-lbl">Rumo</span><span class="voo-val">'+rumo+'</span></div>');
-      if (sub) rows.push('<div><span class="voo-lbl">Subida</span><span class="voo-val">'+sub+'</span></div>');
-      if (pos) rows.push('<div><span class="voo-lbl">Posição</span><span class="voo-val">'+pos+'</span></div>');
+      if (altM) rows.push('<div class="voo-cell"><span class="voo-lbl">Altitude</span><span class="voo-val">'+altM+' m · '+altFt+' ft</span></div>');
+      if (velKmh) rows.push('<div class="voo-cell"><span class="voo-lbl">Velocidade</span><span class="voo-val">'+velKmh+' km/h · '+velKt+' kt</span></div>');
+      if (rumo) rows.push('<div class="voo-cell"><span class="voo-lbl">Rumo</span><span class="voo-val">'+rumo+'</span></div>');
+      if (sub) rows.push('<div class="voo-cell"><span class="voo-lbl">Subida</span><span class="voo-val">'+sub+'</span></div>');
+      if (pos) rows.push('<div class="voo-cell"><span class="voo-lbl">Posição</span><span class="voo-val">'+pos+'</span></div>');
       const row = document.createElement('div'); row.className = 'voo-row';
       row.innerHTML =
         '<div class="voo-top">'

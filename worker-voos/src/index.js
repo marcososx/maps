@@ -23,6 +23,7 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods
 // posição do avião ao histórico dele, só dentro do raio de 100 km. Assim, ao
 // ativar a camada o front já recebe o progresso que o voo correu (e continua).
 const _trails = {};            // icao24 -> [ [lon,lat], ... ] (mais recente no fim)
+const _trailLast = {};         // icao24 -> ms da última vez visto (p/ não apagar em gap)
 const _TRAIL_MAX = 300;        // ≈ 10 min a 2 s de poll
 const _TRAIL_STEP = 0.001;     // mínimo de deslocamento (graus) p/ registrar ponto
 
@@ -140,9 +141,11 @@ async function handle(req, env, ctx) {
     }
     // atualiza o histórico de posição de cada voo (só dentro do raio) e anexa
     const seen = new Set();
+    const now = Date.now();
     for (const v of voos) {
       if (!v.icao24 || v.lat == null || v.lon == null) continue;
       seen.add(v.icao24);
+      _trailLast[v.icao24] = now;
       const arr = _trails[v.icao24] || (_trails[v.icao24] = []);
       const last = arr[arr.length - 1];
       if (!last || Math.abs(last[0] - v.lon) > _TRAIL_STEP || Math.abs(last[1] - v.lat) > _TRAIL_STEP) {
@@ -151,8 +154,9 @@ async function handle(req, env, ctx) {
       }
       v.trail = arr.slice();
     }
-    // limpa trilhas de aviões que saíram da região
-    for (const k in _trails) if (!seen.has(k)) delete _trails[k];
+    // limpa trilhas de aviões que sumiram há mais de ~3 min (tolerância a gaps
+    // de dados — senão um voo que some por instante perde o rastro completo)
+    for (const k in _trails) if (!seen.has(k) && (now - (_trailLast[k]||0)) > 180000) delete _trails[k];
   } catch (e) {
     return new Response(JSON.stringify({ erro: 'Airplanes.live indisponível', detalhe: String(e.message || e) }),
       { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
