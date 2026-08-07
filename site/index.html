@@ -22,7 +22,7 @@
     --shadow:0 10px 26px rgba(0,0,0,.45);
     --blur:blur(8px);
     --box-pad:11px 13px;
-    --chip-h:34px;
+    --chip-h:38px;
   }
   html,body{ margin:0; height:100%; background:var(--bg); color:var(--txt);
              font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
@@ -135,12 +135,12 @@
   #legend .sw{ width:16px; height:0; border-top-width:2px; border-top-style:solid; }
   /* hint (hover) — tooltip base alinhado ao design system */
   #hint{ position:absolute; z-index:8; pointer-events:none; display:none;
-         padding:8px 12px; font-size:12px; line-height:1.45; color:var(--txt);
+         padding:9px 13px; font-size:13px; line-height:1.45; color:var(--txt);
          background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
          border:1px solid var(--border-2); border-top:2px solid var(--neon);
          border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.5);
          transform:translate(12px,12px); white-space:nowrap; }
-  #hint .k{ color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+  #hint .k{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
   #hint.rt-card{ white-space:normal; width:264px; padding:0; }
   #hint.rt-card .k{ font-size:11px; }
   /* hint de cotas — layout 2 colunas: texto à esquerda, cota grande à direita.
@@ -149,22 +149,22 @@
                    line-height:1.45; box-shadow:0 8px 26px rgba(0,0,0,.5); }
   #hint.cota-card .cota-body{ display:flex; align-items:stretch; height:100%; }
   #hint.cota-card .cota-info{ flex:1; padding:14px 14px 14px 16px; min-width:0; }
-  #hint.cota-card .k{ color:#8a97a8; font-size:10.5px; text-transform:uppercase; letter-spacing:.7px; }
-  #hint.cota-card .cota-local{ font-size:14.5px; margin-top:6px; color:#fff; }
+  #hint.cota-card .k{ color:#8a97a8; font-size:11.5px; text-transform:uppercase; letter-spacing:.7px; }
+  #hint.cota-card .cota-local{ font-size:16px; margin-top:7px; color:#fff; }
   #hint.cota-card .cota-local b{ color:#fff; font-weight:700; }
-  #hint.cota-card .cota-nivel{ font-size:13px; color:#fff; margin-top:5px; }
+  #hint.cota-card .cota-nivel{ font-size:14px; color:#fff; margin-top:6px; }
   #hint.cota-card .cota-big{ display:flex; flex-direction:column; align-items:center; justify-content:center;
                    background:rgba(255,255,255,.06); border-left:1px solid rgba(255,255,255,.14);
-                   width:110px; padding:14px 12px; }
-  #hint.cota-card .cota-big .u{ font-size:10px; font-weight:700; color:#8a97a8; text-transform:uppercase;
-                   letter-spacing:.8px; padding:2px 8px; border-radius:4px;
-                   background:rgba(255,255,255,.08); margin-bottom:8px; }
-  #hint.cota-card .cota-big .n{ font-size:30px; font-weight:800; color:#fff; line-height:1;
-                   font-variant-numeric:tabular-nums; white-space:nowrap; }
-  #hint.cota-card .cota-big .n .m{ font-size:20px; font-weight:700; margin-left:2px; }
+                   width:140px; padding:14px 12px; }
+  #hint.cota-card .cota-big .u{ font-size:11px; font-weight:700; color:#8a97a8; text-transform:uppercase;
+                   letter-spacing:.8px; padding:2px 9px; border-radius:4px;
+                   background:rgba(255,255,255,.08); margin-bottom:9px; }
+  #hint.cota-card .cota-big .n{ font-size:48px; font-weight:800; color:#fff; line-height:1;
+                   font-variant-numeric:tabular-nums; white-space:nowrap; text-shadow:0 0 16px rgba(0,176,255,.35); }
+  #hint.cota-card .cota-big .n .m{ font-size:26px; font-weight:700; margin-left:3px; color:#8fd3ff; }
   /* hint de pontes/abrigos — borda/layout iguais ao hint padrão; card interno com título + infos */
-  #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ position:absolute; z-index:8; pointer-events:none; display:none;
-         min-width:190px; max-width:260px; padding:10px 12px; font-size:12px;
+  #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc, #hint-rio{ position:absolute; z-index:8; pointer-events:none; display:none;
+         min-width:200px; max-width:280px; padding:11px 13px; font-size:13px;
          background:rgba(11,14,20,.94); backdrop-filter:blur(7px);
          border:1px solid var(--border-2); border-top:2px solid var(--neon); border-radius:10px;
          transform:translate(12px,12px); box-shadow:0 8px 24px rgba(0,0,0,.5);
@@ -190,8 +190,25 @@
         padding-bottom:6px; border-bottom:1px solid rgba(255,213,79,.18); }
   #hint-voos .hv-logo img{ height:22px; max-width:110px; object-fit:contain; }
   #hint-voos .hv-logo svg{ width:28px; height:28px; flex:0 0 auto; }
-  #hint-voos .hv-logo .hv-callsign{ font:700 12px ui-monospace,Space Mono,monospace; color:#eaf6ff;
-        letter-spacing:.4px; margin-left:auto; text-align:right; }
+  #hint-voos .hv-logo .hv-callsign{ font:800 16px ui-monospace,Space Mono,monospace; color:#fff;
+        letter-spacing:.6px; margin-left:auto; text-align:right; text-shadow:0 0 10px rgba(255,213,79,.35); }
+  /* selo de classificação do voo (comercial / militar / particular) */
+  #hint-voos .hv-class{ display:flex; justify-content:flex-end; margin:-2px 0 2px; }
+  #hint-voos .hv-badge{ display:inline-block; font:800 9px var(--font-ui); text-transform:uppercase;
+        letter-spacing:.6px; padding:2px 9px; border-radius:999px; color:#04121c; }
+  /* cabeçalho do card de aeroporto: ícone + código GRANDE + bola de status */
+  #hint-voos .hv-aero-head{ display:flex; align-items:center; gap:11px; margin-bottom:9px;
+        padding-bottom:9px; border-bottom:1px solid rgba(255,213,79,.18); }
+  #hint-voos .hv-aero-head svg{ flex:0 0 auto; }
+  #hint-voos .hv-aero-id{ display:flex; flex-direction:column; min-width:0; }
+  #hint-voos .hv-aero-code{ font:800 28px ui-monospace,Space Mono,monospace; color:#fff;
+        letter-spacing:1.5px; line-height:1; }
+  #hint-voos .hv-aero-code.sm{ font-size:15px; letter-spacing:.4px; }
+  #hint-voos .hv-aero-sub{ font:700 9px var(--font-ui); color:#8a97a8; text-transform:uppercase;
+        letter-spacing:.6px; margin-top:4px; }
+  #hint-voos .hv-status-dot{ width:17px; height:17px; border-radius:50%; margin-left:auto;
+        flex:0 0 auto; box-shadow:0 0 11px currentColor; }
+  #hint-voos .hv-status-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
   /* rota: origem ───► destino (neon) */
   #hint-voos .hv-rota{ display:flex; align-items:center; gap:8px; margin:7px 0;
         padding:7px 10px; border-radius:8px; border:1px solid rgba(255,213,79,.4);
@@ -237,13 +254,29 @@
         overflow:hidden; text-overflow:ellipsis; }
   #hint-voos .hv-title small{ color:#8a97a8; font-size:9px; text-transform:uppercase;
         letter-spacing:.4px; margin-top:2px; }
-  #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row, #hint-celesc .hp-row{ margin-top:6px; }
-  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child, #hint-celesc .hp-row:first-child{ margin-top:0; }
-  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl, #hint-celesc .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
-  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after, #hint-voos .hp-lbl::after, #hint-celesc .hp-lbl::after{ content:':'; }
-  #hint-ponte .hp-val, #hint-abrigo .hp-val, #hint-voos .hp-val, #hint-celesc .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:11px; margin-top:1px; }
-  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub, #hint-voos .hp-val.sub, #hint-celesc .hp-val.sub{ color:#eaf6ff; font-weight:400; }
-  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info, #hint-voos .hp-val.info, #hint-celesc .hp-val.info{ color:#00B0FF; }
+  #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row, #hint-celesc .hp-row, #hint-rio .hp-row{ margin-top:7px; }
+  #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child, #hint-celesc .hp-row:first-child, #hint-rio .hp-row:first-child{ margin-top:0; }
+  #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl, #hint-celesc .hp-lbl, #hint-rio .hp-lbl{ display:block; color:#8a97a8; font-size:11px; letter-spacing:.3px; }
+  #hint-ponte .hp-lbl::after, #hint-abrigo .hp-lbl::after, #hint-voos .hp-lbl::after, #hint-celesc .hp-lbl::after, #hint-rio .hp-lbl::after{ content:':'; }
+  #hint-ponte .hp-val, #hint-abrigo .hp-val, #hint-voos .hp-val, #hint-celesc .hp-val, #hint-rio .hp-val{ display:block; color:#eaf6ff; font-weight:600; font-size:12.5px; margin-top:2px; }
+  #hint-ponte .hp-val.sub, #hint-abrigo .hp-val.sub, #hint-voos .hp-val.sub, #hint-celesc .hp-val.sub, #hint-rio .hp-val.sub{ color:#eaf6ff; font-weight:400; }
+  #hint-ponte .hp-val.info, #hint-abrigo .hp-val.info, #hint-voos .hp-val.info, #hint-celesc .hp-val.info, #hint-rio .hp-val.info{ color:#00B0FF; }
+  /* ── cabeçalho bonito compartilhado (pontes / nível do rio): ícone + título + destaque ── */
+  #hint-ponte{ border-color:#7CB342; }
+  #hint-rio{ border-color:#00B0FF; }
+  #hint-ponte .ic-head, #hint-rio .ic-head{ display:flex; align-items:center; gap:10px; margin-bottom:9px;
+        padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.12); }
+  #hint-ponte .ic-head svg, #hint-rio .ic-head svg{ flex:0 0 auto; }
+  #hint-ponte .ic-title, #hint-rio .ic-title{ display:flex; flex-direction:column; min-width:0; }
+  #hint-ponte .ic-title b, #hint-rio .ic-title b{ color:#eaf6ff; font-weight:800; font-size:13.5px; line-height:1.15; }
+  #hint-ponte .ic-title small, #hint-rio .ic-title small{ color:#8a97a8; font-size:10px; margin-top:2px; letter-spacing:.2px; }
+  #hint-rio .ic-big{ margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; flex:0 0 auto; }
+  #hint-rio .ic-big .n{ font:800 26px ui-monospace,Space Mono,monospace; color:#fff; line-height:1;
+        font-variant-numeric:tabular-nums; text-shadow:0 0 14px rgba(0,176,255,.4); }
+  #hint-rio .ic-big .n small{ font-size:14px; color:#8fd3ff; font-weight:700; }
+  #hint-rio .ic-big .u{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.6px; margin-top:2px; }
+  /* selo de nível sem telemetria */
+  #hint-rio .ic-nodata{ margin-left:auto; font-size:10px; color:#8a97a8; text-align:right; max-width:120px; }
   /* símbolo de status do abrigo (verde = aberto, vermelho = fechado) */
   #hint-abrigo .hp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; }
   #hint-abrigo .hp-dot.aberto{ background:#00E676; box-shadow:0 0 8px rgba(0,230,118,.9); }
@@ -306,16 +339,16 @@
           align-items:center; gap:5px;
           filter:drop-shadow(0 6px 16px rgba(0,0,0,.4)); }
   #chips #title{ order:-1; margin-right:8px; }   /* clima à esquerda dos chips, conectado */
-  .chip{ display:inline-flex; align-items:center; gap:6px; height:var(--chip-h);
-         font:600 11px var(--font-ui); letter-spacing:.1px; color:var(--muted); cursor:pointer;
+  .chip{ display:inline-flex; align-items:center; gap:7px; height:var(--chip-h);
+         font:600 12.5px var(--font-ui); letter-spacing:.1px; color:var(--muted); cursor:pointer;
          background:rgba(23,28,38,.78); border:1px solid rgba(255,255,255,.10);
-         padding:0 11px; backdrop-filter:blur(10px) saturate(1.2); border-radius:999px;
+         padding:0 14px; backdrop-filter:blur(10px) saturate(1.2); border-radius:999px;
          transition:background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease; }
   .chip:hover{ color:var(--txt); border-color:rgba(255,255,255,.22); background:rgba(31,38,51,.85); }
   .chip:active{ transform:translateY(1px); }
-  .cbx{ width:13px; height:13px; border-radius:4px; border:1.5px solid #5a6678;
+  .cbx{ width:15px; height:15px; border-radius:4px; border:1.5px solid #5a6678;
         display:inline-flex; align-items:center; justify-content:center; flex:none;
-        font-size:10px; line-height:1; color:#04121c;
+        font-size:11px; line-height:1; color:#04121c;
         transition:background .2s ease, border-color .2s ease; }
   /* spinner de carregamento DENTRO do checkbox (Uiverse mrhyddenn, compacto) */
   .cbx .spinner{ font-size:11px; position:relative; display:inline-block; width:1em; height:1em;
@@ -345,8 +378,8 @@
         box-shadow:0 14px 34px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.25); transform-origin:top center; }
   .chip-menu.open{ display:block; animation:menuIn .18s ease; }
   @keyframes menuIn{ from{ opacity:0; transform:translateY(-5px) scale(.98) } to{ opacity:1; transform:none } }
-  .chip-menu .item{ display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px;
-        cursor:pointer; font:600 11px var(--font-ui); color:var(--muted); transition:background .15s ease, color .15s ease; }
+  .chip-menu .item{ display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:8px;
+        cursor:pointer; font:600 12.5px var(--font-ui); color:var(--muted); transition:background .15s ease, color .15s ease; }
   .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:var(--txt); }
   .chip-menu .item.on{ color:var(--hi); }
   .chip-menu .item .it-hint{ margin-left:auto; font:400 9px var(--font-ui); color:#5a6678;
@@ -357,7 +390,7 @@
   .chip.on{ color:var(--hi); border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.9);
         box-shadow:0 0 0 1px rgba(255,255,255,.05) inset; }  /* cor de destaque é setada inline por chip (cor da camada) */
   /* ═══ Seletor de base (estilo Google Maps) — grid 3×2 de miniaturas 120×120 ═══ */
-  .mapbase-w{ width:300px; padding:4px 4px 6px; margin-bottom:6px; }
+  .mapbase-w{ width:300px; padding:4px 4px 4px; margin-bottom:0; }
   .mapbase-head{ display:flex; align-items:center; gap:8px; padding:2px 4px 9px;
         font:700 9.5px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
   /* padrão visual novo: marcador neon âmbar antes do título "Base do mapa" */
@@ -389,7 +422,7 @@
         font:800 11px var(--font-ui); color:#04121c; background:var(--info);
         border-radius:50%; box-shadow:0 1px 5px rgba(0,0,0,.55); }
   /* toggle Claro/Escuro — padrão Uiverse (by arghyaBiswasDev), em PRETO */
-  .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:10px;
+  .mapbase-tone{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px;
         padding:9px 12px; border-radius:11px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
         transition:opacity .2s ease; }
   .mapbase-tone .mbw-tone-label{ font:700 10px var(--font-ui); letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
@@ -456,9 +489,10 @@
      align-items:stretch iguala a altura das duas → a coluna curta (esq., 4 itens)
      distribui seus itens (space-between) p/ enquadrar na altura da outra (5 itens),
      sem sobrar espaço morto embaixo de nenhuma. */
-  .vl-cols{ display:flex; gap:18px; align-items:stretch; }
+  /* vertical: Infraestrutura em cima, Status de aeroportos embaixo (uma coluna sobre a outra) */
+  .vl-cols{ display:flex; flex-direction:column; gap:11px; align-items:stretch; }
   .vl-col{ display:flex; flex-direction:column; }
-  .vl-items{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
+  .vl-items{ flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
   /* subtítulo estilo PizzINT: mono âmbar com glow + marcador neon e régua fina */
   .vl-sub{ font:700 10px var(--font-mono); text-transform:none; letter-spacing:.4px;
            color:var(--neon); margin:0 0 9px; padding-bottom:6px;
@@ -467,7 +501,7 @@
            text-shadow:0 0 8px rgba(255,213,79,.35); }
   .vl-sub::before{ content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
            background:var(--neon); box-shadow:0 0 7px var(--neon); }
-  .vl-col + .vl-col{ border-left:1px solid rgba(255,255,255,.09); padding-left:18px; }
+  .vl-col + .vl-col{ border-top:1px solid rgba(255,255,255,.09); padding-top:10px; }
   .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
   .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
   .vl-note{ font-size:8.5px; color:#8a97a8; margin-top:6px; padding-top:5px;
@@ -684,6 +718,7 @@
 <div id="hint-abrigo"></div>
 <div id="hint-voos"></div>
 <div id="hint-celesc"></div>
+<div id="hint-rio"></div>
 <div id="nivelbar">
   <span id="nivellbl">10 m</span>
   <input id="nivelrange" type="range" min="7" max="15" step="0.5" value="10">
@@ -862,7 +897,8 @@ map.on('load', async () => {
                      ponte:document.getElementById('hint-ponte'),
                      abrigo:document.getElementById('hint-abrigo'),
                      voos:document.getElementById('hint-voos'),
-                     celesc:document.getElementById('hint-celesc') };
+                     celesc:document.getElementById('hint-celesc'),
+                     rio:document.getElementById('hint-rio') };
   const hideAllHints = () => { for (const k in _hintEls){ const el=_hintEls[k]; if(el) el.style.display='none'; } };
   const showHint = (id) => { hideAllHints(); const el=_hintEls[id]; if(!el) return null;
                              el.className=''; el.style.display='block'; return el; };
@@ -1420,7 +1456,7 @@ map.on('load', async () => {
         dest_iata:de.iata||null, dest_muni:de.municipio||null, dest_nome:de.nome||null,
         alt_m:v.alt_m, alt_ft: v.alt_m != null ? v.alt_m*3.28084 : null,
         vel_kmh:v.vel_kmh, rumo:rumo, subida:v.subida_mps, tipo:v.tipo, desc:v.desc,
-        categoria:v.categoria, dist_km:v.dist_km, ultima: fmtDt(v.ultima_atualizacao) }
+        categoria:v.categoria, mil: v.mil ? 1 : 0, dist_km:v.dist_km, ultima: fmtDt(v.ultima_atualizacao) }
     };
   });
   // círculo de 100 km ao redor de Brusque (GeoJSON de ~128 pontos)
@@ -2063,17 +2099,9 @@ map.on('load', async () => {
         layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'],
                  'text-size':11, 'text-offset':[0,1.1], 'text-anchor':'top', 'text-optional':true },
         paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.4 } });
-      map.on('click','pontes-pt',(e)=>{
-        const p=e.features[0].properties; const L=['<b>'+(p.nome_oficial||p.nome)+'</b>'];
-        if(p.nome_popular) L.push('<span style="color:#8a97a8">'+p.nome_popular+'</span>');
-        const linha2=[];
-        if(p.comprimento_m)linha2.push(p.comprimento_m+' m');
-        if(p.vao_livre_m)linha2.push('vão livre '+p.vao_livre_m+' m');
-        if(linha2.length)L.push(linha2.join(' · '));
-        if(p.bairros_conexao)L.push('<span style="font-size:10px;color:#8a97a8">liga '+p.bairros_conexao.join(' ↔ ')+'</span>');
-        new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
-      });
+      // hover → hint estilizado (sem popup branco no clique)
       map.on('mouseenter','pontes-pt',()=>map.getCanvas().style.cursor='pointer');
+      const _bridgeIcon='<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#7CB342" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c3.2 0 3.2 3 6.4 3s3.2-3 6.4-3 3.2 3 6.8 3"/><path d="M2 10v8M22 10v8M8.4 13v5M15.6 13v5M12 13v5"/></svg>';
       map.on('mousemove','pontes-pt',(e)=>{
         const p=e.features[0].properties;
         const hp=showHint('ponte');
@@ -2081,12 +2109,14 @@ map.on('load', async () => {
         _posHint(hp, e.point.x, e.point.y);
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
-        let h='';
-        if(p.nome_oficial||p.nome) h+=row('Nome', p.nome_oficial||p.nome);
-        if(p.nome_popular) h+=row('Nome popular', p.nome_popular, 'sub');
+        const liga = p.bairros_conexao
+          ? (Array.isArray(p.bairros_conexao) ? p.bairros_conexao.join(' ↔ ') : String(p.bairros_conexao)) : null;
+        let h='<div class="ic-head">'+_bridgeIcon
+          +'<div class="ic-title"><b>'+(p.nome_oficial||p.nome||'Ponte')+'</b>'
+          +'<small>'+(p.nome_popular||'Ponte')+'</small></div></div>';
         if(p.comprimento_m!=null) h+=row('Comprimento', p.comprimento_m+' m', 'info');
         if(p.vao_livre_m!=null) h+=row('Vão livre', p.vao_livre_m+' m', 'info');
-        if(p.bairros_conexao) h+=row('Liga', p.bairros_conexao.join(' ↔ '), 'sub');
+        if(liga) h+=row('Liga', liga, 'sub');
         hp.innerHTML=h;
       });
       map.on('mouseleave','pontes-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
@@ -2330,18 +2360,33 @@ map.on('load', async () => {
                  'text-offset':[0,1.2], 'text-anchor':'top', 'text-optional':true },
         paint:{ 'text-color':['case',['get','tem_dado'],'#bfe6ff','#8a97a8'],
                 'text-halo-color':'#04121c','text-halo-width':1.3 } });
-      map.on('click','rios-pt',(e)=>{
+      // hover → hint estilizado do nível do rio (substitui o popup branco no clique)
+      const _dropIcon='<svg viewBox="0 0 24 24" width="24" height="26" fill="#00B0FF" style="filter:drop-shadow(0 0 5px rgba(0,176,255,.5))"><path d="M12 2.5c4 5.2 6.5 8.4 6.5 12A6.5 6.5 0 0 1 12 21a6.5 6.5 0 0 1-6.5-6.5c0-3.6 2.5-6.8 6.5-12z"/></svg>';
+      map.on('mousemove','rios-pt',(e)=>{
+        map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
-        const L=['<b>'+(p.nome||'')+'</b>','<span style="color:#8a97a8">'+(p.rio||'')+' · '+(p.municipio||'')+' · DC-SC '+(p.codigo||'')+'</span>'];
-        if (p.tem_dado) {
-          if(p.nivel_m!=null) L.push('Nível: <b>'+p.nivel_m.toFixed(2).replace('.',',')+' m</b>');
-          if(p.variacao_cm!=null) L.push('Variação: '+(p.variacao_cm>0?'+':'')+p.variacao_cm.toFixed(1).replace('.',',')+' cm');
-          if(p.chuva_mm!=null) L.push('Chuva: '+p.chuva_mm.toFixed(1).replace('.',',')+' mm');
-          if(p.coleta) L.push('<span style="font-size:10px;color:#8a97a8">'+p.coleta+' · DC-SC</span>');
-        } else {
-          L.push('<span style="color:#8a97a8">Sem leitura em tempo real (telemetria indisponível)</span>');
-        }
-        new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(L.join('<br>')).addTo(map);
+        const hr=showHint('rio');
+        if(!hr) return;
+        _posHint(hr, e.point.x, e.point.y);
+        const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
+          +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+        const temDado = p.tem_dado===true || p.tem_dado==='true' || p.tem_dado==1;
+        const nivel = (temDado && p.nivel_m!=null && p.nivel_m!=='') ? (+p.nivel_m).toFixed(2).replace('.',',') : null;
+        let h='<div class="ic-head">'+_dropIcon
+          +'<div class="ic-title"><b>'+(p.nome||'Estação')+'</b>'
+          +'<small>'+[p.rio,p.municipio].filter(Boolean).join(' · ')+'</small></div>'
+          +(nivel!=null
+              ? '<div class="ic-big"><div class="n">'+nivel+'<small> m</small></div><div class="u">nível do rio</div></div>'
+              : '<div class="ic-nodata">Sem leitura ao vivo<br>telemetria indisponível</div>')
+          +'</div>';
+        if(temDado){
+          if(p.variacao_cm!=null && p.variacao_cm!==''){ const v=+p.variacao_cm;
+            h+=row('Variação', (v>0?'▲ +':v<0?'▼ ':'')+Math.abs(v).toFixed(1).replace('.',',')+' cm', 'info'); }
+          if(p.chuva_mm!=null && p.chuva_mm!=='') h+=row('Chuva', (+p.chuva_mm).toFixed(1).replace('.',',')+' mm');
+          if(p.codigo) h+=row('Código DC-SC', p.codigo, 'sub');
+          if(p.coleta) h+=row('Medição', p.coleta+' · DC-SC', 'sub');
+        } else if(p.codigo) h+=row('Código DC-SC', p.codigo, 'sub');
+        hr.innerHTML=h;
       });
       map.on('mouseenter','rios-pt',()=>map.getCanvas().style.cursor='pointer');
       map.on('mouseleave','rios-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
@@ -2441,6 +2486,12 @@ map.on('load', async () => {
         } else {
           h+='<div class="hv-logo">'+_planeGlyph+'<span class="hv-callsign">'+cs+'</span></div>';
         }
+        // classificação do voo (militar / comercial / particular)
+        const isMil = p.mil==1 || p.mil==='1' || p.mil===true || p.mil==='true';
+        const kls = isMil ? {t:'Militar', c:'#FF7043'}
+                  : (p.cia_nome || p.cia_icao) ? {t:'Comercial', c:'#4FC3F7'}
+                  : {t:'Particular', c:'#B0BEC5'};
+        h+='<div class="hv-class"><span class="hv-badge" style="background:'+kls.c+'">'+kls.t+'</span></div>';
         // rota: origem ───► destino (só se tiver os dois) + nome da companhia
         if (p.orig_iata && p.dest_iata) {
           h+='<div class="hv-rota"><span class="hv-aero">'+p.orig_iata
@@ -2536,17 +2587,26 @@ map.on('load', async () => {
         // ícone por tipo: mesmo avião pro aeroporto (branco) e aeródromo (azul),
         // helicóptero pro heliponto.
         const ic = p.tipo==='aeroporto'
-          ? '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
+          ? '<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
           : p.tipo==='aerodromo'
-          ? '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
-          : '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg>';
-        let h='<div class="hv-logo">'+ic+'<span class="hv-callsign">'+tipo+'</span></div>';
-        if(p.nome) h+=row('Nome', p.nome);
-        if(p.municipio) h+=row('Município', p.municipio);
-        if(p.oaci) h+=row('Código OACI', p.oaci, 'sub');
-        if(p.ciad) h+=row('CIAD', p.ciad, 'sub');
-        // status operacional de pista (METAR) — só aeroportos que publicam METAR
+          ? '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
+          : '<svg viewBox="0 0 24 24" width="30" height="30"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg>';
+        // status METAR (só aeroporto com boletim) — define a cor da bola no topo
         const st = (window._METAR && p.oaci) ? window._METAR[p.oaci] : null;
+        const isAero = p.tipo==='aeroporto';
+        const code = p.oaci || p.iata || '';
+        const dotColor = st ? st.cor : '#8A97A8';
+        const dotPisca = st ? st.pisca : true;
+        // cabeçalho: ícone + código GRANDE + bola de status (cor do momento)
+        let h='<div class="hv-aero-head">'+ic
+          +'<div class="hv-aero-id">'
+          +  (code ? '<span class="hv-aero-code">'+code+'</span>'
+                   : '<span class="hv-aero-code sm">'+(p.nome||tipo)+'</span>')
+          +  '<span class="hv-aero-sub">'+tipo+'</span>'
+          +'</div>'
+          +(isAero ? '<span class="hv-status-dot'+(dotPisca?' pisca':'')+'" style="color:'+dotColor+';background:'+dotColor+'"></span>' : '')
+          +'</div>';
+        // status por escrito (METAR), depois os outros dados do aeroporto
         if (st) {
           const hora = st.hora ? new Date(st.hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
           h += '<div class="metar-box">'
@@ -2569,6 +2629,10 @@ map.on('load', async () => {
             + '<div class="metar-metar">última consulta'+(ts?' · '+ts:'')+'</div>'
             + '</div>';
         }
+        // outros dados do aeroporto (abaixo do status)
+        if(p.nome && code) h+=row('Nome', p.nome);
+        if(p.municipio) h+=row('Município', p.municipio);
+        if(p.ciad) h+=row('CIAD', p.ciad, 'sub');
         hv.innerHTML = h;
       };
       if (!map.getSource('voos-infra')) {
@@ -2891,7 +2955,7 @@ map.on('load', async () => {
     ['Deslizamento','#FF5252','CPRM 2019'],
     ['Enxurrada (Alagamento)','#3949AB','CPRM 2019'],
     ['Inundação Gradual (Enchente)','#29B6F6','CPRM 2019'],
-    ['Setor 2011','#9E9E9E','CPRM 2011'],
+    ['Setor 2011','#AB47BC','CPRM 2011'],
   ];
   const SETORES = SETORES_CATS.map(([cat,cor,hintAno]) => {
     const slug = 'setores-' + cat.replace(/[^a-z0-9]+/gi,'_').toLowerCase();

@@ -148,6 +148,8 @@ function build(d) {
         tipo: a.t || null,                          // tipo ICAO (ex.: A332, E295)
         desc: a.desc || null,                       // descrição (ex.: AIRBUS A-330-200)
         categoria: a.category || null,              // categoria ADS-B (ex.: A3, B6)
+        mil: a.dbFlags != null && (Number(a.dbFlags) & 1) === 1,   // bit militar do banco ADS-B
+
         dist_km: Math.round(dist * 10) / 10,
         ultima_atualizacao: a.seen != null ? new Date(Date.now() - a.seen * 1000).toISOString() : null,
       };
