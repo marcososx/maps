@@ -564,29 +564,36 @@
         transition:background .18s ease, border-color .18s ease; }
   .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
   .voo-top{ display:flex; align-items:center; gap:9px; }
-  .voo-tipo{ flex:0 0 auto; min-width:50px; height:34px; padding:0 8px; border-radius:8px; display:flex;
+  .voo-tipo{ flex:0 0 auto; min-width:60px; height:38px; padding:0 10px; border-radius:9px; display:flex;
         align-items:center; justify-content:center; background:rgba(255,213,79,.14);
-        border:1px solid rgba(255,213,79,.4); font:800 12px ui-monospace,Space Mono,monospace;
-        color:#ffd54f; white-space:nowrap; letter-spacing:.3px; }
-  .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; align-items:flex-start; }
-  .voo-logo{ height:18px; max-width:150px; object-fit:contain; }
-  .voo-rota{ display:flex; align-items:center; gap:7px; width:100%; }
-  .voo-aero{ font:800 13px ui-monospace,Space Mono,monospace; color:#ffd54f; line-height:1.1; text-align:center; }
-  .voo-aero small{ display:block; font:500 9px ui-monospace,Space Mono,monospace; color:#8a97a8;
+        border:1px solid rgba(255,213,79,.4); font:800 14px ui-monospace,Space Mono,monospace;
+        color:#ffd54f; white-space:nowrap; letter-spacing:.4px; text-shadow:0 0 8px rgba(255,213,79,.4); }
+  .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .voo-logo{ height:20px; max-width:150px; object-fit:contain; }
+  .voo-rota{ display:flex; align-items:center; gap:8px; width:100%; }
+  .voo-aero{ font:800 14px ui-monospace,Space Mono,monospace; color:#ffd54f; line-height:1.1; text-align:center; }
+  .voo-aero small{ display:block; font:500 9.5px ui-monospace,Space Mono,monospace; color:#8a97a8;
         letter-spacing:.2px; }
   .voo-seta{ flex:1; height:2px; min-width:16px;
         background:linear-gradient(90deg,rgba(255,213,79,.9),rgba(255,213,79,.3));
         position:relative; align-self:center; }
   .voo-seta::after{ content:''; position:absolute; right:0; top:-3px; border:3px solid transparent;
         border-left-color:rgba(255,213,79,.9); }
-  .voo-desc{ font-size:10.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  /* selo de classificação (COM/MIL/PART) no topo da linha */
+  .voo-tag{ flex:0 0 auto; align-self:flex-start; font:800 8.5px var(--font-ui); letter-spacing:.5px;
+        color:#04121c; padding:2px 7px; border-radius:999px; }
+  /* modelo da aeronave — legenda discreta em 1 linha */
+  .voo-model{ font-size:11px; color:#9fb0c3; margin-top:7px; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  .voo-rows{ display:grid; grid-template-columns:1fr 1fr; gap:4px 18px; font-size:10.5px;
-        border-top:1px solid rgba(255,255,255,.06); padding-top:6px; margin-top:2px; }
-  .voo-cell{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; min-width:0; }
-  .voo-lbl{ color:#8a97a8; flex:0 0 auto; }
-  .voo-val{ color:#eaf6ff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-        text-align:right; font-variant-numeric:tabular-nums; }
+  /* 3 tiles principais: número GRANDE (menos dado miúdo) */
+  .voo-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:8px;
+        border-top:1px solid rgba(255,255,255,.06); padding-top:9px; }
+  .voo-tile{ background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.07);
+        border-radius:9px; padding:6px 8px; min-width:0; }
+  .voo-tile .k{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
+  .voo-tile .v{ font:700 16px ui-monospace,Space Mono,monospace; color:#eaf6ff; margin-top:3px;
+        line-height:1; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .voo-tile .v small{ font-size:9.5px; font-weight:600; color:#8a97a8; margin-left:3px; }
   /* painel dos 5+ indicadores (Open-Meteo) */
   #wxpanel .wxp-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; }
   #wxpanel .wxp-title b{ font:700 12px Inter,system-ui; color:#eaf6ff; letter-spacing:.4px; }
@@ -782,7 +789,6 @@
   <!-- Voos · aeronaves no raio de 100 km de Brusque (ADS-B) -->
   <div id="voospanel" class="wpanel" data-chip="voos">
     <div class="p-head"><b>Voos · raio 100 km de Brusque</b><span class="p-upd" id="voos-upd">—</span></div>
-    <div class="voo-count" id="voos-count">Carregando…</div>
     <div class="voo-list" id="voos-list"></div>
   </div>
 
@@ -1811,20 +1817,28 @@ map.on('load', async () => {
           +'</span><span class="voo-seta"></span><span class="voo-aero">'+de.iata
           +(de.municipio?'<small>'+de.municipio+'</small>':'')
           +'</span></div>' : '';
-      const rows = [];
-      if (altM) rows.push('<div class="voo-cell"><span class="voo-lbl">Altitude</span><span class="voo-val">'+altM+' m · '+altFt+' ft</span></div>');
-      if (velKmh) rows.push('<div class="voo-cell"><span class="voo-lbl">Velocidade</span><span class="voo-val">'+velKmh+' km/h · '+velKt+' kt</span></div>');
-      if (rumo) rows.push('<div class="voo-cell"><span class="voo-lbl">Rumo</span><span class="voo-val">'+rumo+'</span></div>');
-      if (sub) rows.push('<div class="voo-cell"><span class="voo-lbl">Subida</span><span class="voo-val">'+sub+'</span></div>');
-      if (pos) rows.push('<div class="voo-cell"><span class="voo-lbl">Posição</span><span class="voo-val">'+pos+'</span></div>');
+      // classificação (comercial / militar / particular)
+      const isMil = v.mil===true || v.mil===1;
+      const kls = isMil ? {t:'MIL', c:'#FF7043'}
+                : c.icao ? {t:'COM', c:'#4FC3F7'}
+                : {t:'PART', c:'#B0BEC5'};
+      // 3 tiles principais (número grande) — Alt · Vel · Rumo
+      const tile=(k,val,u)=> '<div class="voo-tile"><div class="k">'+k+'</div>'
+        +'<div class="v">'+val+(u?'<small>'+u+'</small>':'')+'</div></div>';
+      const stats=[];
+      if (altM) stats.push(tile('Altitude', altM, 'm'));
+      if (velKmh) stats.push(tile('Velocidade', velKmh, 'km/h'));
+      if (rumo) stats.push(tile('Rumo', rumo, ''));
+      const model = desc || tipo;
       const row = document.createElement('div'); row.className = 'voo-row';
       row.innerHTML =
         '<div class="voo-top">'
           +'<span class="voo-tipo">'+cs+'</span>'
-          +'<div class="voo-main">'+logo+rota
-          +'<div class="voo-desc">'+tipo+(desc?' · '+desc:'')+'</div></div>'
+          +'<div class="voo-main">'+(logo||'')+rota+'</div>'
+          +'<span class="voo-tag" style="background:'+kls.c+'">'+kls.t+'</span>'
         +'</div>'
-        +(rows.length ? '<div class="voo-rows">'+rows.join('')+'</div>' : '');
+        +(model && model!=='—' ? '<div class="voo-model">'+model+'</div>' : '')
+        +(stats.length ? '<div class="voo-stats">'+stats.join('')+'</div>' : '');
       row.onclick = () => {
         // clicar na lista: só foca o avião no mapa (sem popup/hint — o hint
         // aparece ao passar o mouse sobre o avião na camada)
@@ -2531,12 +2545,8 @@ map.on('load', async () => {
               +'<span class="hv-v'+(cls?' '+cls:'')+'">'+v+'</span></div>';
           h+='</div>';
         }
-        // rodapé: distância de Brusque · última posição
-        const foot=[];
-        if (p.dist_km != null) foot.push('<b>'+Math.round(p.dist_km)+' km</b> de Brusque');
-        if (p.ultima) foot.push(p.ultima);
-        if (foot.length) h+='<div class="hv-foot"><span>'+foot[0]+'</span>'
-          +(foot[1]?'<span>'+foot[1]+'</span>':'')+'</div>';
+        // rodapé: última posição (sem distância de Brusque)
+        if (p.ultima) h+='<div class="hv-foot"><span>última posição</span><span>'+p.ultima+'</span></div>';
         return h;
       };
       map.on('mousemove','voos-pt',(e)=>{
@@ -2594,7 +2604,10 @@ map.on('load', async () => {
         // status METAR (só aeroporto com boletim) — define a cor da bola no topo
         const st = (window._METAR && p.oaci) ? window._METAR[p.oaci] : null;
         const isAero = p.tipo==='aeroporto';
-        const code = p.oaci || p.iata || '';
+        // código comercial IATA (NVT, FLN, BNU…) quando existe; senão cai pro OACI
+        const _IATA = { SBNF:'NVT', SBFL:'FLN', SSBL:'BNU', SBJV:'JOI', SBCM:'CCM' };
+        const iata = p.iata || _IATA[p.oaci] || null;
+        const code = iata || p.oaci || '';
         const dotColor = st ? st.cor : '#8A97A8';
         const dotPisca = st ? st.pisca : true;
         // cabeçalho: ícone + código GRANDE + bola de status (cor do momento)
@@ -2632,6 +2645,7 @@ map.on('load', async () => {
         // outros dados do aeroporto (abaixo do status)
         if(p.nome && code) h+=row('Nome', p.nome);
         if(p.municipio) h+=row('Município', p.municipio);
+        if(iata && p.oaci) h+=row('Código OACI', p.oaci, 'sub');
         if(p.ciad) h+=row('CIAD', p.ciad, 'sub');
         hv.innerHTML = h;
       };
