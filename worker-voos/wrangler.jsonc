@@ -3,6 +3,7 @@
   "name": "brusque-voos",
   "main": "src/index.js",
   "compatibility_date": "2025-07-01",
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "kv_namespaces": [{ "binding": "VOOS_KV", "id": "9c86d7cbd600411889c2086adf0b8491" }]
   // Sem segredos: fonte = OpenSky Network pública (anônimo, sem chave).
 }

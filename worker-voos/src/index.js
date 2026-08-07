@@ -24,6 +24,36 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods
 // ativar a camada o front já recebe o progresso que o voo correu (e continua).
 const _trails = {};            // icao24 -> [ [lon,lat], ... ] (mais recente no fim)
 const _trailLast = {};         // icao24 -> ms da última vez visto (p/ não apagar em gap)
+
+// ── Persistência do rastro em KV ────────────────────────────────────────────
+// O Cloudflare recicla o isolate do worker com frequência; sem isso o rastro
+// (em memória) era zerado a cada reciclagem → aviões ficavam "sem rastro".
+// Aqui salvamos o histórico no KV (a cada ~12 s) e recarregamos ao subir.
+const KV_TRAILS_KEY = 'trails:v1';
+let _kvLoaded = false, _kvDirty = false;
+async function kvLoad(env) {
+  if (_kvLoaded || !env.VOOS_KV) return;
+  _kvLoaded = true;
+  try {
+    const raw = await env.VOOS_KV.get(KV_TRAILS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      for (const k in (d.trails || {})) _trails[k] = d.trails[k];
+      for (const k in (d.last || {})) _trailLast[k] = d.last[k];
+    }
+  } catch (e) {}
+}
+function kvScheduleSave(env, ctx) {
+  if (!env.VOOS_KV || _kvDirty) return;
+  _kvDirty = true;
+  ctx.waitUntil(new Promise(res => setTimeout(res, 12000)).then(async () => {
+    _kvDirty = false;
+    try {
+      await env.VOOS_KV.put(KV_TRAILS_KEY,
+        JSON.stringify({ trails: _trails, last: _trailLast }), { expirationTtl: 86400 });
+    } catch (e) {}
+  }));
+}
 const _TRAIL_MAX = 300;        // ≈ 10 min a 2 s de poll
 const _TRAIL_STEP = 0.001;     // mínimo de deslocamento (graus) p/ registrar ponto
 
@@ -131,6 +161,7 @@ async function handle(req, env, ctx) {
   if (url.pathname !== '/voos.json') {
     return new Response(JSON.stringify({ erro: 'use GET /voos.json' }), { status: 404, headers: CORS });
   }
+  await kvLoad(env);   // recupera o rastro acumulado (sobrevive a restart de isolate)
   const CACHE_V = '9';
   const ck = new URL(req.url); ck.searchParams.set('_v', CACHE_V);
   const cacheReq = new Request(ck);
@@ -191,6 +222,7 @@ async function handle(req, env, ctx) {
     // limpa trilhas de aviões que sumiram há mais de ~3 min (tolerância a gaps
     // de dados — senão um voo que some por instante perde o rastro completo)
     for (const k in _trails) if (!seen.has(k) && (now - (_trailLast[k]||0)) > 180000) delete _trails[k];
+    kvScheduleSave(env, ctx);   // persiste o rastro (sobrevive a restart de isolate)
   } catch (e) {
     return new Response(JSON.stringify({ erro: 'Airplanes.live indisponível', detalhe: String(e.message || e) }),
       { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
