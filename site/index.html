@@ -582,7 +582,7 @@
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FF9800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#42A5F5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17v4"/><path d="M14 3v8a2 2 0 0 0 2 2h5.865"/><path d="M17 17v4"/><path d="M18 17a4 4 0 0 0 4-4 8 6 0 0 0-8-6 6 5 0 0 0-6 5v3a2 2 0 0 0 2 2z"/><path d="M2 10v5"/><path d="M6 3h16"/><path d="M7 21h14"/><path d="M8 13H2"/></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
   </div>
 </div>
 
@@ -2124,7 +2124,7 @@ map.on('load', async () => {
           ? '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
           : p.tipo==='aerodromo'
           ? '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#FF9800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
-          : '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17v4"/><path d="M14 3v8a2 2 0 0 0 2 2h5.865"/><path d="M17 17v4"/><path d="M18 17a4 4 0 0 0 4-4 8 6 0 0 0-8-6 6 5 0 0 0-6 5v3a2 2 0 0 0 2 2z"/><path d="M2 10v5"/><path d="M6 3h16"/><path d="M7 21h14"/><path d="M8 13H2"/></svg>';
+          : '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg>';
         let h='<div class="hv-logo">'+ic+'<span class="hv-callsign">'+tipo+'</span></div>';
         if(p.nome) h+=row('Nome', p.nome);
         if(p.municipio) h+=row('Município', p.municipio);
@@ -2141,20 +2141,20 @@ map.on('load', async () => {
         _infraPos = (infra.features || [])
           .filter(f => f.geometry && f.geometry.type === 'Point')
           .map(f => f.geometry.coordinates);
-        // aeroportos públicos — avião BRANCO (ícone da legenda)
+        // aeroportos públicos — avião BRANCO (ícone da legenda, 3x)
         map.addLayer({ id:'voos-infra-aeroporto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aeroporto'],
-          layout:{ 'icon-image':'aviao-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,0.42,14,0.62],
+          layout:{ 'icon-image':'aviao-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,1.26,14,1.86],
                     'icon-allow-overlap':true, 'icon-ignore-placement':true } });
-        // aeródromos privados — avião LARANJA (ícone da legenda)
+        // aeródromos privados — avião LARANJA (ícone da legenda, 3x)
         map.addLayer({ id:'voos-infra-aerodromo', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aerodromo'],
-          layout:{ 'icon-image':'aviao-laranja', 'icon-size':['interpolate',['linear'],['zoom'],9,0.35,14,0.52],
+          layout:{ 'icon-image':'aviao-laranja', 'icon-size':['interpolate',['linear'],['zoom'],9,1.05,14,1.56],
                     'icon-allow-overlap':true, 'icon-ignore-placement':true } });
-        // helipontos — ícone genérico de heliponto (círculo + "H")
+        // helipontos — ícone genérico de heliponto (círculo + "H"), menor
         map.addLayer({ id:'voos-infra-heliponto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'heliponto'],
-          layout:{ 'icon-image':'heliponto', 'icon-size':['interpolate',['linear'],['zoom'],10,0.4,14,0.58],
+          layout:{ 'icon-image':'heliponto', 'icon-size':['interpolate',['linear'],['zoom'],10,0.26,14,0.36],
                     'icon-allow-overlap':true, 'icon-ignore-placement':true } });
         // labels só dos aeroportos públicos (brancos)
         map.addLayer({ id:'voos-infra-label', type:'symbol', source:'voos-infra', minzoom:9,
