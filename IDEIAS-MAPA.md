@@ -108,3 +108,33 @@ o Marcos der o "vai".
 - Se quiser aprofundar: **anomalia sazonal de chuva** (ECMWF SEAS5 via Open-Meteo,
   temp já funciona) e **temperatura do mar (SST)** na costa — ficam como sugestão.
 
+## Otimização da camada de Voos (em andamento — 06/08/2026)
+
+**Diagnóstico do fluxo:** 3 baldes — (a) **pins de infra** (aeroportos/aeródromos/
+helipontos) são ESTÁTICOS: `site/brusque_aerodromos.geojson`, carregado 1× e até
+pré-carregado; zero API por abertura (já é o "fixo no banco" ideal — melhor que DB,
+é asset de edge). (b) **aeronaves** = live via worker `brusque-voos` (airplanes.live),
+cache ~2 s, poll de 2 s no front — correto ser vivo. (c) **abertura** era o gargalo.
+
+**Manutenção dos pins:** fonte ANAC (dados abertos). "Atualizar 1×/dia" NÃO é runtime
+— é só **regenerar o `brusque_aerodromos.geojson` de vez em quando** (pipeline offline),
+não há o que otimizar no front.
+
+**Feito nesta rodada:**
+- Radar (varredura) com **throttle a ~22 fps** (`_RADAR_MIN_DT`) — corta ~3× o `setData`
+  por frame (principal custo). Esteira com menos pontos (`_BLIP_STEPS` 14→10).
+- Radar **+20% de velocidade** (`_RADAR_ROT` 5120→4096 ms/volta).
+- **Removido o "carregamento de 100 km"** (círculo estático de satélite — `satCircleBuild`/
+  `satSnapshot`): flag `_voosSat` fica desligada → satélite PURO por tiles. Máquina do
+  círculo continua no código, dormente.
+- **Rotina de abertura por etapas:** Passo 1 = zoom out (fitBounds 900 ms) até o círculo
+  de 100 km caber; Passo 2 = radar só arranca no `moveend` (não mais no build/início).
+- **CELESC ⇄ Voos exclusivos:** um desmarca o outro. CELESC enquadra **SC inteiro em
+  tela cheia** (`_scBoundsNow` a partir de `window._estado`, padding 24).
+
+**Próximo passo (maior ganho, quando quiser):** mover a varredura do radar pra um
+`<canvas>` overlay próprio (fora do pipeline geojson→setData do MapLibre) — desenho 2D,
+sem re-upload pra GPU por frame. Hoje está só com throttle (versão barata).
+
+_(add. 06/08/2026)_
+

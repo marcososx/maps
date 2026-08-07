@@ -21,8 +21,13 @@ function upstreamURL(api, z, x, y, key, style) {
   }
   // clássico v4 — estilos: absolute | relative | relative-delay | reduced-sensitivity
   const s = style || 'relative';
+  // Espessura da linha (TomTom "queima" no tile via ?thickness=1..20). Como o
+  // Worker recebe o zoom `z`, escala por nível: FINO no zoom-out, cheio no
+  // zoom-in. Mantém 8 (valor antigo) nos zooms próximos; afina só ao afastar.
+  //   z≤9→2 · z10→3 · z11→4 · z12→5 · z13→6 · z14→7 · z15+→8
+  const t = Math.max(2, Math.min(8, (+z) - 7));
   return `https://api.tomtom.com/traffic/map/4/tile/flow/${s}/${z}/${x}/${y}.png` +
-         `?key=${key}&thickness=8`;
+         `?key=${key}&thickness=${t}`;
 }
 
 export default {

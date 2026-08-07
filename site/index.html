@@ -264,7 +264,7 @@
   .chip.on{ color:var(--hi); border-color:rgba(255,255,255,.20); background:rgba(31,38,51,.9);
         box-shadow:0 0 0 1px rgba(255,255,255,.05) inset; }  /* cor de destaque é setada inline por chip (cor da camada) */
   /* ═══ Seletor de base (estilo Google Maps) — grid 3×2 de miniaturas 120×120 ═══ */
-  .mapbase-w{ width:340px; padding:4px 4px 10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .mapbase-w{ width:300px; padding:4px 4px 10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.07); }
   .mapbase-head{ display:flex; align-items:center; gap:8px; padding:2px 4px 9px;
         font:700 9.5px var(--font-ui); letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
   .mapbase-head::after{ content:''; flex:1; height:1px;
@@ -281,11 +281,13 @@
   .mapbase-th img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
         transition:transform .35s ease; }
   .mapbase-th:hover img{ transform:scale(1.06); }
+  /* miniaturas do tema claro ficam lavadas — satura p/ as ruas aparecerem */
+  .mapbase-th img.mb-boost{ filter:saturate(2.8) contrast(1.24) brightness(1.0); }
   /* legenda: faixa de gradiente na base (leitura garantida, sem pílula flutuante) */
-  .mapbase-th .mb-label{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:15px 9px 6px;
-        font:700 10px var(--font-ui); letter-spacing:.2px; color:#fff; text-align:left;
+  .mapbase-th .mb-label{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:18px 6px 8px;
+        font:700 12.5px var(--font-ui); letter-spacing:.2px; color:#fff; text-align:center;
         text-shadow:0 1px 3px rgba(0,0,0,.95);
-        background:linear-gradient(to top, rgba(0,0,0,.80) 0%, rgba(0,0,0,.34) 58%, transparent 100%); }
+        background:linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.36) 60%, transparent 100%); }
   /* selecionado/ativo: anel aceso + selo de check no canto */
   .mapbase-th.sel{ border-color:var(--info);
         box-shadow:0 0 0 2px var(--info), 0 5px 16px -2px rgba(0,176,255,.5); }
@@ -771,6 +773,18 @@ map.on('load', async () => {
     _cirB = new maplibregl.LngLatBounds([_cirLon - dLon, _cirLat - dLat], [_cirLon + dLon, _cirLat + dLat]);
     return _cirB;
   };
+  // Bounds do estado de SC inteiro (a partir do geojson da CELESC, window._estado),
+  // calculado UMA vez e cacheado — usado pra enquadrar o CELESC em tela cheia.
+  let _scB = null;
+  const _scBoundsNow = () => {
+    if (_scB) return _scB;
+    const b = new maplibregl.LngLatBounds();
+    const walk = (c) => { if (typeof c[0] === 'number') b.extend(c); else c.forEach(walk); };
+    ((window._estado && window._estado.features) || []).forEach(f => f.geometry && walk(f.geometry.coordinates));
+    if (b.isEmpty()) return null;   // ainda não carregou → deixa o chamador decidir
+    _scB = b;
+    return _scB;
+  };
   const satCircleBuild = async () => {
     if (map.getSource('satelite-circulo')) return;
     const b = _cirBoundsNow();
@@ -1115,7 +1129,8 @@ map.on('load', async () => {
     return [lo*180/Math.PI, la*180/Math.PI];
   };
   let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0, _sweepPrev = 0;
-  const _RADAR_ROT = 5120, _RADAR_TURNS = 1;   // 5,12 s/volta (20% mais rápida que os 6,4 s), só 1 volta
+  const _RADAR_ROT = 4096, _RADAR_TURNS = 1;   // 4,10 s/volta (+20% de velocidade sobre os 5,12 s), só 1 volta
+  const _RADAR_LEAD = Math.PI/2, _RADAR_TAIL = Math.PI/2;   // 90° de fade-IN antes da ronda + 90° de fade-OUT depois
   // ângulo de um ponto qualquer em relação ao centro (0 = norte, sentido horário) —
   // mesmo critério do _radarPt, usado pra saber quando a varredura passa por um avião
   const _bearingTo = (lon, lat) => {
@@ -1135,75 +1150,99 @@ map.on('load', async () => {
   // a varredura pinga elas em VERDE, igual faz com os aviões. Preenchido uma vez
   // ao carregar 'voos-infra'.
   let _infraPos = [];
+  // ── Radar em CANVAS overlay (2D, 60 fps, SEM setData por frame) ────────────
+  // Antes o radar era uma source GeoJSON re-enviada pra GPU a cada frame (caro →
+  // travava). Agora desenha num <canvas> por cima do mapa, alinhado via
+  // map.project() a cada frame (acompanha pan/zoom). A ronda começa 90° ANTES
+  // (fade-in) e termina 90° DEPOIS (fade-out) do círculo de 100 km.
+  let _radarCanvas = null, _radarCtx = null;
+  const _ensureRadarCanvas = () => {
+    if (_radarCanvas) return;
+    const cv = document.createElement('canvas');
+    cv.id = 'voos-radar-canvas';
+    cv.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;';
+    // anexa ao #map (getContainer), que tem tamanho real (inset:0). O
+    // canvas-container colapsa a 0 de altura → NÃO serve pra dimensionar.
+    map.getContainer().appendChild(cv);
+    _radarCanvas = cv; _radarCtx = cv.getContext('2d');
+  };
+  const _radarClear = () => { if (_radarCtx && _radarCanvas)
+    _radarCtx.setTransform(1,0,0,1,0,0), _radarCtx.clearRect(0, 0, _radarCanvas.width, _radarCanvas.height); };
+  const _radarDraw = (A, ts, sweepVisible) => {
+    const cont = map.getCanvasContainer();
+    const w = cont.clientWidth, h = cont.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (_radarCanvas.width !== Math.round(w*dpr) || _radarCanvas.height !== Math.round(h*dpr)) {
+      _radarCanvas.width = Math.round(w*dpr); _radarCanvas.height = Math.round(h*dpr);
+      _radarCanvas.style.width = w+'px'; _radarCanvas.style.height = h+'px';
+    }
+    const ctx = _radarCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const C = map.project([_cirLon, _cirLat]);
+    // varredura (linha + esteira) — só na fase visível, com envelope de fade
+    if (sweepVisible) {
+      let env = 1;
+      if (A < 0) { const p = (A + _RADAR_LEAD) / _RADAR_LEAD; env = p*p; }                          // fade-IN (90° antes)
+      else if (A > 2*Math.PI) { const p = ((2*Math.PI + _RADAR_TAIL) - A) / _RADAR_TAIL; env = p*p; } // fade-OUT (90° depois)
+      env = Math.max(0, Math.min(1, env));
+      ctx.globalAlpha = env;
+      // esteira (comet) seguindo a circunferência de A-0.4 até A
+      ctx.beginPath(); ctx.moveTo(C.x, C.y);
+      for (let i = 0; i <= _BLIP_STEPS; i++) { const p = map.project(_radarPt(A - 0.4 + 0.4*i/_BLIP_STEPS)); ctx.lineTo(p.x, p.y); }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,255,65,0.12)'; ctx.fill();
+      // linha da varredura (gradiente: fraca no centro, forte na borda) + glow
+      const E = map.project(_radarPt(A));
+      const g = ctx.createLinearGradient(C.x, C.y, E.x, E.y);
+      g.addColorStop(0, 'rgba(0,255,65,0.12)'); g.addColorStop(1, 'rgba(0,255,65,1)');
+      ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(0,255,65,0.7)'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(C.x, C.y); ctx.lineTo(E.x, E.y); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    }
+    // blips (ecos) — alpha próprio pelo TTL, independente do envelope da varredura
+    for (const x of _blips) {
+      const age = (ts - x.born) / _BLIP_TTL;               // 0 → 1
+      const isV = x.k === 'v';
+      const r  = (isV ? 6 : 4) + (isV ? 16 : 11) * age;    // cresce com a idade
+      const op = (isV ? 0.5 : 0.35) * (1 - age);           // apaga com a idade
+      const p = map.project([x.lon, x.lat]);
+      const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*1.25);
+      rg.addColorStop(0, 'rgba(0,255,65,'+op+')'); rg.addColorStop(1, 'rgba(0,255,65,0)');
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r*1.25, 0, Math.PI*2); ctx.fill();
+    }
+  };
   const _radarStep = (ts) => {
-    if (!_sweepOn || !map.getSource('voos-radar')) { _sweepOn = false; return; }
+    if (!_sweepOn) return;
     const t = ts - _sweepT0;
-    // ── fase de SAÍDA: a régua completou a volta. Em vez de cortar tudo de uma
-    // vez (ficava "seco"), a linha some e os ecos restantes apagam no próprio
-    // tempo (TTL) — o rastro do radar respira até o último ping sumir.
-    if (t > _RADAR_ROT * _RADAR_TURNS) {
-      _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
-      if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 0);
-      if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0);
-      const tail = _blips.map(x => ({ type:'Feature',
-        properties:{ a:(ts - x.born) / _BLIP_TTL, k:x.k },
-        geometry:{ type:'Point', coordinates:[x.lon, x.lat] } }));
-      map.getSource('voos-radar').setData({ type:'FeatureCollection', features:tail });
-      if (!_blips.length) { _radarStop(); return; }
-      _sweepRaf = requestAnimationFrame(_radarStep);
-      return;
-    }
-    const ang = (t % _RADAR_ROT) / _RADAR_ROT * 2 * Math.PI;
-    const volta = Math.floor(t / _RADAR_ROT);
-    // radar primário: quando a varredura cruza o rumo de um avião → flash VERDE no ponto
-    for (const c of _voosPos) {
-      const b = _bearingTo(c[0], c[1]);
-      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'v' });
-    }
-    // radar secundário: a varredura também pinga a infra fixa → flash VERDE
-    for (const c of _infraPos) {
-      const b = _bearingTo(c[0], c[1]);
-      if (_sweepPrev < b && ang >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'i' });
+    // ângulo CONTÍNUO: começa em -90° (lead/fade-in) e termina em 360°+90°
+    // (tail/fade-out), à mesma velocidade angular (2π a cada _RADAR_ROT ms)
+    const A = -_RADAR_LEAD + (t / _RADAR_ROT) * 2*Math.PI;
+    const sweepDone = A > 2*Math.PI + _RADAR_TAIL;
+    // pinga os alvos SÓ durante a ronda (0→360°); lead/tail são só fade visual
+    if (!sweepDone && A >= 0 && A < 2*Math.PI) {
+      for (const c of _voosPos)  { const b = _bearingTo(c[0], c[1]); if (_sweepPrev < b && A >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'v' }); }
+      for (const c of _infraPos) { const b = _bearingTo(c[0], c[1]); if (_sweepPrev < b && A >= b) _blips.push({ lon:c[0], lat:c[1], born:ts, k:'i' }); }
     }
     _blips = _blips.filter(x => ts - x.born < _BLIP_TTL);
-    const edge = _radarPt(ang);
-    // esteira seguindo a CIRCUNFERÊNCIA (não corta reta pelo círculo → sem "vazio")
-    const ring = [[_cirLon, _cirLat]];
-    for (let i = 1; i <= _BLIP_STEPS; i++) ring.push(_radarPt(ang - 0.4 + 0.4 * i / _BLIP_STEPS));
-    ring.push([_cirLon, _cirLat]);
-    const feats = [
-      { type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:[[_cirLon,_cirLat], edge] } },
-      { type:'Feature', properties:{}, geometry:{ type:'Polygon', coordinates:[ring] } },
-    ];
-    for (const x of _blips) {
-      const age = (ts - x.born) / _BLIP_TTL;
-      feats.push({ type:'Feature', properties:{ a:age, k:x.k },
-        geometry:{ type:'Point', coordinates:[x.lon, x.lat] } });
-    }
-    map.getSource('voos-radar').setData({ type:'FeatureCollection', features:feats });
-    // fade out no fim da volta: de 225° (1.25π) até 360°/topo (2π) a varredura
-    // some com curva ease-out (some devagar no começo e "assenta" no fim) —
-    // saída macia em vez de corte seco
-    let op = 1;
-    if (volta === _RADAR_TURNS - 1 && ang > 1.25 * Math.PI) {
-      const x = Math.max(0, (2 * Math.PI - ang) / (0.75 * Math.PI)); // 1→0
-      op = x * x; // ease-out no apagar
-    }
-    if (map.getLayer('voos-radar-line')) map.setPaintProperty('voos-radar-line', 'line-opacity', 1 * op);
-    if (map.getLayer('voos-radar-fill')) map.setPaintProperty('voos-radar-fill', 'fill-opacity', 0.1 * op);
-    _sweepPrev = ang;
+    _radarDraw(A, ts, !sweepDone);
+    _sweepPrev = A;
+    // encerra quando a varredura acabou E os últimos ecos apagaram
+    if (sweepDone && !_blips.length) { _radarStop(); return; }
     _sweepRaf = requestAnimationFrame(_radarStep);
   };
   const _radarStart = () => {
     if (_sweepOn) return;
-    _sweepOn = true; _sweepT0 = performance.now(); _sweepPrev = 0; _blips = [];
+    _ensureRadarCanvas();
+    _sweepOn = true; _sweepT0 = performance.now(); _sweepPrev = -_RADAR_LEAD; _blips = [];
     if (!_sweepRaf) _sweepRaf = requestAnimationFrame(_radarStep);
   };
   const _radarStop = () => {
     _sweepOn = false;
     if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; }
     _blips = [];
-    if (map.getSource('voos-radar')) map.getSource('voos-radar').setData({ type:'FeatureCollection', features:[] });
+    _radarClear();
   };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
   // Só reconstrói o DOM quando a lista MUDA (novo voo/saiu voo); nos ticks de
@@ -1715,10 +1754,12 @@ map.on('load', async () => {
                     2,'#FFEB3B',3,'#FFB300',4,'#FF6D00',5,'#E53935',1,'#00E676','#8a97a8'],
                   'fill-opacity':0.55 } });
         map.addLayer({ id:'celesc-linha', type:'line', source:'celesc',
-          paint:{ 'line-color':'#FFB300', 'line-width':0.6, 'line-opacity':0.28 } });
-        // destaque das 90 cidades do raio (contorno âmbar tracejado)
+          // TODAS as cidades: borda PRETA, mesma espessura, sem dash (uniforme)
+          paint:{ 'line-color':'#000000', 'line-width':0.8, 'line-opacity':0.55 } });
+        // as 90 cidades do raio usam a MESMA borda preta/espessura (sem destaque
+        // diferenciado) — mantém tudo uniforme como pedido
         map.addLayer({ id:'celesc-raio', type:'line', source:'celesc', filter:['==',['get','raio'],true],
-          paint:{ 'line-color':'#FFB300', 'line-width':1.1, 'line-opacity':0.6, 'line-dasharray':[2,1] } });
+          paint:{ 'line-color':'#000000', 'line-width':0.8, 'line-opacity':0.55 } });
       }
       let _celHov = null;   // celesc_id em hover — só re-renderiza o card se mudar
       map.on('mousemove','celesc-fill',(e)=>{
@@ -1813,7 +1854,8 @@ map.on('load', async () => {
           filter:['==',['geometry-type'],'LineString'],
           paint:{ 'line-color':'#00FF41', 'line-width':3.5, 'line-opacity':1 } });
       }
-      _radarStart();
+      // (o radar NÃO arranca mais aqui — ele só roda depois do zoom-out, quando o
+      //  círculo de 100 km está em tela; ver a rotina de abertura no onToggle)
       // ── aeronaves ──────────────────────────────────────────────────────────
       if (!map.getSource('voos')) map.addSource('voos', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
       // trajeto (trail) — linha por baixo dos aviões, mostrando por onde passaram
@@ -2278,9 +2320,12 @@ map.on('load', async () => {
           const all = c => { if (Array.isArray(c[0])) c.forEach(all); else bb.extend(c); };
           window._vizinhas.features.forEach(f => all(f.geometry.coordinates));
           map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
+        } else if (!on) {
+          goHome();   // desmarcar Limites → SEMPRE volta à visão inicial de Brusque
         }
       } },
-    { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros', inWidget:true, darkBase:true },
+    { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros', inWidget:true, darkBase:true,
+      onToggle: (on) => { if (on) goHome(); } },   // marcar Bairros → SEMPRE ajusta ao mapa de Brusque
     { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', inWidget:true, layers:['satelite'] },
     { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', inWidget:true, layers:['trafego'] },
   ];
@@ -2319,21 +2364,21 @@ map.on('load', async () => {
       onToggle: async (on) => {
         clearInterval(_voosTimer); _voosTimer = null;
         if (on) {
-          _radarStart();
-          // hierarquia: ativar Voos desmarca TODAS as outras camadas e liga
-          // o Esri World Topo JUNTO (mapa + relevo, sem satélite — como o
-          // FlightRadar24). Performance garantida por:
-          //  1) radar usa cache em memória (_voosPos), não querySourceFeatures
-          //     a cada frame; 2) fitBounds mais curto (1.6 s) = menos zooms
-          //     intermediários baixando tiles do raster.
+          // ROTINA DE ABERTURA (por etapas):
+          //  Passo 1 — zoom out até o círculo de 100 km caber na tela (fitBounds).
+          //  Passo 2 — só quando o zoom-out termina (círculo em tela) o radar roda
+          //            (map.once('moveend')); não arranca mais cedo → não briga com
+          //            o download dos tiles do satélite.
+          // hierarquia: ativar Voos desmarca TODAS as outras camadas.
           [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].forEach(arr => arr.forEach(m => {
             if (m.id === 'voos') return;
             if (m.on) { m.on = false; if (m.onToggle) m.onToggle(false); if (m.paint) m.paint(); }
           }));
-          // liga o satélite JUNTO (contexto de imagem) — vira a base do widget
-          selectBase('satelite');
-          // círculo de 100 km estático: interior fixo, tiles só fora do círculo
-          _voosSat = true; satCircleBuild();
+          // base = mapa DARK SEM rótulos (dark_nolabels), o MESMO da abertura do
+          // mapa — carrega rápido (tiles CARTO leves) em vez do satélite raster
+          // pesado. O círculo estático de 100 km segue REMOVIDO (flag _voosSat
+          // desligada → máquina de snapshot/satCircleBuild dormente).
+          selectBase('mapa'); setDark(true);
           // re-busca + reinicia o refresh (ao reativar depois de desligar)
           if (map.getSource('voos')) {
             try {
@@ -2357,12 +2402,18 @@ map.on('load', async () => {
             } catch(e) {}
           }, 2000);
           showPanel('voospanel'); showPanel('voosleg');
-          // ajusta a câmera ao círculo de 100 km (aparece inteiro na tela) —
-          // mais curto para reduzir a janela de download do satélite
+          // Passo 1: zoom out até o círculo de 100 km caber na tela (duração
+          // padrão de antes; o ease-in ficou ruim e foi removido)
           const c = _cirFeat().geometry.coordinates[0];
           const bb = new maplibregl.LngLatBounds();
           c.forEach(([lo, la]) => bb.extend([lo, la]));
           map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
+          // Passo 2: círculo já em tela (fim do zoom-out) → agora sim liga o radar,
+          // se o Voos ainda estiver ligado (usuário pode ter desmarcado no meio)
+          map.once('moveend', () => {
+            const V = TEMPOREAL.find(m => m.id === 'voos');
+            if (V && V.on && map.getSource('voos-radar')) _radarStart();
+          });
         } else {
           _radarStop();
           hidePanel('voospanel'); hidePanel('voosleg');
@@ -2375,19 +2426,32 @@ map.on('load', async () => {
       } },
     // CELESC — UC sem energia nas 90 cidades do raio de 100 km (via worker).
     // Atualiza a cada 5 min enquanto ligado (mesma cadência do painel da CELESC).
-    { id:'celesc', label:'CELESC', on:false, color:'#FFB300', build:'celesc',
+    { id:'celesc', label:'CELESC', on:false, color:'#FFB300', build:'celesc', darkBase:true,
       onToggle: (on) => {
         clearInterval(_celescTimer); _celescTimer = null;
         if (on) {
+          // exclusividade: CELESC e Voos NUNCA ligados juntos → desliga o Voos
+          // (o Voos, por sua vez, já desmarca o CELESC no forEach de "uncheck all")
+          const V = TEMPOREAL.find(m => m.id === 'voos');
+          if (V && V.on) { V.on = false; if (V.onToggle) V.onToggle(false); if (V.paint) V.paint(); }
           showPanel('celelegend'); showPanel('celregpanel');
           refreshCelesc();
           _celescTimer = setInterval(refreshCelesc, 5*60*1000);
-          // enquadra o raio de 100 km (mesmo comportamento da camada de Voos);
-          // o usuário pode dar zoom out para ver o estado inteiro
-          const c = _cirFeat().geometry.coordinates[0];
-          const bb = new maplibregl.LngLatBounds();
-          c.forEach(([lo, la]) => bb.extend([lo, la]));
-          map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
+          // CELESC = estado de SC INTEIRO em tela cheia, ajustado à largura e à
+          // altura da tela com margens pequenas (fallback: raio de 100 km enquanto
+          // o geojson de SC ainda não carregou).
+          const sc = _scBoundsNow();
+          if (sc) {
+            // margens pequenas, MAS abrindo espaço à direita p/ a tabela de
+            // regionais (#celregpanel: right 14 + width 312) e embaixo/à esquerda
+            // p/ a legenda (#celelegend, canto inferior esquerdo).
+            map.fitBounds(sc, { padding:{ top:70, right:340, bottom:60, left:40 }, duration:1200 });
+          } else {
+            const c = _cirFeat().geometry.coordinates[0];
+            const bb = new maplibregl.LngLatBounds();
+            c.forEach(([lo, la]) => bb.extend([lo, la]));
+            map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1200 });
+          }
         } else {
           hidePanel('celelegend'); hidePanel('celregpanel');
           goHome();   // desmarcar CELESC → volta à visão inicial
@@ -2663,7 +2727,11 @@ map.on('load', async () => {
     // miniaturas locais: o claro/escuro troca a variação de cada item
     document.querySelectorAll('.mapbase-th').forEach(b => {
       const key = b._key, img = b.querySelector('img');
-      if (key && img) img.src = TH_IMG[key][_dark ? 'dark' : 'light'];
+      if (key && img) {
+        img.src = TH_IMG[key][_dark ? 'dark' : 'light'];
+        // satura só a variante CLARA (lavada) de mapa/estradas/trânsito
+        img.classList.toggle('mb-boost', !_dark && (key === 'mapa' || key === 'estradas' || key === 'trafego'));
+      }
     });
     // toggle Claro/Escuro (checkbox) — sincroniza e desativa no satélite
     const cb = document.getElementById('mbw-tone-cb');
