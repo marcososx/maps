@@ -1094,7 +1094,7 @@ map.on('load', async () => {
   // ── Trajeto dos voos: acumula as posições de cada aeronave ao longo do tempo
   // e desenha uma linha (trail) mostrando por onde ela passou. ────────────────
   const _trails = {};            // icao24 -> [ [lon,lat], ... ] (mais recente no fim)
-  const _TRAIL_MAX = 150;        // pontos máximos por voo (≈5 min a 2s de poll)
+  const _TRAIL_MAX = 300;        // pontos máximos por voo (≈10 min a 2s de poll)
   const trailFeatures = (d) => {
     const seen = new Set();
     const feats = [];
@@ -1120,28 +1120,63 @@ map.on('load', async () => {
     for (const k in _trails) if (!seen.has(k)) delete _trails[k];
     return feats;
   };
-  // ── Linha reta na TRASEIRA de cada aeronave (vetor de rumo invertido) ──────
-  // Só para voos que NÃO decolaram de NVT (Navegantes) ou FLN (Florianópolis) —
-  // esses dois aeroportos locais já deixam o trail visual sujo. Comprimento
-  // proporcional à velocidade (voo mais rápido → cauda mais longa).
+  // ── Rastro dos aviões: segue o PADRÃO REAL acumulado e estende até a BORDA ──
+  // do círculo quando a trajetória é uma linha reta apontando pro círculo. Em
+  // curva o rastro acompanha a curva de verdade (sem linha reta falsa). O rastro
+  // NÃO se perde quando o avião avança: ele acumula posições reais (só envelhecem
+  // no fim, pelos limites _TRAIL_MAX/_TAIL_BODY). Só voos que NÃO decolaram de
+  // NVT (Navegantes) ou FLN (Florianópolis) ganham o rastro.
   const _TAIL_ORIG_SKIP = { NVT:1, SBNF:1, FLN:1, SBFL:1 };
-  const _ptAt = (lon, lat, brDeg, km) => {
-    const R = 6371, d = km / R, br = brDeg * Math.PI / 180, la = lat * Math.PI / 180;
-    const la2 = Math.asin(Math.sin(la)*Math.cos(d) + Math.cos(la)*Math.sin(d)*Math.cos(br));
-    const lo2 = lon*Math.PI/180 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(la),
-      Math.cos(d) - Math.sin(la)*Math.sin(la2));
-    return [lo2*180/Math.PI, la2*180/Math.PI];
+  const _bearingOf = (a, b) => {   // proa (0= norte, sentido horário) do ponto a → b
+    const f1 = a[1]*Math.PI/180, f2 = b[1]*Math.PI/180, dl = (b[0]-a[0])*Math.PI/180;
+    const y = Math.sin(dl)*Math.cos(f2);
+    const x = Math.cos(f1)*Math.sin(f2) - Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+    return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
   };
+  const _rayCircle = (lon, lat, brDeg) => {   // raio (origem, proa) ∩ círculo de 100 km → ponto mais próximo (ou null)
+    const kx = 111.32*Math.cos(_cirLat*Math.PI/180), ky = 111.32;
+    const ox = (lon-_cirLon)*kx, oy = (lat-_cirLat)*ky;
+    const br = brDeg*Math.PI/180, ux = Math.sin(br), uy = Math.cos(br);
+    const b = ox*ux + oy*uy, c = ox*ox + oy*oy - _raioKm*_raioKm;
+    const disc = b*b - c;
+    if (disc < 0) return null;
+    const t1 = -b - Math.sqrt(disc), t2 = -b + Math.sqrt(disc);
+    const t = t1 >= 0 ? t1 : t2;   // interseção mais próxima na DIREÇÃO do raio (t ≥ 0)
+    if (t < 0) return null;
+    return [ (ox + t*ux)/kx + _cirLon, (oy + t*uy)/ky + _cirLat ];
+  };
+  const _TAIL_BODY = 120;   // corpo do rastro: últimos N pontos reais (≈4 min a 2 s)
   const tailFeatures = (d) => {
     const feats = [];
     for (const v of (d.voos || [])) {
-      if (!v.icao24 || v.lat == null || v.lon == null || v.rumo == null) continue;
+      if (!v.icao24 || v.lat == null || v.lon == null) continue;
       const o = v.origem || {};
       const code = ((o.iata || o.icao) || '').toUpperCase();
       if (_TAIL_ORIG_SKIP[code]) continue;
-      const L = Math.min(45, Math.max(12, (v.vel_kmh || 500) / 25));
+      const arr = _trails[v.icao24] || [];
+      if (!arr.length) continue;
+      // corpo = caminho real acumulado (segue curvas, não perde o rastro atrás)
+      const coords = arr.slice(-_TAIL_BODY).map(p => [p[0], p[1]]);
+      const last = coords[coords.length-1];
+      if (Math.abs(last[0]-v.lon) > 1e-6 || Math.abs(last[1]-v.lat) > 1e-6) coords.push([v.lon, v.lat]);
+      // padrão RETO (2 últimos trechos na mesma proa)? → estende até a borda
+      if (coords.length >= 3) {
+        const p0=coords[coords.length-3], p1=coords[coords.length-2], p2=coords[coords.length-1];
+        const s1 = p0[0]!==p1[0]||p0[1]!==p1[1], s2 = p1[0]!==p2[0]||p1[1]!==p2[1];
+        if (s1 && s2) {
+          const b12 = _bearingOf(p1, p2), b01 = _bearingOf(p0, p1);
+          let d = Math.abs(b12 - b01) % 360; if (d > 180) d = 360 - d;
+          if (d < 12) {
+            const fwd = _rayCircle(p2[0], p2[1], b12);            // borda à frente (pra onde aponta)
+            const bak = _rayCircle(p2[0], p2[1], (b12 + 180) % 360); // borda atrás (por onde entrou)
+            if (fwd && (Math.abs(fwd[0]-p2[0]) > 1e-4 || Math.abs(fwd[1]-p2[1]) > 1e-4)) coords.push(fwd);
+            if (bak && (Math.abs(bak[0]-coords[0][0]) > 1e-4 || Math.abs(bak[1]-coords[0][1]) > 1e-4)) coords.unshift(bak);
+          }
+        }
+      }
+      if (coords.length < 2) continue;
       feats.push({ type:'Feature', properties:{ icao24:v.icao24, callsign:v.callsign },
-        geometry:{ type:'LineString', coordinates:[[v.lon, v.lat], _ptAt(v.lon, v.lat, v.rumo + 180, L)] } });
+        geometry:{ type:'LineString', coordinates:coords } });
     }
     return feats;
   };
