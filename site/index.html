@@ -722,6 +722,10 @@ map.on('load', async () => {
       map.getSource('base-mapa').setTiles([cartoURL(st)]);
       satHideOverlay();
     }
+    // modo claro: contorno do município e círculo de 100 km em PRETO (no escuro
+    // voltam ao amarelo/verde) — preto contrasta com o fundo claro.
+    if (map.getLayer('municipio-linha')) map.setPaintProperty('municipio-linha', 'line-color', _dark ? COLORS.municipio : '#000000');
+    if (map.getLayer('voos-circulo')) map.setPaintProperty('voos-circulo', 'line-color', _dark ? '#00E676' : '#000000');
     if (sat && sat.on !== isSat) { sat.on = isSat; fadeLayer('satelite', isSat); refreshMapa(); }
     updateBaseWidget();
   };
@@ -1275,7 +1279,7 @@ map.on('load', async () => {
   };
   let _sweepOn = false, _sweepRaf = null, _sweepT0 = 0, _sweepPrev = 0;
   const _RADAR_ROT = 4096, _RADAR_TURNS = 1;   // 4,10 s/volta (+20% de velocidade sobre os 5,12 s), só 1 volta
-  const _RADAR_LEAD = Math.PI/2, _RADAR_TAIL = Math.PI/2;   // 90° de fade-IN antes da ronda + 90° de fade-OUT depois
+  const _RADAR_LEAD = 2*Math.PI/3, _RADAR_TAIL = 2*Math.PI/3;   // 120° de fade-IN antes da ronda + 120° de fade-OUT depois
   // ângulo de um ponto qualquer em relação ao centro (0 = norte, sentido horário) —
   // mesmo critério do _radarPt, usado pra saber quando a varredura passa por um avião
   const _bearingTo = (lon, lat) => {
@@ -1327,8 +1331,8 @@ map.on('load', async () => {
     // varredura (linha + esteira) — só na fase visível, com envelope de fade
     if (sweepVisible) {
       let env = 1;
-      if (A < 0) { const p = (A + _RADAR_LEAD) / _RADAR_LEAD; env = p*p; }                          // fade-IN (90° antes)
-      else if (A > 2*Math.PI) { const p = ((2*Math.PI + _RADAR_TAIL) - A) / _RADAR_TAIL; env = p*p; } // fade-OUT (90° depois)
+      if (A < 0) { const p = (A + _RADAR_LEAD) / _RADAR_LEAD; env = p*p*(3-2*p); }                            // fade-IN suave (smoothstep)
+      else if (A > 2*Math.PI) { const p = ((2*Math.PI + _RADAR_TAIL) - A) / _RADAR_TAIL; env = p*p*(3-2*p); } // fade-OUT suave (smoothstep)
       env = Math.max(0, Math.min(1, env));
       ctx.globalAlpha = env;
       // esteira (comet) seguindo a circunferência de A-0.4 até A
@@ -1336,14 +1340,16 @@ map.on('load', async () => {
       for (let i = 0; i <= _BLIP_STEPS; i++) { const p = map.project(_radarPt(A - 0.4 + 0.4*i/_BLIP_STEPS)); ctx.lineTo(p.x, p.y); }
       ctx.closePath();
       ctx.fillStyle = 'rgba(0,255,65,0.12)'; ctx.fill();
-      // linha da varredura (gradiente: fraca no centro, forte na borda) + glow
+      // linha da varredura — falso glow em 2 passadas (barato, sem shadowBlur):
+      // um traço largo e translúcido por baixo + o traço fino e forte por cima
       const E = map.project(_radarPt(A));
+      ctx.strokeStyle = 'rgba(0,255,65,0.22)'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(C.x, C.y); ctx.lineTo(E.x, E.y); ctx.stroke();
       const g = ctx.createLinearGradient(C.x, C.y, E.x, E.y);
       g.addColorStop(0, 'rgba(0,255,65,0.12)'); g.addColorStop(1, 'rgba(0,255,65,1)');
       ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.lineCap = 'round';
-      ctx.shadowColor = 'rgba(0,255,65,0.7)'; ctx.shadowBlur = 8;
       ctx.beginPath(); ctx.moveTo(C.x, C.y); ctx.lineTo(E.x, E.y); ctx.stroke();
-      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1;
     }
     // blips (ecos) — alpha próprio pelo TTL, independente do envelope da varredura.
     // Avião (k='v') pisca MUITO mais forte no momento da colisão: núcleo quente
@@ -1359,9 +1365,7 @@ map.on('load', async () => {
       rg.addColorStop(0.4, 'rgba(0,255,65,'+(op*0.9)+')');
       rg.addColorStop(1,   'rgba(0,255,65,0)');
       ctx.fillStyle = rg;
-      if (isV) { ctx.shadowColor = 'rgba(0,255,65,0.95)'; ctx.shadowBlur = 16; }  // glow forte no avião
       ctx.beginPath(); ctx.arc(p.x, p.y, r*1.35, 0, Math.PI*2); ctx.fill();
-      if (isV) ctx.shadowBlur = 0;
     }
   };
   const _radarStep = (ts) => {
@@ -1432,10 +1436,7 @@ map.on('load', async () => {
       ctx.beginPath(); ctx.arc(pt.x, pt.y, r, 0, Math.PI*2);
       ctx.strokeStyle = 'rgba(255,213,79,'+op+')';
       ctx.lineWidth = 2.5;
-      ctx.shadowColor = 'rgba(255,213,79,'+(op*0.8)+')';
-      ctx.shadowBlur = 14;
       ctx.stroke();
-      ctx.shadowBlur = 0;
     }
     _pulseRaf = requestAnimationFrame(_pulseDraw);
   };
@@ -2071,7 +2072,7 @@ map.on('load', async () => {
       if (!map.getSource('voos-circulo')) {
         map.addSource('voos-circulo', { type:'geojson', data:{ type:'FeatureCollection', features:[_cirFeat()] } });
         map.addLayer({ id:'voos-circulo', type:'line', source:'voos-circulo',
-          paint:{ 'line-color':'#00E676', 'line-width':3, 'line-dasharray':[4,2], 'line-opacity':0.95 } });
+          paint:{ 'line-color':'#00E676', 'line-width':1.5, 'line-dasharray':[4,2], 'line-opacity':0.95 } });
         // varredura de radar (estética) — fonte + linha/esteira animadas (verde Matrix)
         map.addSource('voos-radar', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
         map.addLayer({ id:'voos-radar-fill', type:'fill', source:'voos-radar',
