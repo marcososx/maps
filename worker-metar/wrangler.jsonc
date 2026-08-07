@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brusque-metar",
+  "main": "src/index.js",
+  "compatibility_date": "2025-07-01",
+  "observability": { "enabled": true }
+  // Sem segredos: fonte = aviationweather.gov (NOAA/AWC) pública, sem chave.
+}

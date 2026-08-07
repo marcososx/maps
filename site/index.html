@@ -189,6 +189,16 @@
   #hint-abrigo .hp-dot.fechado{ background:#FF5252; box-shadow:0 0 8px rgba(255,82,82,.9); }
   #hint-abrigo .hp-val.sit-aberto{ color:#00E676; }
   #hint-abrigo .hp-val.sit-fechado{ color:#FF5252; }
+  /* selo de status operacional de pista (METAR → VFR/MVFR/IFR/LIFR) no hint */
+  #hint-voos .metar-box{ margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.10); }
+  #hint-voos .metar-badge{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:999px;
+    font:800 12px ui-monospace,Space Mono,monospace; color:#04121c; letter-spacing:.4px; }
+  #hint-voos .metar-badge .dot{ width:8px; height:8px; border-radius:50%; background:#04121c; opacity:.55; }
+  #hint-voos .metar-badge.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
+  #hint-voos .metar-sit{ font-size:11px; color:#cfe3f2; margin-top:5px; }
+  #hint-voos .metar-metar{ margin-top:6px; font:600 10px ui-monospace,Space Mono,monospace; color:#8a97a8;
+    word-break:break-all; line-height:1.4; }
+  @keyframes metarPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
   /* slider de níveis de alagamento (aparece ao escolher um nível) — HORIZONTAL
      na parte de baixo do mapa, mesma largura dos chips (centralizado) */
   #nivelbar{ position:absolute; z-index:4; bottom:14px; left:50%;
@@ -353,6 +363,17 @@
   .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
   .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
   .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
+  /* duas colunas: infraestrutura (esq.) + status de pista/METAR (dir.) */
+  .vl-cols{ display:flex; gap:20px; align-items:flex-start; }
+  .vl-sub{ font:800 8.5px Inter,system-ui; text-transform:uppercase; letter-spacing:.6px;
+           color:#8a97a8; margin:2px 0 3px; }
+  .vl-col + .vl-col{ border-left:1px solid rgba(255,255,255,.09); padding-left:18px; }
+  .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
+  .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
+  .vl-note{ font-size:8.5px; color:#8a97a8; margin-top:6px; padding-top:5px;
+            border-top:1px solid rgba(255,255,255,.08); }
+  @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; }
+    .vl-col + .vl-col{ border-left:0; padding-left:0; border-top:1px solid rgba(255,255,255,.09); padding-top:8px; } }
   /* legenda CELESC (UC sem energia) — canto inferior ESQUERDO */
   #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:232px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
@@ -591,10 +612,22 @@
   <!-- Legenda da infra aeronáutica (aparece junto com a camada Voos) -->
   <div id="voosleg" class="wpanel" data-chip="voos">
     <div class="p-head"><b>Legenda</b></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
+    <div class="vl-cols">
+      <div class="vl-col">
+        <div class="vl-sub">Infraestrutura</div>
+        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
+        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
+        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
+        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
+      </div>
+      <div class="vl-col">
+        <div class="vl-sub">Status da pista · METAR</div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot" style="color:#00E676;background:#00E676"></span></span><span class="vl-txt"><b>VFR</b><small>Opera normal</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#4FC3F7;background:#4FC3F7"></span></span><span class="vl-txt"><b>MVFR</b><small>Marginal</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF5252;background:#FF5252"></span></span><span class="vl-txt"><b>IFR</b><small>Restrição · atrasos</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#E040FB;background:#E040FB"></span></span><span class="vl-txt"><b>LIFR</b><small>Pista fecha</small></span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1104,6 +1137,17 @@ map.on('load', async () => {
   };
   const _planeImgW2 = _makeOutlinePlane('#ffffff');   // aeroporto (contorno branco)
   const _planeImgO2 = _makeOutlinePlane('#26C6DA');   // aeródromo (contorno ciano)
+  // Miolo PREENCHIDO da MESMA silhueta do contorno (mesmo path/transform), como
+  // máscara p/ ícone SDF → recolorível por icon-color = cor do status METAR.
+  // Fica por baixo do contorno branco: o interior oco do avião ganha a cor da pista.
+  const _makeFillPlane = () => {
+    const c = document.createElement('canvas'); c.width = 48; c.height = 48;
+    const g = c.getContext('2d');
+    g.translate(24,24); g.scale(2.0,2.0); g.translate(-12,-12);
+    g.fillStyle = '#ffffff'; g.fill(_PLANE_OUTLINE);   // cor real vem do icon-color (SDF)
+    return g.getImageData(0,0,48,48);
+  };
+  const _planeFillSDF = _makeFillPlane();
   // Ícone genérico de heliponto: círculo escuro com anel azul + "H" (os dados da
   // ANAC que temos aqui não trazem categoria de heliponto, então é genérico).
   const _helipontoCanvas = document.createElement('canvas'); _helipontoCanvas.width=48; _helipontoCanvas.height=48;
@@ -2110,6 +2154,7 @@ map.on('load', async () => {
       map.addImage('aviao-laranja', _planeImgO);
       map.addImage('aviao-contorno-branco', _planeImgW2);
       map.addImage('aviao-contorno-ciano', _planeImgO2);
+      map.addImage('aviao-fill-sdf', _planeFillSDF, { sdf:true });   // miolo recolorível (status METAR)
       map.addImage('heliponto', _helipontoImg);
       map.addLayer({ id:'voos-pt', type:'symbol', source:'voos',
         layout:{ 'icon-image':'aviao', 'icon-size':0.8, 'icon-allow-overlap':true,
@@ -2242,14 +2287,45 @@ map.on('load', async () => {
         if(p.municipio) h+=row('Município', p.municipio);
         if(p.oaci) h+=row('Código OACI', p.oaci, 'sub');
         if(p.ciad) h+=row('CIAD', p.ciad, 'sub');
+        // status operacional de pista (METAR) — só aeroportos que publicam METAR
+        const st = (window._METAR && p.oaci) ? window._METAR[p.oaci] : null;
+        if (st) {
+          const hora = st.hora ? new Date(st.hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+          h += '<div class="metar-box">'
+            + '<span class="metar-badge'+(st.pisca?' pisca':'')+'" style="background:'+st.cor+'">'
+            +   '<span class="dot"></span>'+st.rotulo+' — pista '+(st.categoria==='VFR'?'operando':'sob restrição')+'</span>'
+            + '<div class="metar-sit">'+st.situacao+'</div>'
+            + row('Teto', st.teto_txt)
+            + row('Visibilidade', st.vis_txt)
+            + (st.vento ? row('Vento', st.vento) : '')
+            + (st.fenomeno ? row('Tempo', st.fenomeno, 'info') : '')
+            + (st.temp_c!=null ? row('Temp / orvalho', st.temp_c+'° / '+st.orvalho_c+'°', 'sub') : '')
+            + '<div class="metar-metar">'+(st.metar||'')+(hora?' · '+hora:'')+'</div>'
+            + '</div>';
+        }
         hv.innerHTML = h;
       };
       if (!map.getSource('voos-infra')) {
         const infra = await (_pre.infra || pre('infra', fetchJson('./brusque_aerodromos.geojson')));
         if (!infra) return ['voos-pt','voos-label','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
-        map.addSource('voos-infra', { data:{ type:'FeatureCollection', features:(infra.features||[]).map(f =>
-          ({ type:'Feature', geometry:f.geometry, properties:Object.assign({}, f.properties,
-            { code:_AERO_CODE[f.properties.oaci] || f.properties.oaci || '' }) })) }, type:'geojson' });
+        _infraFeatsRaw = infra.features || [];
+        // fonte já com o status METAR mesclado (window._METAR, se já carregado)
+        map.addSource('voos-infra', { data:_infraFC(), type:'geojson' });
+        // MIOLO do avião colorido pelo status METAR (semáforo da pista): avião
+        // preenchido SDF por BAIXO do contorno branco, alinhado 1:1 (mesmo icon-size).
+        // VFR = fixo (verde); ≠ VFR = pisca (icon-opacity animado por _metarBlinkStart).
+        const _FILL_SIZE = ['interpolate',['linear'],['zoom'],9,0.9,14,1.2];  // = contorno do aeroporto
+        map.addLayer({ id:'voos-infra-fill', type:'symbol', source:'voos-infra',
+          filter:['all',['==',['get','tipo'],'aeroporto'],['has','st_cor'],['!=',['get','st_pisca'],true]],
+          layout:{ 'icon-image':'aviao-fill-sdf', 'icon-size':_FILL_SIZE,
+                    'icon-allow-overlap':true, 'icon-ignore-placement':true },
+          paint:{ 'icon-color':['get','st_cor'], 'icon-opacity':0.92 } });
+        map.addLayer({ id:'voos-infra-fill-blink', type:'symbol', source:'voos-infra',
+          filter:['all',['==',['get','tipo'],'aeroporto'],['==',['get','st_pisca'],true]],
+          layout:{ 'icon-image':'aviao-fill-sdf', 'icon-size':_FILL_SIZE,
+                    'icon-allow-overlap':true, 'icon-ignore-placement':true },
+          paint:{ 'icon-color':['get','st_cor'], 'icon-opacity':0.92 } });
+        _metarBlinkStart();
         // guarda as posições da infra p/ a varredura pingar em branco (eco fixo)
         _infraPos = (infra.features || [])
           .filter(f => f.geometry && f.geometry.type === 'Point')
@@ -2289,7 +2365,7 @@ map.on('load', async () => {
         map.on('mouseleave','voos-infra-aerodromo',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
         map.on('mouseleave','voos-infra-heliponto',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
       }
-      return ['voos-pt','voos-label','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto'];
+      return ['voos-pt','voos-label','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo','voos-infra-fill','voos-infra-fill-blink','voos-infra-aeroporto','voos-infra-aerodromo','voos-infra-heliponto'];
     },
     // Nuvens em tempo real — NASA GIBS (GOES-East, infravermelho). Overlay
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
@@ -2382,6 +2458,10 @@ map.on('load', async () => {
   const VOOS_URL = 'https://brusque-voos.marcososx.workers.dev/voos.json';
   const ENSO_URL = 'https://brusque-clima.marcososx.workers.dev/enso.json';
   const CELESC_URL = 'https://brusque-celesc.marcososx.workers.dev/celesc.json';
+  const METAR_URL = 'https://brusque-metar.marcososx.workers.dev/metar.json';
+  // status operacional de pista (METAR) por OACI — preenchido pelo worker e lido
+  // pelo hint do aeroporto + anel de status piscante. window p/ o builder alcançar.
+  window._METAR = null;
 
   // ── Pré-carga (cache) dos dados das camadas ─────────────────────────────────
   // Tudo é buscado em background logo após o mapa pintar e os dados vivos são
@@ -2418,7 +2498,59 @@ map.on('load', async () => {
     pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
     pre('chuvaacum', fetchJson('https://archive-api.open-meteo.com/v1/archive?latitude=-27.1&longitude=-48.9&daily=precipitation_sum&start_date='+f30(new Date(Date.now()-30*864e5))+'&end_date='+f30(new Date())));
     pre('soloum',   fetchJson('https://api.open-meteo.com/v1/forecast?latitude=-27.1&longitude=-48.9&current=soil_moisture_0_to_1cm,soil_moisture_7_to_28cm'));
+    loadMetar();
   };
+  // status de pista (METAR): guarda em window._METAR e aplica no mapa (anel +
+  // hint). Falha silenciosa — sem status o aeroporto só não mostra o selo.
+  // mock p/ conferir o piscar sem esperar mau tempo: ?metarmock=ifr (ou lifr/mvfr)
+  const _METAR_MOCK = (() => {
+    const q = new URLSearchParams(location.search).get('metarmock');
+    if (!q) return null;
+    const P = { vfr:['VFR','#00E676','Céu bom — opera normal',false,'Sem teto significativo','≥ 10 km','Chuva'],
+                mvfr:['MVFR','#4FC3F7','Marginal — começa a apertar',true,'2500 ft','7,0 km','Névoa úmida'],
+                ifr:['IFR','#FF5252','Só por instrumentos — atrasos',true,'800 ft','3,2 km','Nevoeiro'],
+                lifr:['LIFR','#E040FB','Teto/vis. no chão — pista fecha',true,'200 ft','0,5 km','Nevoeiro'] };
+    const p = P[q.toLowerCase()] || P.ifr;
+    const mk = (oaci) => ({ oaci, categoria:p[0], cor:p[1], rotulo:p[0], situacao:p[2], pisca:p[3],
+      teto_txt:p[4], vis_txt:p[5], vento:'200° / 12 kt', temp_c:17, orvalho_c:16, fenomeno:p[6],
+      metar:'MOCK '+oaci+' '+p[0], hora:new Date().toISOString() });
+    return { SBFL:mk('SBFL'), SBNF:mk('SBNF') };
+  })();
+  const loadMetar = () => _pre.metar = fetchJson(METAR_URL, { cache:'no-store' })
+    .then(d => { window._METAR = _METAR_MOCK || ((d && d.aeroportos) ? d.aeroportos : null);
+                 if (typeof applyMetarStatus === 'function') applyMetarStatus();
+                 return d; })
+    .catch(() => { window._METAR = _METAR_MOCK; if (typeof applyMetarStatus === 'function') applyMetarStatus(); return null; });
+  // features cruas da infra aeronáutica (guardadas no build da camada 'voos') +
+  // helpers que mesclam o status METAR nas props e repintam anel + selo.
+  let _infraFeatsRaw = null;
+  function _infraFC(){
+    const M = window._METAR || {};
+    return { type:'FeatureCollection', features:(_infraFeatsRaw||[]).map(f => {
+      const props = Object.assign({}, f.properties,
+        { code:_AERO_CODE[f.properties.oaci] || f.properties.oaci || '' });
+      const st = f.properties.tipo==='aeroporto' && M[f.properties.oaci];
+      if (st){ props.st_cor = st.cor; props.st_cat = st.categoria; props.st_pisca = !!st.pisca; }
+      return { type:'Feature', geometry:f.geometry, properties:props };
+    }) };
+  }
+  function applyMetarStatus(){
+    const src = map.getSource && map.getSource('voos-infra');
+    if (src && _infraFeatsRaw) src.setData(_infraFC());
+  }
+  // pulso do miolo dos aeroportos ≠ VFR (icon-opacity em senoide, período ~1,05s).
+  let _metarBlinkRAF = 0;
+  function _metarBlinkStart(){
+    if (_metarBlinkRAF) return;
+    const tick = (t) => {
+      _metarBlinkRAF = requestAnimationFrame(tick);
+      if (!map.getLayer('voos-infra-fill-blink')) return;
+      if (map.getLayoutProperty('voos-infra-fill-blink','visibility') === 'none') return;
+      const k = 0.5 + 0.5*Math.sin(t/1050*Math.PI*2);
+      map.setPaintProperty('voos-infra-fill-blink','icon-opacity', 0.15 + 0.8*k);
+    };
+    _metarBlinkRAF = requestAnimationFrame(tick);
+  }
   // roda logo após o mapa pintar (não compete com o render inicial)
   setTimeout(prefetchAll, 800);
   // revalida os dados vivos a cada 5 min (sempre prontos pra mostrar em tela)
@@ -2426,6 +2558,7 @@ map.on('load', async () => {
     pre('abrigos',  fetchJson(ABRIGOS_URL, { cache:'no-store' }));
     pre('rios',     fetchJson(RIOS_URL, { cache:'no-store' }));
     pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
+    loadMetar();
   }, 5*60*1000);
   const normNome = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     .replace(/\(.*?\)/g,'').replace(/[^a-z0-9]+/g,' ').trim();

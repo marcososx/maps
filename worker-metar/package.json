@@ -1,0 +1,13 @@
+{
+  "name": "brusque-metar",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: status de pista (METAR → categoria VFR/MVFR/IFR/LIFR) dos aeroportos ≤100 km, com CORS pro mapa",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

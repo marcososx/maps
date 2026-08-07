@@ -334,3 +334,45 @@ com cache e CORS. Deixar a DC só como fallback. Implementação fica como próx
   - O `mapa.js` é regenerado a cada poucos minutos e **não tem timestamp**; o `tabelas.js` tem o
     campo `DATA`. O worker usa o momento do próprio build como `updated`.
 
+
+---
+
+## 8. METAR — status operacional de pista dos aeroportos (≤100 km)
+
+- **Onde aparece:** na camada **Voos** (infra aeronáutica). Cada **aeroporto** que
+  publica METAR tem o **miolo do ícone de avião pintado com a cor do status**
+  (semáforo da pista — o avião é um contorno oco branco e o interior recebe a cor)
+  e, no hint, um **selo de categoria de voo** + teto/visibilidade/vento/tempo + o
+  METAR cru. Aeródromos privados e helipontos não têm METAR (não recebem cor).
+- **Fonte:** `aviationweather.gov` (NOAA/AWC), API pública **sem chave**, com CORS.
+  Proxy/normalização no worker **`brusque-metar`** (`worker-metar/`):
+  `https://brusque-metar.marcososx.workers.dev/metar.json`
+- **OACIs consultados** (aeroportos do `brusque_aerodromos.geojson` dentro de 100 km):
+  `SBFL` (Florianópolis, 70,6 km), `SBNF` (Navegantes, 38 km), `SSBL` (Blumenau),
+  `SSLN` (Lontras). Na prática só **SBFL e SBNF** retornam METAR — os outros são
+  campos regionais sem estação; o worker os ignora silenciosamente.
+- **Categoria de voo** (calculada no worker a partir de teto + visibilidade):
+
+  | Categoria | Cor | Teto | Visibilidade | Pisca? |
+  |---|---|---|---|---|
+  | **VFR**  | 🟢 `#00E676` | > 3000 ft | > 5 SM | não |
+  | **MVFR** | 🔵 `#4FC3F7` | 1000–3000 ft | 3–5 SM | sim |
+  | **IFR**  | 🔴 `#FF5252` | 500–1000 ft | 1–3 SM | sim |
+  | **LIFR** | 🟣 `#E040FB` | < 500 ft | < 1 SM | sim |
+
+  Regra: pega a categoria mais restritiva entre teto e visibilidade. Nevoeiro
+  (`FG`/`BR` no METAR) derruba a visibilidade → IFR/LIFR → **pista fecha**.
+- **Piscar:** o front pisca o anel de qualquer aeroporto **≠ VFR** (halo em círculo
+  animado por `requestAnimationFrame`, período ~1,05 s) + o selo pisca no hint (CSS
+  `@keyframes metarPulse`). Verde = anel fixo, sem piscar.
+- **Cadência:** cache 5 min no worker (`caches.default`); front re-busca a cada 5 min
+  (mesmo `setInterval` do ENSO/abrigos/rios). METAR sai de hora em hora, com **SPECI**
+  fora de hora quando o tempo muda — 5 min cobre bem.
+- **Teste sem mau tempo:** abrir o mapa com `?metarmock=ifr` (ou `lifr`/`mvfr`/`vfr`)
+  força o status de SBFL/SBNF pra ver o anel piscando e o selo colorido na hora.
+- **Gotchas:**
+  - `visib` da AWC vem em **milhas terrestres** (SM), às vezes como string (`"6+"`,
+    `"10+"`, `"0.5"`) — o parse pega só o número. `clouds[].base` em **pés**.
+  - Teto = base da camada **BKN/OVC/OVX/VV** mais baixa; `FEW`/`SCT` não contam.
+  - `VCTS` (trovoada na vizinhança) e `TS` **não** mudam a categoria por si — quem
+    muda é o teto/visibilidade. Um dia dá pra escalar pra "alerta" à parte se quiser.
