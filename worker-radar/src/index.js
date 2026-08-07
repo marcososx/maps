@@ -5,47 +5,62 @@
 // de dBZ), transparência real no fundo.
 //
 // O Worker baixa os frames, decodifica o PNG (sem canvas), classifica cada
-// pixel em 5 níveis de intensidade, gera contornos (marching squares + RDP) e
-// devolve GeoJSON leve por nível — o front renderiza como camadas fill com
-// transparência. Sem raster pesado no cliente.
+// pixel em N níveis de intensidade, gera contornos (marching squares + RDP +
+// Chaikin) e devolve GeoJSON leve por nível — o front renderiza como camadas
+// fill com transparência.
 //
-//   GET /frames.json          -> { updated, fonte, ext, frames:[{time,file}] }
-//   GET /frame/{arquivo}.json -> { time, ext, niveis:[{nivel,cor,opacidade,
+// Histórico + interpolação (07/08/2026):
+//  - Os grids classificados de cada frame são guardados COMPRIMIDOS no KV
+//    (RADAR_HIST), acumulando horas de história mesmo com a EPAGRI só
+//    devolvendo ~7 frames (≈35 min).
+//  - A timeline (frames.json) devolve os frames reais + SUB-FRAMES
+//    INTERPOLADOS por média entre pares consecutivos (navegação fluida).
+//  - /frame/{id}.json vetoriza um passo real ou interpolado.
+//
+//   GET /frames.json          -> { updated, fonte, ext, passos:[{id,time}] }
+//   GET /frame/{id}.json      -> { time, ext, niveis:[{nivel,cor,opacidade,
 //                                geometry:{MultiPolygon}}] }
+//   GET /cache/clear          -> limpa cache+KV (debug)
 //
-// Cache: caches.default ~4 min (frames novos a cada ~5 min).
+// Cache: caches.default (frames reais e interpolados) + KV p/ grids.
 
 const EPAGRI_BASE = 'https://ciram.epagri.sc.gov.br/radar/rest/radar/';
 const PROD = 4;       // COMP (mosaico SC)
 const RADAR = 'COMP';
 const EXT = [-58.0651, -33.8163, -46.4999, -24.7654];   // w,s,e,n
 const TTL = 240;      // segundos de cache (frame a cada ~5 min)
+const KV_KEY = 'hist:v2';         // grid comprimido + lista de frames reais
+const KV_MAX_FRAMES = 60;         // ≈5 h de histórico (1 frame a cada 5 min)
+const INTERP_PER_GAP = 3;         // sub-frames por intervalo entre frames reais
 
-// ── Classificação de intensidade (escala dBZ da EPAGRI → 5 níveis) ─────────
+// ── Classificação de intensidade (escala dBZ da EPAGRI → 8 níveis) ─────────
 // Cores observadas no PNG do COMP. O cinza #C8C8C8 = sem sinal (descartado).
 const NIVEL_POR_RGB = {
   '165,255,255': 1,   // A5FFFF  ciano clarinho
-  '110,200,255': 1,   // 6EC8FF  ciano
-  '55,145,255': 1,    // 3791FF  azul claro
-  '0,90,255': 2,      // 005AFF  azul
-  '170,255,0': 2,     // AAFF00  verde limão
-  '128,206,0': 3,     // 80CE00  verde
-  '85,156,0': 3,      // 559C00  verde médio
-  '43,107,0': 4,      // 2B6B00  verde escuro
-  '0,57,0': 4,        // 003900  verde muito escuro
-  '255,255,0': 5,     // FFFF00  amarelo
-  '255,192,0': 5,     // FFC000  laranja
-  '255,128,0': 5,     // FF8000  laranja forte
-  '255,64,0': 5,      // FF4000  vermelho-laranja
+  '110,200,255': 2,   // 6EC8FF  ciano
+  '55,145,255': 3,    // 3791FF  azul claro
+  '0,90,255': 4,      // 005AFF  azul
+  '170,255,0': 5,     // AAFF00  verde limão
+  '128,206,0': 6,     // 80CE00  verde
+  '85,156,0': 6,      // 559C00  verde médio
+  '43,107,0': 7,      // 2B6B00  verde escuro
+  '0,57,0': 7,        // 003900  verde muito escuro
+  '255,255,0': 8,     // FFFF00  amarelo
+  '255,192,0': 8,     // FFC000  laranja
+  '255,128,0': 8,     // FF8000  laranja forte
+  '255,64,0': 8,      // FF4000  vermelho-laranja
 };
 
-// Cor + opacidade de exibição por nível (semáforo do radar, escala própria).
+// Cor + opacidade por nível — escala própria, azuis mais fortes (tom acima).
 const NIVEIS = [
-  { nivel: 1, cor: '#DCEBF7', opacidade: 0.14, rotulo: 'Fraca' },
-  { nivel: 2, cor: '#C9E0F2', opacidade: 0.16, rotulo: 'Moderada' },
-  { nivel: 3, cor: '#AED3EE', opacidade: 0.18, rotulo: 'Forte' },
-  { nivel: 4, cor: '#93C4E8', opacidade: 0.20, rotulo: 'Muito forte' },
-  { nivel: 5, cor: '#7FB8E8', opacidade: 0.22, rotulo: 'Extrema' },
+  { nivel: 1, cor: '#C4E6FA', opacidade: 0.15, rotulo: 'Muito fraca' },
+  { nivel: 2, cor: '#9FD0F4', opacidade: 0.17, rotulo: 'Fraca' },
+  { nivel: 3, cor: '#76B7EE', opacidade: 0.19, rotulo: 'Moderada' },
+  { nivel: 4, cor: '#4E9CE8', opacidade: 0.21, rotulo: 'Moderada forte' },
+  { nivel: 5, cor: '#8FCB8F', opacidade: 0.23, rotulo: 'Forte' },
+  { nivel: 6, cor: '#6EB377', opacidade: 0.25, rotulo: 'Forte alta' },
+  { nivel: 7, cor: '#E3C56C', opacidade: 0.27, rotulo: 'Muito forte' },
+  { nivel: 8, cor: '#E98570', opacidade: 0.30, rotulo: 'Extrema' },
 ];
 
 const CORS = {
@@ -54,11 +69,9 @@ const CORS = {
 };
 
 // ── Decoder PNG mínimo (paleta 8-bit / 4-bit, filtros 0-4) ──────────────────
-// Sem canvas no Worker: parseia chunks, descomprime o IDAT com
-// DecompressionStream('deflate') e re-aplica os filtros de scanline.
 async function decodePng(data) {
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  let pos = 8;                       // pula assinatura
+  let pos = 8;
   let w = 0, h = 0, bd = 0, ct = 0;
   const plte = [], trns = [];
   let idat = [];
@@ -83,7 +96,6 @@ async function decodePng(data) {
     const r = new Uint8Array(a.length + b.length); r.set(a); r.set(b, a.length); return r;
   }, new Uint8Array(0))));
 
-  // bytes por pixel de filtro: paleta usa sempre 1 byte/pixel (4-bit empacota)
   const bpp = 1;
   const stride = Math.ceil(w * bd / 8);
   const out = new Uint8Array(w * h);
@@ -128,6 +140,23 @@ async function inflate(data) {
   return new Uint8Array(ab);
 }
 
+// ── Compactação de grid (deflate + base64) p/ o KV ──────────────────────────
+async function compactGrid(grid) {
+  const cs = new CompressionStream('deflate');
+  const stream = new Blob([grid]).stream().pipeThrough(cs);
+  const ab = await new Response(stream).arrayBuffer();
+  const b = new Uint8Array(ab);
+  let s = '';
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+async function expandGrid(b64) {
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return inflate(u8);
+}
+
 // ── Classificação → grid de níveis ──────────────────────────────────────────
 function classificarNiveis(png) {
   const { w, h, bd, paleta, transparencia, indices } = png;
@@ -145,9 +174,19 @@ function classificarNiveis(png) {
   return { w, h, nv };
 }
 
-// ── Contornos por nível (marching squares binário + conexão de loops) ───────
+// ── Interpolação por média entre dois grids (morphing suave) ────────────────
+// grid_m = arredonda(média ponderada(A,B)). Mantém só os níveis ≥ 1.
+function interpolarGrids(a, b, t) {
+  const out = new Uint8Array(a.length);
+  for (let i = 0; i < a.length; i++) {
+    const v = Math.round(a[i] * (1 - t) + b[i] * t);
+    out[i] = v;
+  }
+  return out;
+}
+
+// ── Contornos por nível ──────────────────────────────────────────────────────
 function contornosNivel(w, h, nv, nivel) {
-  // gera arestas de contorno: todo pixel interno (>= nivel) com vizinho externo
   const segs = [];
   const em = (x, y) => x >= 0 && y >= 0 && x < w && y < h && nv[y * w + x] >= nivel;
   for (let y = 0; y < h; y++) {
@@ -159,7 +198,6 @@ function contornosNivel(w, h, nv, nivel) {
       if (!em(x, y + 1))     segs.push([[x, y + 1], [x + 1, y + 1]]);
     }
   }
-  // mapa ponto de grade -> arestas (contorno fechado: grau 2 em cada ponto)
   const key = (a) => a[0] + ',' + a[1];
   const map = new Map();
   segs.forEach((sg, i) => {
@@ -186,7 +224,7 @@ function contornosNivel(w, h, nv, nivel) {
       const other = segs[next][0][0] === tail[0] && segs[next][0][1] === tail[1]
         ? segs[next][1] : segs[next][0];
       loop.push(other); tail = other;
-      if (loop[0][0] === tail[0] && loop[0][1] === tail[1]) break;  // fechou
+      if (loop[0][0] === tail[0] && loop[0][1] === tail[1]) break;
     }
     if (loop[0][0] === loop[loop.length - 1][0] && loop[0][1] === loop[loop.length - 1][1]) {
       loop.pop();
@@ -196,8 +234,8 @@ function contornosNivel(w, h, nv, nivel) {
   return loops;
 }
 
-// ── Polígonos (lon/lat), simplificação RDP e classificação exterior/buraco ──
-function area2(ring) {            // área sinalizada (pixel coords) — shoelace
+// ── Polígonos, suavização e classificação exterior/buraco ───────────────────
+function area2(ring) {
   let a = 0;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     a += (ring[j][0] * ring[i][1]) - (ring[i][0] * ring[j][1]);
@@ -222,17 +260,6 @@ function rdp(points, eps) {
   }
   return [points[0], points[points.length - 1]];
 }
-function pontoNoAnel(p, ring) {
-  const [px, py] = p;
-  let inR = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if (((yi > py) !== (yj > py)) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inR = !inR;
-  }
-  return inR;
-}
-
-// suavização Chaikin (subdivide cada aresta 1x) — arredonda os contornos
 function chaikin(ring) {
   if (ring.length < 4) return ring;
   const out = [];
@@ -245,14 +272,22 @@ function chaikin(ring) {
   }
   return out;
 }
-
+function pontoNoAnel(p, ring) {
+  const [px, py] = p;
+  let inR = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if (((yi > py) !== (yj > py)) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inR = !inR;
+  }
+  return inR;
+}
 function loopsParaMultiPolygon(loops, w, h, ext) {
   const [xw, ys, xe, yn] = ext;
   const toLonLat = (ring) => ring.map(([px, py]) => [
     xw + (px / (w - 1)) * (xe - xw),
     yn - (py / (h - 1)) * (yn - ys),
   ]);
-  const EPS = 3.4;                     // px de tolerância (≈4,2 km no COMP) — contornos suaves
+  const EPS = 3.4;
   const MIN_AREA_PX2 = 8;
   const feats = [];
   for (const loop of loops) {
@@ -260,7 +295,7 @@ function loopsParaMultiPolygon(loops, w, h, ext) {
     if (ring.length < 4) continue;
     if (Math.abs(area2(ring)) < MIN_AREA_PX2) continue;
     const extRing = toLonLat(ring);
-    const aGeo = area2(extRing);       // lon/lat: exterior = anti-horário = positivo
+    const aGeo = area2(extRing);
     feats.push({ exterior: extRing, buraco: aGeo < 0 });
   }
   const exteriors = feats.filter(f => !f.buraco);
@@ -270,22 +305,44 @@ function loopsParaMultiPolygon(loops, w, h, ext) {
       pontoNoAnel([b.exterior[0][0], b.exterior[0][1]], e.exterior));
     return { exterior: e.exterior, buracos: holes.map(h => h.exterior) };
   });
-  // só polígonos com área geográfica mínima (remove ruído de 1 px)
-  const valid = partes.filter(p => Math.abs(area2(p.exterior)) > 0.02);   // graus²
+  const valid = partes.filter(p => Math.abs(area2(p.exterior)) > 0.02);
   return { type: 'MultiPolygon', coordinates: valid.map(p => [p.exterior, ...p.buracos]) };
 }
 
-// ── Orquestração dos frames ──────────────────────────────────────────────────
-async function listaFrames() {
-  const u = `${EPAGRI_BASE}getUltimasImagens?prod=${PROD}&radar=${RADAR}`;
-  const r = await fetch(u, { cf: { cacheTtl: TTL }, headers: { 'User-Agent': 'brusque-discover/1.0' } });
-  if (!r.ok) throw new Error('EPAGRI getUltimasImagens: ' + r.status);
-  const arr = await r.json();
-  if (!Array.isArray(arr) || !arr.length) throw new Error('EPAGRI sem frames');
-  return arr;
+// ── Grid → GeoJSON por nível (todos os níveis presentes no grid) ────────────
+function gridParaNiveis(w, h, nv, ext) {
+  const niveis = [];
+  for (const cfg of NIVEIS) {
+    const loops = contornosNivel(w, h, nv, cfg.nivel);
+    if (!loops.length) continue;
+    const geometry = loopsParaMultiPolygon(loops, w, h, ext);
+    if (!geometry.coordinates.length) continue;
+    niveis.push({ nivel: cfg.nivel, cor: cfg.cor, opacidade: cfg.opacidade, rotulo: cfg.rotulo, geometry });
+  }
+  return niveis;
 }
 
-async function processarFrame(file) {
+// ── Histórico no KV ──────────────────────────────────────────────────────────
+async function histLoad(env) {
+  if (!env.RADAR_HIST) return { frames: [], grids: {} };
+  try {
+    const raw = await env.RADAR_HIST.get(KV_KEY, 'json');
+    if (raw && raw.frames) return raw;
+  } catch (e) {}
+  return { frames: [], grids: {} };
+}
+async function histSave(env, hist) {
+  if (!env.RADAR_HIST) return;
+  // grids guardados como base64 comprimidos; o KV guarda { file: b64 }
+  const payload = { frames: hist.frames, grids: hist.grids };
+  await env.RADAR_HIST.put(KV_KEY, JSON.stringify(payload));
+}
+function frameTime(file) {
+  const m = file.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+}
+async function fetchPngGrid(file) {
   const im = await fetch(`${EPAGRI_BASE}getImagem?prod=${PROD}&radar=${RADAR}&file=${file}`, {
     cf: { cacheTtl: TTL }, headers: { 'User-Agent': 'brusque-discover/1.0' },
   });
@@ -293,16 +350,89 @@ async function processarFrame(file) {
   const buf = new Uint8Array(await im.arrayBuffer());
   const png = await decodePng(buf);
   const { w, h, nv } = classificarNiveis(png);
-  const m = file.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-  const time = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])).toISOString() : null;
-  const niveis = [];
-  for (const cfg of NIVEIS) {
-    const loops = contornosNivel(w, h, nv, cfg.nivel);
-    if (!loops.length) continue;
-    const geometry = loopsParaMultiPolygon(loops, w, h, EXT);
-    if (!geometry.coordinates.length) continue;
-    niveis.push({ nivel: cfg.nivel, cor: cfg.cor, opacidade: cfg.opacidade, rotulo: cfg.rotulo, geometry });
+  return { w, h, nv };
+}
+
+// busca os frames reais da EPAGRI e acumula os novos no KV
+async function syncHistoria(env) {
+  const hist = await histLoad(env);
+  let files;
+  try {
+    const r = await fetch(`${EPAGRI_BASE}getUltimasImagens?prod=${PROD}&radar=${RADAR}`, {
+      cf: { cacheTtl: TTL }, headers: { 'User-Agent': 'brusque-discover/1.0' },
+    });
+    files = await r.json();
+  } catch (e) { files = []; }
+  if (!Array.isArray(files)) files = [];
+  // ordena por tempo e processa os que ainda não temos
+  files.sort((a, b) => (frameTime(a) || 0) - (frameTime(b) || 0));
+  let changed = false;
+  for (const file of files) {
+    if (hist.grids[file]) continue;
+    try {
+      const { w, h, nv } = await fetchPngGrid(file);
+      hist.grids[file] = { b64: await compactGrid(nv), w, h };
+      if (!hist.frames.includes(file)) hist.frames.push(file);
+      changed = true;
+    } catch (e) {}
   }
+  if (changed) {
+    hist.frames.sort((a, b) => (frameTime(a) || 0) - (frameTime(b) || 0));
+    while (hist.frames.length > KV_MAX_FRAMES) {
+      const old = hist.frames.shift();
+      delete hist.grids[old];
+    }
+    await histSave(env, hist);
+  }
+  return hist;
+}
+
+// monta a lista de passos (reais + interpolados) a partir do histórico
+function montarPassos(hist) {
+  const frames = hist.frames.filter(f => hist.grids[f]);
+  if (!frames.length) return [];
+  const passos = [];
+  for (let i = 0; i < frames.length; i++) {
+    passos.push({ id: 'r:' + frames[i], time: frameTime(frames[i]) });
+    if (i < frames.length - 1) {
+      for (let k = 1; k <= INTERP_PER_GAP; k++) {
+        const t = k / (INTERP_PER_GAP + 1);
+        passos.push({ id: 'i:' + frames[i] + ':' + frames[i + 1] + ':' + t.toFixed(3), time: null });
+      }
+    }
+  }
+  return passos;
+}
+
+// carrega/gera o grid de um passo (real ou interpolado)
+async function gridDoPasso(env, id) {
+  const hist = await histLoad(env);
+  if (id.startsWith('r:')) {
+    const file = id.slice(2);
+    if (!hist.grids[file]) {
+      const { nv } = await fetchPngGrid(file);
+      return { w: 920, h: 719, nv };
+    }
+    const g = hist.grids[file];
+    return { w: g.w, h: g.h, nv: await expandGrid(g.b64) };
+  }
+  const m = id.match(/^i:(.+):(.+):([\d.]+)$/);
+  if (!m) throw new Error('id inválido: ' + id);
+  const [, fa, fb, ts] = m;
+  const t = parseFloat(ts);
+  let ga = hist.grids[fa], gb = hist.grids[fb];
+  if (!ga) { const r = await fetchPngGrid(fa); ga = { w: r.w, h: r.h, nv: r.nv }; }
+  if (!gb) { const r = await fetchPngGrid(fb); gb = { w: r.w, h: r.h, nv: r.nv }; }
+  const a = ga.nv || await expandGrid(ga.b64);
+  const b = gb.nv || await expandGrid(gb.b64);
+  return { w: 920, h: 719, nv: interpolarGrids(a, b, t) };
+}
+
+async function passoJson(env, id) {
+  const { w, h, nv } = await gridDoPasso(env, id);
+  const niveis = gridParaNiveis(w, h, nv, EXT);
+  let time = null;
+  if (id.startsWith('r:')) time = frameTime(id.slice(2));
   return { time, ext: EXT, niveis };
 }
 
@@ -311,7 +441,8 @@ const json = (obj, extra) => new Response(JSON.stringify(obj), {
   headers: { ...CORS, ...extra, 'Content-Type': 'application/json; charset=utf-8' },
 });
 
-export { decodePng, classificarNiveis, contornosNivel, loopsParaMultiPolygon, NIVEIS, EXT };
+export { decodePng, classificarNiveis, contornosNivel, loopsParaMultiPolygon,
+         NIVEIS, EXT, interpolarGrids, gridParaNiveis, montarPassos };
 
 export default {
   async fetch(request, env, ctx) {
@@ -320,24 +451,29 @@ export default {
 
     try {
       if (/\/frames\.json$/.test(url.pathname)) {
-        const frames = await listaFrames();
-        return json({ updated: new Date().toISOString(), fonte: 'EPAGRI/CIRAM · mosaico SC (COMP)', ext: EXT,
-                      frames: frames.map(f => ({ time: f, file: f })) });
+        const hist = await syncHistoria(env);
+        const passos = montarPassos(hist);
+        return json({ updated: new Date().toISOString(), fonte: 'EPAGRI/CIRAM · mosaico SC (COMP)',
+                      ext: EXT, passos });
+      }
+      if (/\/cache\/clear$/.test(url.pathname) && env.RADAR_HIST) {
+        await env.RADAR_HIST.delete(KV_KEY);
+        return json({ ok: true });
       }
       const m = url.pathname.match(/^\/frame\/([^/]+)\.json$/);
       if (m) {
-        const file = decodeURIComponent(m[1]);
+        const id = decodeURIComponent(m[1]);
         const cache = caches.default;
         const ck = new Request(url.origin + url.pathname);
         const hit = await cache.match(ck);
         if (hit) return hit;
-        const data = await processarFrame(file);
+        const data = await passoJson(env, id);
         const resp = json({ ...data, fonte: 'EPAGRI/CIRAM · mosaico SC (COMP)' },
           { 'Cache-Control': `public, max-age=${TTL}` });
         ctx.waitUntil(cache.put(ck, resp.clone()));
         return resp;
       }
-      return json({ erro: 'Use GET /frames.json ou /frame/{arquivo}.json' }, { status: 404 });
+      return json({ erro: 'Use GET /frames.json ou /frame/{id}.json' }, { status: 404 });
     } catch (e) {
       return json({ erro: String(e) }, { status: 502 });
     }

@@ -704,7 +704,7 @@
 <div id="wlegend" data-chip="radar">
   <div class="wl-head"><span id="wl-head-txt"></span><span id="wl-head-time" style="font-family:ui-monospace,Space Mono,monospace"></span></div>
   <div class="wl-bar" id="wl-bar"></div>
-  <div class="wl-labels"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Muito forte</span><span>Extrema</span></div>
+  <div class="wl-labels"><span>muito fraca</span><span>fraca</span><span>moderada</span><span>forte</span><span>muito forte</span><span>extrema</span></div>
 </div>
 
 <!-- Tempo Real · CELESC — legenda de UC sem energia (canto inferior ESQUERDO) -->
@@ -1047,11 +1047,14 @@ map.on('load', async () => {
   // Fallback SILENCIOSO: RainViewer (se o worker/EPAGRI cair).
   const RADAR_URL = 'https://brusque-radar.marcososx.workers.dev';
   const RADAR_NIVEIS = [
-    { nivel:1, cor:'#DCEBF7', opacidade:0.14, rotulo:'Fraca' },
-    { nivel:2, cor:'#C9E0F2', opacidade:0.16, rotulo:'Moderada' },
-    { nivel:3, cor:'#AED3EE', opacidade:0.18, rotulo:'Forte' },
-    { nivel:4, cor:'#93C4E8', opacidade:0.20, rotulo:'Muito forte' },
-    { nivel:5, cor:'#7FB8E8', opacidade:0.22, rotulo:'Extrema' },
+    { nivel:1, cor:'#C4E6FA', opacidade:0.15, rotulo:'Muito fraca' },
+    { nivel:2, cor:'#9FD0F4', opacidade:0.17, rotulo:'Fraca' },
+    { nivel:3, cor:'#76B7EE', opacidade:0.19, rotulo:'Moderada' },
+    { nivel:4, cor:'#4E9CE8', opacidade:0.21, rotulo:'Moderada forte' },
+    { nivel:5, cor:'#8FCB8F', opacidade:0.23, rotulo:'Forte' },
+    { nivel:6, cor:'#6EB377', opacidade:0.25, rotulo:'Forte alta' },
+    { nivel:7, cor:'#E3C56C', opacidade:0.27, rotulo:'Muito forte' },
+    { nivel:8, cor:'#E98570', opacidade:0.30, rotulo:'Extrema' },
   ];
   let _radarOn = false;
   let _radarSourceName = 'radar';          // 'radar' | 'rainviewer'
@@ -1089,15 +1092,15 @@ map.on('load', async () => {
     if (data.time) setRadarTime(new Date(data.time));
   }
 
-  // busca frames.json e carrega os dados de todos (pré-busca p/ a animação)
+  // busca frames.json (passos reais + interpolados) e carrega todos os dados
   async function loadRadarFrames(){
     const meta = await (await fetch(RADAR_URL+'/frames.json', { cache:'no-store' })).json();
-    const frames = meta.frames || [];
-    _radarFrames = frames.map(f => ({ time:f.time, file:f.file, data:null }));
+    const passos = meta.passos || [];
+    _radarFrames = passos.map(p => ({ id:p.id, time:p.time, data:null }));
     // carrega em paralelo, tolerando falha individual
     await Promise.all(_radarFrames.map(async fr => {
       try {
-        const r = await fetch(RADAR_URL+'/frame/'+encodeURIComponent(fr.file)+'.json', { cache:'no-store' });
+        const r = await fetch(RADAR_URL+'/frame/'+encodeURIComponent(fr.id)+'.json', { cache:'no-store' });
         if (r.ok) fr.data = await r.json();
       } catch(e){}
     }));
@@ -1208,7 +1211,7 @@ map.on('load', async () => {
     const hd = document.getElementById('wl-head-txt');
     if (hd) hd.textContent = isVec ? 'Radar EPAGRI/CIRAM · mosaico SC' : 'Radar RainViewer · composite global';
     const nt = document.getElementById('radar-note');
-    if (nt) nt.textContent = isVec ? 'mosaico do estado (EPAGRI/CIRAM) · frames de 5 min · raio ~750 km a oeste' : 'fallback: RainViewer (global) · atualiza a cada 5 min';
+    if (nt) nt.textContent = isVec ? 'mosaico do estado (EPAGRI/CIRAM) · histórico + frames interpolados · ~750 km a oeste' : 'fallback: RainViewer (global) · atualiza a cada 5 min';
   }
 
   // Timers periódicos das camadas de tempo (parados quando o chip desliga)

@@ -79,12 +79,18 @@ eles é a **região monitorada** (`brusque_regiao.geojson`).
 - **Como o app usa (VETORIAL, desde 07/08/2026):**
   - **Worker novo `brusque-radar`** (`worker-radar/`, `https://brusque-radar.marcososx.workers.dev`) baixa o
     PNG, decodifica **sem canvas** (parser PNG puro + `DecompressionStream`), classifica cada pixel em
-    **5 níveis de intensidade** e gera contornos (`marching squares` binário + simplificação RDP) →
-    devolve **GeoJSON leve por nível** (`/frames.json` lista os ~7 frames; `/frame/{arquivo}.json` um frame).
-  - **Front** renderiza como **camadas `fill` por nível** com transparência (`radar-n1`..`radar-n5`), em vez
-    de PNG esticado. Níveis: Fraca `#4FC3F7` · Moderada `#2196F3` · Forte `#4CAF50` · Muito forte `#FFC107` ·
-    Extrema `#F44336` (opacidade 0.32→0.82). Legenda inferior em **segmentos** com as 5 cores.
-  - **Linha do tempo**: player no painel (play/pause + scrub) animando os ~7 frames (~5 min cada);
+    **8 níveis de intensidade** e gera contornos (`marching squares` binário + RDP + Chaikin) →
+    devolve **GeoJSON leve por nível**.
+  - **Histórico + interpolação (07/08):** os grids classificados de cada frame são guardados
+    **comprimidos no KV** (`RADAR_HIST`, ~14 KB/frame) → acumula horas de história mesmo a EPAGRI
+    só devolvendo ~7 frames. A timeline (`/frames.json`) devolve os frames reais **+ sub-frames
+    interpolados por média** (`/frame/{id}.json`, ids `r:<file>` e `i:<a>:<b>:<t>`) → navegação/
+    animação fluida. `INTERP_PER_GAP = 3` sub-frames por intervalo (~30 min de cobertura contínua).
+  - **Front** renderiza como **camadas `fill` por nível** com transparência (`radar-n1`..`radar-n8`).
+    Níveis (8, azuis mais fortes): Muito fraca `#C4E6FA` · Fraca `#9FD0F4` · Moderada `#76B7EE` ·
+    Moderada forte `#4E9CE8` · Forte `#8FCB8F` · Forte alta `#6EB377` · Muito forte `#E3C56C` ·
+    Extrema `#E98570` (opacidade 0.15→0.30). Legenda inferior em **segmentos** com as cores.
+  - **Linha do tempo**: player no painel (play/pause + scrub) animando os passos (reais + interpolados);
     abre no frame mais recente.
   - Fallback: se o worker/EPAGRI cair, **RainViewer** (raster, composite global) assume e avisa na legenda.
 - **Riscos:** mosaico junta vários radares (padrão C-MAX); refletividade ≠ mm/h exatos; serviço

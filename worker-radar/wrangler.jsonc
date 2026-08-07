@@ -3,5 +3,8 @@
   "name": "brusque-radar",
   "main": "src/index.js",
   "compatibility_date": "2025-07-01",
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "kv_namespaces": [
+    { "binding": "RADAR_HIST", "id": "a1e448f1ba804544a4cba2375ecdcfde" }
+  ]
 }
