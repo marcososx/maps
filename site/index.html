@@ -86,6 +86,9 @@
   .box-min :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head){ cursor:pointer; }
   #map{ position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease .3s; }
   #map.ready{ opacity:1; }
+  /* overlay de animação do clima — acima do mapa, sem capturar cliques */
+  #wxfx{ position:absolute; inset:0; z-index:2; width:100%; height:100%;
+        pointer-events:none; opacity:0; transition:opacity .6s ease; }
   /* HUD */
   .hud{ position:absolute; z-index:2; background:rgba(21,25,33,.85);
         border:1px solid var(--border); border-radius:10px; backdrop-filter:blur(6px); }
@@ -202,6 +205,38 @@
   #hint-voos .hv-seta::after{ content:''; position:absolute; right:0; top:-3px;
         width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent;
         border-left:7px solid #ffd54f; filter:drop-shadow(0 0 3px rgba(255,213,79,.8)); }
+  /* ── card de voo / infra: talento (grade de telemetria em colunas alinhadas) ── */
+  #hint-voos .hv-logo .hv-plane{ color:#FFD54F; display:flex; align-items:center; flex:0 0 auto;
+        filter:drop-shadow(0 0 5px rgba(255,213,79,.5)); }
+  /* nome da companhia, logo abaixo da rota */
+  #hint-voos .hv-cia{ font-size:10px; color:#8a97a8; text-align:center; letter-spacing:.2px;
+        margin:-1px 0 1px; }
+  /* aeronave (modelo · tipo ICAO) */
+  #hint-voos .hv-craft{ font-size:10.5px; color:#cfe3f2; margin-top:7px; line-height:1.35; }
+  #hint-voos .hv-craft b{ color:#eaf6ff; font-weight:700; }
+  /* grade 2 colunas: cada célula = rótulo em cima, valor mono embaixo (colunas alinhadas) */
+  #hint-voos .hv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:7px 12px; margin-top:8px; }
+  #hint-voos .hv-stat{ min-width:0; }
+  #hint-voos .hv-stat.wide{ grid-column:1 / -1; }
+  #hint-voos .hv-k{ display:block; color:#8a97a8; font-size:9px; text-transform:uppercase;
+        letter-spacing:.5px; }
+  #hint-voos .hv-v{ display:block; color:#eaf6ff; font:700 12.5px ui-monospace,Space Mono,monospace;
+        margin-top:2px; line-height:1.15; }
+  #hint-voos .hv-v.info{ color:#00B0FF; }
+  #hint-voos .hv-v small{ display:block; font-size:9.5px; font-weight:600; color:#8a97a8;
+        margin-top:1px; letter-spacing:.2px; }
+  /* rodapé do card (distância · última posição) */
+  #hint-voos .hv-foot{ margin-top:8px; padding-top:6px; border-top:1px solid rgba(255,255,255,.08);
+        display:flex; justify-content:space-between; gap:8px; font-size:9px; color:#8a97a8; }
+  #hint-voos .hv-foot b{ color:#FFD54F; font-weight:700; }
+  /* cabeçalho do card de infra: ícone + nome (título) alinhado à esquerda */
+  #hint-voos .hv-logo-infra{ align-items:center; }
+  #hint-voos .hv-logo-infra svg{ flex:0 0 auto; }
+  #hint-voos .hv-title{ display:flex; flex-direction:column; min-width:0; margin-left:2px; }
+  #hint-voos .hv-title b{ color:#eaf6ff; font-weight:800; font-size:12.5px; line-height:1.15;
+        overflow:hidden; text-overflow:ellipsis; }
+  #hint-voos .hv-title small{ color:#8a97a8; font-size:9px; text-transform:uppercase;
+        letter-spacing:.4px; margin-top:2px; }
   #hint-ponte .hp-row, #hint-abrigo .hp-row, #hint-voos .hp-row, #hint-celesc .hp-row{ margin-top:6px; }
   #hint-ponte .hp-row:first-child, #hint-abrigo .hp-row:first-child, #hint-voos .hp-row:first-child, #hint-celesc .hp-row:first-child{ margin-top:0; }
   #hint-ponte .hp-lbl, #hint-abrigo .hp-lbl, #hint-voos .hp-lbl, #hint-celesc .hp-lbl{ display:block; color:#8a97a8; font-size:10px; letter-spacing:.3px; }
@@ -282,6 +317,26 @@
         display:inline-flex; align-items:center; justify-content:center; flex:none;
         font-size:10px; line-height:1; color:#04121c;
         transition:background .2s ease, border-color .2s ease; }
+  /* spinner de carregamento DENTRO do checkbox (Uiverse mrhyddenn, compacto) */
+  .cbx .spinner{ font-size:11px; position:relative; display:inline-block; width:1em; height:1em;
+        filter:drop-shadow(0 0 2px rgba(255,255,255,.25)); }
+  .cbx .spinner .spinner-blade{ position:absolute; left:.4629em; bottom:0; width:.074em; height:.2777em;
+        border-radius:.0555em; background-color:transparent;
+        -webkit-transform-origin:center -.2222em; transform-origin:center -.2222em;
+        animation:spinner-fade9234 1s infinite linear; }
+  .cbx .spinner .spinner-blade:nth-child(1){ animation-delay:0s; transform:rotate(0deg); }
+  .cbx .spinner .spinner-blade:nth-child(2){ animation-delay:.083s; transform:rotate(30deg); }
+  .cbx .spinner .spinner-blade:nth-child(3){ animation-delay:.166s; transform:rotate(60deg); }
+  .cbx .spinner .spinner-blade:nth-child(4){ animation-delay:.249s; transform:rotate(90deg); }
+  .cbx .spinner .spinner-blade:nth-child(5){ animation-delay:.332s; transform:rotate(120deg); }
+  .cbx .spinner .spinner-blade:nth-child(6){ animation-delay:.415s; transform:rotate(150deg); }
+  .cbx .spinner .spinner-blade:nth-child(7){ animation-delay:.498s; transform:rotate(180deg); }
+  .cbx .spinner .spinner-blade:nth-child(8){ animation-delay:.581s; transform:rotate(210deg); }
+  .cbx .spinner .spinner-blade:nth-child(9){ animation-delay:.664s; transform:rotate(240deg); }
+  .cbx .spinner .spinner-blade:nth-child(10){ animation-delay:.747s; transform:rotate(270deg); }
+  .cbx .spinner .spinner-blade:nth-child(11){ animation-delay:.83s; transform:rotate(300deg); }
+  .cbx .spinner .spinner-blade:nth-child(12){ animation-delay:.913s; transform:rotate(330deg); }
+  @keyframes spinner-fade9234{ 0%{ background-color:#dbe4ee; } 100%{ background-color:transparent; } }
   .chip .caret{ width:12px; height:12px; opacity:.7; margin-left:-1px; transition:transform .2s ease, opacity .2s ease; }
   /* dropdown */
   .chip-menu{ position:fixed; z-index:6; min-width:150px; padding:6px; display:none;
@@ -294,6 +349,8 @@
         cursor:pointer; font:600 11px var(--font-ui); color:var(--muted); transition:background .15s ease, color .15s ease; }
   .chip-menu .item:hover{ background:rgba(255,255,255,.06); color:var(--txt); }
   .chip-menu .item.on{ color:var(--hi); }
+  .chip-menu .item .it-hint{ margin-left:auto; font:400 9px var(--font-ui); color:#5a6678;
+        letter-spacing:.3px; white-space:nowrap; padding-left:14px; }
   .chip-menu .combo-item{ justify-content:space-between; gap:10px; cursor:default; }
   .chip-menu select.combo{ background:var(--bg); color:var(--txt); border:1px solid rgba(255,255,255,.12);
         border-radius:8px; font:600 11px var(--font-ui); padding:3px 6px; cursor:pointer; }
@@ -518,13 +575,44 @@
   #radarctl .rc-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#2fbf71; }
   #radarctl .rc-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:4px; gap:6px; }
   #radarctl .rc-note{ font-size:9px; color:#8a97a8; line-height:1.35; }
-  #radarctl .rc-tl{ display:flex; align-items:center; gap:8px; margin-top:10px; }
-  #radarctl .rc-tl input[type=range]{ flex:1; accent-color:#2fbf71; height:4px; cursor:pointer; }
-  #radarctl .rc-frame{ font:600 10px ui-monospace,Space Mono,monospace; color:#8a97a8; white-space:nowrap; }
-  #radarctl .rc-play{ width:26px; height:26px; padding:0; flex:none; font-size:11px; line-height:1; }
-  /* legenda de cores do radar — barra inferior, mesma largura dos chips */
-  #wlegend{ position:absolute; z-index:4; bottom:14px; left:50%; transform:translateX(-50%);
-        width:min(560px, calc(100% - 28px)); padding:10px 16px 12px;
+  /* timeline do radar — barra INFERIOR, mesmo design do slider de níveis (espaçoso) */
+  #radarbar{ position:absolute; z-index:4; bottom:14px; left:50%;
+        transform:translateX(-50%) translateY(-6px);
+        display:flex; flex-direction:row; align-items:center; gap:14px; padding:12px 18px 14px;
+        width:min(620px, calc(100% - 28px)); box-sizing:border-box;
+        background:rgba(21,25,33,.92); border:1px solid var(--border); border-radius:12px;
+        backdrop-filter:blur(8px); box-shadow:0 10px 26px rgba(0,0,0,.45);
+        opacity:0; visibility:hidden; pointer-events:none;
+        transition:opacity .36s ease, transform .36s ease, visibility .36s; }
+  #radarbar.show{ opacity:1; visibility:visible; transform:translateX(-50%); pointer-events:auto; }
+  #radarbar .rb-play{ flex:0 0 auto; width:34px; height:34px; padding:0; border-radius:50%;
+        font-size:13px; line-height:1; }
+  #radarbar .rb-mid{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  #radarbar .rb-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  #radarbar .rb-lbl{ font-size:9px; color:#8a97a8; text-transform:uppercase; letter-spacing:.5px; }
+  #radarbar #radar-fr{ font:700 13px Inter,system-ui; color:#fff;
+        font-variant-numeric:tabular-nums; white-space:nowrap; }
+  #radarbar #radar-tl{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
+        -webkit-appearance:none; background:transparent; margin:0; }
+  #radarbar #radar-tl::-webkit-slider-runnable-track{ height:8px; border-radius:4px;
+        background:linear-gradient(90deg,
+          #C4E6FA 0%, #9FD0F4 14%, #76B7EE 29%, #4E9CE8 43%,
+          #8FCB8F 57%, #6EB377 71%, #E3C56C 86%, #E98570 100%);
+        box-shadow:inset 0 1px 2px rgba(0,0,0,.4); }
+  #radarbar #radar-tl::-moz-range-track{ height:8px; border-radius:4px;
+        background:linear-gradient(90deg,
+          #C4E6FA 0%, #9FD0F4 14%, #76B7EE 29%, #4E9CE8 43%,
+          #8FCB8F 57%, #6EB377 71%, #E3C56C 86%, #E98570 100%); }
+  #radarbar #radar-tl::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px;
+        border-radius:50%; background:#fff; border:3px solid #4E9CE8;
+        margin-top:-5px; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+  #radarbar #radar-tl::-moz-range-thumb{ width:18px; height:18px; border-radius:50%;
+        background:#fff; border:3px solid #4E9CE8;
+        box-shadow:0 2px 6px rgba(0,0,0,.5); }
+  #radarbar #radar-tl:focus{ outline:none; }
+  /* legenda de cores do radar — CANTO SUPERIOR ESQUERDO, compacta */
+  #wlegend{ position:absolute; z-index:4; top:64px; left:14px; width:auto; min-width:230px;
+        padding:10px 14px 12px;
         background:rgba(21,25,33,.92); border:1px solid var(--border); border-radius:12px;
         backdrop-filter:blur(8px); box-shadow:0 10px 26px rgba(0,0,0,.45);
         opacity:0; visibility:hidden; pointer-events:none;
@@ -558,11 +646,12 @@
     .chip{ height:32px; padding:0 10px; font-size:10.5px; flex:0 0 auto; }
     #wxstack{ left:10px; top:56px; width:calc(100vw - 20px); }
     #radarctl, #nuvctl{ left:10px; right:10px; top:56px; width:auto; margin-left:0; }
+    #radarbar{ width:calc(100vw - 20px); }
     #voosleg{ right:10px; bottom:10px; }
     #voospanel{ width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
     #celregpanel{ right:10px; top:56px; width:calc(100vw - 20px); max-width:calc(100vw - 20px); }
     #celelegend{ left:10px; bottom:10px; width:calc(100vw - 20px); }
-    #wlegend{ width:calc(100vw - 20px); }
+    #wlegend{ left:10px; top:96px; width:calc(100vw - 20px); }
     #nivelbar{ width:calc(100vw - 20px); }
     #hint, #hint-ponte, #hint-abrigo, #hint-voos, #hint-celesc{ max-width:calc(100vw - 24px); }
   }
@@ -573,6 +662,9 @@
 </head>
 <body>
 <div id="map"></div>
+
+<!-- Overlay de animação do clima (sol/nuvens/chuva/raios) — restrito a Brusque -->
+<canvas id="wxfx"></canvas>
 
 <!-- Selo "Brusque + clima" — aparece só quando NENHUMA camada está ligada -->
 <div id="title" style="display:none">
@@ -689,18 +781,25 @@
 <!-- Tempo Real · radar de precipitação (EPAGRI/CIRAM mosaico SC · vetorial) -->
 <div id="radarctl" data-chip="radar">
   <div class="rc-head"><b>Radar de chuva</b><span class="rc-time" id="radar-time">--:--</span></div>
-  <div class="rc-tl">
-    <button class="wbtn rc-play" id="radar-play" title="Animar frames">▶</button>
-    <input type="range" id="radar-tl" min="0" max="0" value="0" step="1" disabled>
-    <span class="rc-frame" id="radar-fr">1/1</span>
-  </div>
   <div class="rc-foot">
     <span class="rc-note" id="radar-note">radar do estado (EPAGRI/CIRAM) · mosaico SC · atualiza a cada 5 min</span>
     <button class="wbtn" id="radar-refresh">Atualizar</button>
   </div>
 </div>
 
-<!-- Legenda de cores do radar — barra inferior (mesma largura dos chips) -->
+<!-- Timeline do radar — barra INFERIOR espaçosa (design do slider de níveis) -->
+<div id="radarbar" data-chip="radar">
+  <button class="wbtn rb-play" id="radar-play" title="Animar frames">▶</button>
+  <div class="rb-mid">
+    <div class="rb-top">
+      <span class="rb-lbl">Linha do tempo</span>
+      <span class="rb-lbl" id="radar-fr">1/1</span>
+    </div>
+    <input type="range" id="radar-tl" min="0" max="0" value="0" step="1" disabled>
+  </div>
+</div>
+
+<!-- Legenda de cores do radar — canto superior esquerdo -->
 <div id="wlegend" data-chip="radar">
   <div class="wl-head"><span id="wl-head-txt"></span><span id="wl-head-time" style="font-family:ui-monospace,Space Mono,monospace"></span></div>
   <div class="wl-bar" id="wl-bar"></div>
@@ -1074,21 +1173,49 @@ map.on('load', async () => {
     const e1=document.getElementById('radar-time'); if (e1) e1.textContent = s;
     const e2=document.getElementById('wl-head-time'); if (e2) e2.textContent = s; };
 
-  // cria source + 1 camada fill por nível (nível 5 por cima) — idempotente
+  // cria source + 1 camada fill por nível (nível 5 por cima) — idempotente.
+  // Duas fontes (radar-vec = atual, radar-vec-old = anterior) p/ crossfade suave.
   function ensureRadarVecLayers(){
     if (map.getSource('radar-vec')) return;
     map.addSource('radar-vec', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+    map.addSource('radar-vec-old', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
     for (const cfg of RADAR_NIVEIS) {
-      map.addLayer({ id:'radar-n'+cfg.nivel, type:'fill', source:'radar-vec',
+      map.addLayer({ id:'radar-o'+cfg.nivel, type:'fill', source:'radar-vec-old',
         filter:['==',['get','nivel'],cfg.nivel],
         paint:{ 'fill-color':cfg.cor, 'fill-opacity':cfg.opacidade } }, 'municipio-linha');
+      map.addLayer({ id:'radar-n'+cfg.nivel, type:'fill', source:'radar-vec',
+        filter:['==',['get','nivel'],cfg.nivel],
+        paint:{ 'fill-color':cfg.cor, 'fill-opacity':0 } }, 'municipio-linha');
     }
+  }
+  // crossfade entre o frame anterior (radar-o*) e o novo (radar-n*): o antigo
+  // some suavemente enquanto o novo entra (easeOutCubic, ~500ms).
+  let _radarLastFeats = [];
+  let _radarFadeRAF = 0;
+  const RADAR_FADE_MS = 500;
+  function _radarCrossfade(){
+    const t0 = performance.now();
+    cancelAnimationFrame(_radarFadeRAF);
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / RADAR_FADE_MS);
+      const e = 1 - Math.pow(1 - k, 3);          // easeOutCubic
+      for (const cfg of RADAR_NIVEIS) {
+        if (map.getLayer('radar-o'+cfg.nivel)) map.setPaintProperty('radar-o'+cfg.nivel, 'fill-opacity', cfg.opacidade * (1 - e));
+        if (map.getLayer('radar-n'+cfg.nivel)) map.setPaintProperty('radar-n'+cfg.nivel, 'fill-opacity', cfg.opacidade * e);
+      }
+      if (k < 1) _radarFadeRAF = requestAnimationFrame(tick);
+    };
+    _radarFadeRAF = requestAnimationFrame(tick);
   }
   function setRadarVec(data){
     if (!map.getSource('radar-vec')) return;
     const feats = (data.niveis || []).map(n => ({ type:'Feature',
       properties:{ nivel:n.nivel }, geometry:n.geometry }));
+    // frame anterior vira a camada "old" (fade-out); o novo entra na "atual"
+    map.getSource('radar-vec-old').setData({ type:'FeatureCollection', features:_radarLastFeats });
     map.getSource('radar-vec').setData({ type:'FeatureCollection', features:feats });
+    _radarLastFeats = feats;
+    _radarCrossfade();
     if (data.time) setRadarTime(new Date(data.time));
   }
 
@@ -2300,42 +2427,65 @@ map.on('load', async () => {
       // hover no avião → hint no padrão das pontes (#hint-voos)
       map.on('mouseenter','voos-pt',()=>map.getCanvas().style.cursor='pointer');
       let _hvKey = null, _hvAt = 0;   // cache p/ não reconstruir a <img> do logo a cada mousemove
+      const _planeGlyph = '<span class="hv-plane"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg></span>';
       const hvHTML = (p) => {
-        const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
-          +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
+        const cs = p.callsign || p.icao24 || '—';
         let h='';
-        // logo da companhia + callsign (se a fonte tiver o logo)
+        // cabeçalho: logo da companhia (com avião genérico de fallback) + callsign
         if (p.cia_icao) {
           h+='<div class="hv-logo"><img src="https://static.airplanes.live/airline_banners/'
-            +encodeURIComponent(p.cia_icao)+'.png" onerror="this.style.display=\'none\'" alt="">'
-            +'<span class="hv-callsign">'+(p.callsign||'')+'</span></div>';
+            +encodeURIComponent(p.cia_icao)+'.png" alt="" '
+            +'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+            +_planeGlyph.replace('class="hv-plane"','class="hv-plane" style="display:none"')
+            +'<span class="hv-callsign">'+cs+'</span></div>';
         } else {
-          h+=row('Voo', (p.callsign||p.icao24||'—'));
+          h+='<div class="hv-logo">'+_planeGlyph+'<span class="hv-callsign">'+cs+'</span></div>';
         }
-        // rota: origem ───► destino (só se tiver os dois)
+        // rota: origem ───► destino (só se tiver os dois) + nome da companhia
         if (p.orig_iata && p.dest_iata) {
           h+='<div class="hv-rota"><span class="hv-aero">'+p.orig_iata
             +'<small>'+(p.orig_muni||'')+'</small></span>'
             +'<span class="hv-seta"></span>'
             +'<span class="hv-aero">'+p.dest_iata
             +'<small>'+(p.dest_muni||'')+'</small></span></div>';
-        } else {
-          h+=row('Rota', (p.callsign||'—'), 'sub');
         }
-        if(p.tipo||p.desc) h+=row('Aeronave', ((p.tipo||'')+(p.desc?' · '+p.desc:'')).trim(), 'sub');
+        if (p.cia_nome) h+='<div class="hv-cia">'+p.cia_nome+'</div>';
+        // aeronave: modelo (desc) em destaque · tipo ICAO
+        if (p.desc || p.tipo) {
+          const craft = p.desc ? '<b>'+p.desc+'</b>'+(p.tipo?' · '+p.tipo:'') : '<b>'+p.tipo+'</b>';
+          h+='<div class="hv-craft">'+craft+'</div>';
+        }
+        // grade de telemetria em 2 colunas alinhadas
+        const stats=[];
         if (p.alt_m != null) {
           const ft = Math.round(p.alt_m*3.28084).toLocaleString('pt-BR');
-          const m = Math.round(p.alt_m).toLocaleString('pt-BR');
-          h+=row('Altitude', ft+' ft — '+m+' m', 'info');
+          const m  = Math.round(p.alt_m).toLocaleString('pt-BR');
+          stats.push(['Altitude', m+' m<small>'+ft+' ft</small>', 'info']);
         }
         if (p.vel_kmh != null) {
-          const kts = Math.round(p.vel_kmh/1.852);
-          const kmh = Math.round(p.vel_kmh);
-          h+=row('Velocidade', kts+' kt — '+kmh+' km/h');
+          const kmh = Math.round(p.vel_kmh).toLocaleString('pt-BR');
+          const kt  = Math.round(p.vel_kmh/1.852);
+          stats.push(['Velocidade', kmh+' km/h<small>'+kt+' kt</small>']);
         }
-        if(p.rumo!=null) h+=row('Rumo', p.rumo+'°');
-        if(p.subida!=null) h+=row('Subida', (p.subida>0?'▲ +':'▼ ')+Math.abs(p.subida)+' m/s', 'info');
-        if(p.ultima) h+=row('Posição', p.ultima, 'sub');
+        if (p.rumo != null) stats.push(['Rumo', Math.round(p.rumo)+'°']);
+        if (p.subida != null) {
+          const s = p.subida;
+          const v = s>0 ? '▲ +'+s : s<0 ? '▼ '+Math.abs(s) : '— 0';
+          stats.push(['Subida', (''+v).replace('.',',')+' m/s', 'info']);
+        }
+        if (stats.length) {
+          h+='<div class="hv-grid">';
+          for (const [k,v,cls] of stats)
+            h+='<div class="hv-stat"><span class="hv-k">'+k+'</span>'
+              +'<span class="hv-v'+(cls?' '+cls:'')+'">'+v+'</span></div>';
+          h+='</div>';
+        }
+        // rodapé: distância de Brusque · última posição
+        const foot=[];
+        if (p.dist_km != null) foot.push('<b>'+Math.round(p.dist_km)+' km</b> de Brusque');
+        if (p.ultima) foot.push(p.ultima);
+        if (foot.length) h+='<div class="hv-foot"><span>'+foot[0]+'</span>'
+          +(foot[1]?'<span>'+foot[1]+'</span>':'')+'</div>';
         return h;
       };
       map.on('mousemove','voos-pt',(e)=>{
@@ -2503,7 +2653,7 @@ map.on('load', async () => {
       await refreshRadarFrames();      // prefetch RV (só usado no fallback)
       paintRadarUI();
       await buildRadarOverlay();
-      return ['radar-n1','radar-n2','radar-n3','radar-n4','radar-n5','radar','regiao-linha'];
+      return ['radar-n1','radar-n2','radar-n3','radar-n4','radar-n5','radar-n6','radar-n7','radar-n8','radar-o1','radar-o2','radar-o3','radar-o4','radar-o5','radar-o6','radar-o7','radar-o8','radar','regiao-linha'];
     },
     // Indicadores (5+ métricas em tempo real) — Open-Meteo, mesmo endpoint do selo.
     // O clima já roda na abertura e a cada 5 min; aqui só pinta o painel.
@@ -2738,12 +2888,12 @@ map.on('load', async () => {
   // ── Setores de risco: 1 par de layers por CATEGORIA (filtrado), togglado no
   //    dropdown "Setores de risco". Usa o nome exato de cada categoria como rótulo.
   const SETORES_CATS = [
-    ['Deslizamento','#FF5252'],
-    ['Enxurrada (Alagamento)','#3949AB'],
-    ['Inundação Gradual (Enchente)','#29B6F6'],
-    ['Setor 2011','#9E9E9E'],
+    ['Deslizamento','#FF5252','CPRM 2019'],
+    ['Enxurrada (Alagamento)','#3949AB','CPRM 2019'],
+    ['Inundação Gradual (Enchente)','#29B6F6','CPRM 2019'],
+    ['Setor 2011','#9E9E9E','CPRM 2011'],
   ];
-  const SETORES = SETORES_CATS.map(([cat,cor]) => {
+  const SETORES = SETORES_CATS.map(([cat,cor,hintAno]) => {
     const slug = 'setores-' + cat.replace(/[^a-z0-9]+/gi,'_').toLowerCase();
     BUILDERS['sr_'+slug] = async () => {
       await ensureBuilt('setores');                 // adiciona a fonte 1x
@@ -2765,7 +2915,9 @@ map.on('load', async () => {
         if(_hovSetor!==null) map.setFeatureState({source:'setores',id:_hovSetor},{hover:false}); _hovSetor=null; hideAllHints(); });
       return [slug+'-fill', slug+'-linha'];
     };
-    return { id:'sr_'+slug, label:cat, on:false, color:cor, build:'sr_'+slug };
+    return { id:'sr_'+slug, label:cat, on:false, color:cor, build:'sr_'+slug,
+             hint:'Fonte: Defesa Civil de Brusque · '+hintAno,
+             onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } };
   });
 
   // ── Barra de chips (camadas p/ usuário comum) ───────────────────────────────
@@ -2804,8 +2956,10 @@ map.on('load', async () => {
     }
   };
   const applyVis = (L) => (L.layers || []).forEach(id => fadeLayer(id, !!L.on));
+  const spinnerHTML = () => '<span class="spinner">'
+    + Array.from({length:12},(_,i)=>'<span class="spinner-blade"></span>').join('') + '</span>';
   const paintCbx = (cbx, on, color) => {
-    cbx.textContent = on ? '✓' : '';
+    cbx.innerHTML = on ? '✓' : '';
     cbx.style.background  = on ? color : 'transparent';
     cbx.style.borderColor = on ? color : '#6b7686';
   };
@@ -2814,6 +2968,7 @@ map.on('load', async () => {
   // Satélite/Estradas/Trânsito — libera espaço p/ camadas futuras.
   const MAPA = [
     { id:'limites', label:'Limites', on:false, color:'#9aa7b8', build:'vizinhas', inWidget:true, darkBase:true,
+      hint:'Fonte: IBGE (malha municipal)',
       onToggle: (on) => {
         if (window._setVizWx) window._setVizWx(on);
         // (a camada de texto com o nome das cidades foi REMOVIDA — o badge de
@@ -2826,53 +2981,68 @@ map.on('load', async () => {
           window._vizinhas.features.forEach(f => all(f.geometry.coordinates));
           map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:2600 });
         } else if (!on) {
-          goHome();   // desmarcar Limites → SEMPRE volta à visão inicial de Brusque
+          voltaSeVazio();   // desmarcar → volta ao mapa base se nada marcado
         }
       } },
     { id:'bairros', label:'Bairros', on:false, color:'#faee0a', build:'bairros', inWidget:true, darkBase:true,
-      onToggle: (on) => { if (on) goHome(); } },   // marcar Bairros → SEMPRE ajusta ao mapa de Brusque
-    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', inWidget:true, layers:['satelite'] },
-    { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', inWidget:true, layers:['trafego'] },
+      hint:'Fonte: Prefeitura de Brusque',
+      onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } },   // marcar → ajusta Brusque; desmarcar → volta
+    { id:'satelite', label:'Satélite', on:false, color:'#7bd88f', inWidget:true, layers:['satelite'],
+      hint:'Fonte: Esri World Imagery' },
+    { id:'trafego', label:'Trânsito', on:false, color:'#ff8c42', inWidget:true, layers:['trafego'],
+      hint:'Fonte: OSM (Overpass)' },
   ];
   const TEMPOREAL = [   // dropdown "Tempo Real"
     // Clima: selo de temperatura de Brusque. Marcar mantém o zoom onde está;
     // desmarcar volta à visão inicial. darkBase: ao ligar, a base volta pra
     // 'mapa' escuro sem rótulos (dark_nolabels).
     { id:'clima', label:'Clima', on:true, color:'#5ec7ff', clima:true, darkBase:true,
-      onToggle: (on) => { if (!on) goHome(); } },
+      hint:'Fonte: Open-Meteo',
+      onToggle: (on) => { if (!on) voltaSeVazio(); } },
     // ── Nuvens/Radar (overlays). EXCLUSIVOS entre si (marcar um
     //    desmarca o outro) p/ não sobrepor imagens. ─────────────────────────────
     { id:'nuvens', label:'Nuvens (satélite)', on:false, color:'#7b8cff', exclusive:'wx', build:'nuvens',
+      hint:'Fonte: NASA GIBS (GOES-East)',
       onToggle: (on) => {
         if (on) {
-          showPanel('nuvctl');
+          showPanel('nuvctl'); selectBase('satelite'); fit500();   // 500 km + satélite
           _nuvTimer = setInterval(async () => {
             if (!map.getSource('nuvens')) return;
             const t = await gibsTime(true);
             map.getSource('nuvens').setTiles([gibsTile(GIBS_LAYER, t, '{z}', '{y}', '{x}')]);
             const e1=document.getElementById('nuv-time'); if (e1) e1.textContent = t.slice(11,16)+'Z';
           }, 15*60*1000);
-        } else { hidePanel('nuvctl'); clearInterval(_nuvTimer); _nuvTimer = null; }
+        } else { hidePanel('nuvctl'); clearInterval(_nuvTimer); _nuvTimer = null; selectBase('mapa'); voltaSeVazio(); }
       } },
     { id:'radar', label:'Precipitação (radar)', on:false, color:'#2fbf71', exclusive:'wx', build:'radar',
+      hint:'Fonte: EPAGRI/CIRAM · mosaico SC',
       onToggle: (on) => {
         _radarOn = on;
         if (on) {
-          showPanel('radarctl'); showPanel('wlegend');
+          showPanel('radarctl'); showPanel('radarbar'); showPanel('wlegend');
+          selectBase('satelite'); fit500();   // 500 km + satélite
           buildRadarOverlay();
           _radarRefreshTimer = setInterval(buildRadarOverlay, 5*60*1000);
         } else {
-          hidePanel('radarctl'); hidePanel('wlegend');
+          hidePanel('radarctl'); hidePanel('radarbar'); hidePanel('wlegend');
           clearInterval(_radarRefreshTimer); _radarRefreshTimer = null;
           radarStopPlay();
+          cancelAnimationFrame(_radarFadeRAF);
           if (map.getLayer('radar')) { map.removeLayer('radar'); map.removeSource('radar'); }
-          for (const cfg of RADAR_NIVEIS) if (map.getLayer('radar-n'+cfg.nivel)) map.removeLayer('radar-n'+cfg.nivel);
+          for (const cfg of RADAR_NIVEIS) {
+            if (map.getLayer('radar-n'+cfg.nivel)) map.removeLayer('radar-n'+cfg.nivel);
+            if (map.getLayer('radar-o'+cfg.nivel)) map.removeLayer('radar-o'+cfg.nivel);
+          }
           if (map.getSource('radar-vec')) map.removeSource('radar-vec');
+          if (map.getSource('radar-vec-old')) map.removeSource('radar-vec-old');
+          selectBase('mapa'); voltaSeVazio();
         }
       } },
     // Monitoramento = as estações/indicadores que antes eram o chip "Tempo real"
-    { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real' },
+    { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real',
+      hint:'Fonte: Defesa Civil de Brusque' },
     { id:'voos', label:'Voos (ADS-B)', on:false, color:'#FFD54F', build:'voos',
+      hint:'Fonte: Airplanes.live (ADS-B)',
       onToggle: async (on) => {
         clearInterval(_voosTimer); _voosTimer = null;
         if (on) {
@@ -2943,6 +3113,7 @@ map.on('load', async () => {
     // CELESC — UC sem energia nas 90 cidades do raio de 100 km (via worker).
     // Atualiza a cada 5 min enquanto ligado (mesma cadência do painel da CELESC).
     { id:'celesc', label:'CELESC', on:false, color:'#FFB300', build:'celesc', darkBase:true,
+      hint:'Fonte: CELESC',
       onToggle: (on) => {
         clearInterval(_celescTimer); _celescTimer = null;
         if (on) {
@@ -2973,43 +3144,60 @@ map.on('load', async () => {
           goHome();   // desmarcar CELESC → volta à visão inicial
         }
       } },
-    { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos' },
+    { id:'abrigos', label:'Abrigos', on:false, color:'#4FC3F7', build:'abrigos',
+      hint:'Fonte: Defesa Civil de Brusque',
+      onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } },
   ];
   const INDICADORES = [   // dropdown "Indicadores" — painéis à esquerda do mapa
     { id:'indicadores', label:'Indicadores de tempo', on:false, color:'#FFB300', build:'indicadores',
+      hint:'Fonte: Open-Meteo',
       onToggle: (on) => { if (on) showPanel('wxpanel'); else hidePanel('wxpanel'); } },
     { id:'enso', label:'Índice ENSO (Niño 3.4)', on:false, color:'#FF5252', build:'enso',
+      hint:'Fonte: NOAA (Niño 3.4)',
       onToggle: (on) => { if (on) showPanel('ensopanel'); else hidePanel('ensopanel'); } },
     { id:'chuvaacum', label:'Chuva acumulada', on:false, color:'#29B6F6', build:'chuvaacum',
+      hint:'Fonte: Open-Meteo (arquivo)',
       onToggle: (on) => { if (on) showPanel('chuvapanel'); else hidePanel('chuvapanel'); } },
     { id:'soloum', label:'Umidade do solo', on:false, color:'#00E676', build:'soloum',
+      hint:'Fonte: Open-Meteo',
       onToggle: (on) => { if (on) showPanel('solopanel'); else hidePanel('solopanel'); } },
   ];
   const RIO = [   // dropdown "Rio Itajaí Mirim"
-    { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', build:'rio' },
+    { id:'rio', label:'Rio Itajaí Mirim', on:false, color:'#00B0FF', build:'rio',
+      hint:'Fonte: OSM · OpenStreetMap (rede hidrográfica)',
+      onToggle: (on) => { if (on) fitRio(); else voltaSeVazio(); } },
     // Nível do rio — estações fluviométricas da DC-SC (Itajaí-Mirim: Brusque,
     // Guabiruba, Botuverá). Só mostra estação com cota em tempo real.
-    { id:'rios', label:'Nível do rio', on:false, color:'#00B0FF', build:'rios' },
+    { id:'rios', label:'Nível do rio', on:false, color:'#00B0FF', build:'rios',
+      hint:'Fonte: Defesa Civil SC · rede estadual',
+      onToggle: (on) => { if (on) fitRio(); else voltaSeVazio(); } },
     // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
     { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
+      hint:'Fonte: Defesa Civil de Brusque · Carta Enchente',
       onToggle: async (on) => {
         if (on) { await ensureBuilt('niveis'); selectNivel(document.getElementById('nivelrange').value || '10'); goHome(); }
-        else selectNivel('');
+        else { selectNivel(''); voltaSeVazio(); }
       } },
-    { id:'rotas', label:'Rotas seguras', on:false, color:'#0F9D58', build:'rotas' },
-    { id:'pontes', label:'Pontes', on:false, color:'#00B0FF', build:'pontes' },
-    { id:'cotas', label:'Cotas', on:false, color:'#00B0FF', build:'cotas' },
+    { id:'rotas', label:'Rotas seguras', on:false, color:'#0F9D58', build:'rotas',
+      hint:'Fonte: Defesa Civil de Brusque',
+      onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } },
+    { id:'pontes', label:'Pontes', on:false, color:'#00B0FF', build:'pontes',
+      hint:'Fonte: Prefeitura de Brusque',
+      onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } },
+    { id:'cotas', label:'Cotas', on:false, color:'#00B0FF', build:'cotas',
+      hint:'Fonte: Defesa Civil de Brusque · cheias 2011/2023',
+      onToggle: (on) => { if (on) goHome(); else voltaSeVazio(); } },
   ];
   // ── Selo "Brusque + clima": visível SÓ quando nenhuma camada está ligada ──────
   const wxBadge = document.getElementById('title');
   const wxIcon  = document.getElementById('wx-icon');
   const wxTemp  = document.getElementById('wx-temp');
   const wxInfo  = document.getElementById('wx-info');
-  // WMO weather_code → [ícone, rótulo curto pt-BR]
-  const wxOf = (c) => {
-    if (c === 0)  return ['☀️','Céu limpo'];
-    if (c <= 2)   return ['🌤️','Parcialmente nublado'];
+  // WMO weather_code → [ícone, rótulo curto pt-BR]. Ícones variam dia/noite.
+  const wxOf = (c, isDay = true) => {
+    if (c === 0)  return [isDay ? '☀️' : '🌙','Céu limpo'];
+    if (c <= 2)   return [isDay ? '🌤️' : '🌙','Parcialmente nublado'];
     if (c === 3)  return ['☁️','Nublado'];
     if (c <= 48)  return ['🌫️','Névoa'];
     if (c <= 57)  return ['🌦️','Garoa'];
@@ -3022,7 +3210,7 @@ map.on('load', async () => {
   let _wx = null;
   // Cache do clima (localStorage, TTL 5 min): na abertura mostra instantâneo se
   // já tiver dado fresco; senão busca async e SÓ exibe quando chega (nada de "carregando…").
-  const WX_KEY = 'brusque_wx_v1';
+  const WX_KEY = 'brusque_wx_v2';
   const WX_TTL = 5*60*1000;
   const paintWeather = () => {
     if (!_wx) return;
@@ -3047,10 +3235,11 @@ map.on('load', async () => {
     try {
       const u = 'https://api.open-meteo.com/v1/forecast?latitude=-27.0977&longitude=-48.9172'
               + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,'
-              + 'wind_speed_10m,wind_direction_10m,pressure_msl,cloud_cover,weather_code'
+              + 'wind_speed_10m,wind_direction_10m,pressure_msl,cloud_cover,weather_code,is_day'
               + '&timezone=America%2FSao_Paulo';
       const d = await (await fetch(u)).json();
-      const [ic, desc] = wxOf(d.current.weather_code);
+      const isDay = d.current.is_day === 1 || d.current.is_day === true;
+      const [ic, desc] = wxOf(d.current.weather_code, isDay);
       _wx = { t: Math.round(d.current.temperature_2m),
               tSens: d.current.apparent_temperature,
               umid: d.current.relative_humidity_2m,
@@ -3059,16 +3248,27 @@ map.on('load', async () => {
               ventoDir: d.current.wind_direction_10m,
               pressao: d.current.pressure_msl,
               nuvens: d.current.cloud_cover,
+              code: d.current.weather_code,
+              isDay,
               ic, desc, ts: Date.now() };
       try { localStorage.setItem(WX_KEY, JSON.stringify(_wx)); } catch(e){}
       paintWeather(); paintWxPanel();
       if (typeof updateBadge === 'function') updateBadge();
+      if (typeof wxFxSync === 'function') wxFxSync();
     } catch(e) { /* sem internet: mantém cache anterior (ou badge oculto) */ }
   };
   // cache fresco → mostra na hora, sem "carregando…"
+  const isDayNow = () => {   // fallback: hora local (6h–18h = dia) se cache sem is_day
+    const h = new Date(new Date().toLocaleString('en-US',{ timeZone:'America/Sao_Paulo' })).getHours();
+    return h >= 6 && h < 18;
+  };
   try {
     const c = JSON.parse(localStorage.getItem(WX_KEY) || 'null');
-    if (c && c.t != null && Date.now() - (c.ts||0) < WX_TTL) { _wx = c; paintWeather(); paintWxPanel(); }
+    if (c && c.t != null && Date.now() - (c.ts||0) < WX_TTL) {
+      if (c.isDay === undefined) c.isDay = isDayNow();
+      _wx = c; paintWeather(); paintWxPanel();
+      if (typeof wxFxSync === 'function') wxFxSync();
+    }
   } catch(e){}
   loadWx();                        // busca async (não bloqueia nada)
   setInterval(loadWx, WX_TTL);     // revalida a cada 5 min
@@ -3121,6 +3321,30 @@ map.on('load', async () => {
   let _climaPaint = null, _climaM = null;
   const uncheckClima = () => { if (_climaM && _climaM.on) { _climaM.on = false; _climaPaint && _climaPaint(); } };
   const isBrusqueCover = (id) => id !== 'clima' && id !== 'limites' && id !== 'satelite';
+  // Religar o clima (selo de Brusque) — usado ao voltar ao mapa base.
+  const religarClima = () => { if (_climaM && !_climaM.on) { _climaM.on = true; _climaPaint && _climaPaint(); } };
+  // "Voltar ao mapa de Brusque limpo com clima marcado" SE nenhuma outra
+  // camada estiver marcada (regra única para todos os onToggle).
+  const voltaSeVazio = () => {
+    const tem = [MAPA, TEMPOREAL, RIO, SETORES, INDICADORES].some(arr => arr.some(m => m.on && m.id !== 'clima'));
+    if (!tem) { religarClima(); goHome(); }
+  };
+  // fitBounds no curso completo do Rio Itajaí-Mirim (nascente→foz).
+  const fitRio = async () => {
+    const d = await (_pre.rio || pre('rio', fetchJson('./brusque_rio.geojson')));
+    if (!d || !d.features) return;
+    const bb = new maplibregl.LngLatBounds();
+    const all = c => { if (Array.isArray(c[0])) c.forEach(all); else bb.extend(c); };
+    d.features.forEach(f => all(f.geometry.coordinates));
+    if (!bb.isEmpty()) map.fitBounds(bb, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
+  };
+  // fitBounds num raio de ~500 km ao redor de Brusque (nuvens/radar + satélite).
+  const fit500 = () => {
+    const dLat = 500 / 111.32;
+    const dLon = 500 / (111.32 * Math.cos(_cirLat * Math.PI / 180));
+    const b = new maplibregl.LngLatBounds([_cirLon - dLon, _cirLat - dLat], [_cirLon + dLon, _cirLat + dLat]);
+    map.fitBounds(b, { padding:{ top:84, bottom:44, left:44, right:44 }, duration:1600 });
+  };
 
   // grupo dropdown genérico (usado por "Mapa", "Rio Itajaí Mirim", etc.)
   const makeDropdown = (label, arr, accent) => {
@@ -3149,12 +3373,15 @@ map.on('load', async () => {
           M.on = sel.value !== ''; item.classList.toggle('on', M.on); refresh();
         };
         window._nivelSel = sel;   // ref p/ o slider fixo sincronizar
-        item.append(it, sel); menu.appendChild(item); return;
+        item.append(it, sel);
+        if (M.hint) { const h = document.createElement('span'); h.className = 'it-hint'; h.textContent = M.hint; item.appendChild(h); }
+        menu.appendChild(item); return;
       }
       const item = document.createElement('div'); item.className = 'item';
       const cbx = document.createElement('span'); cbx.className = 'cbx';
       const it = document.createElement('span'); it.textContent = M.label;
       item.append(cbx, it);
+      if (M.hint) { const h = document.createElement('span'); h.className = 'it-hint'; h.textContent = M.hint; item.appendChild(h); }
       const paint = () => { item.classList.toggle('on', M.on); paintCbx(cbx, M.on, M.color); applyVis(M); refresh(); updateBadge(); };
       paint();
       M.paint = paint;   // expõe o repaint p/ exclusividade / fechar painéis
@@ -3172,7 +3399,10 @@ map.on('load', async () => {
             }
           });
         }
-        if (M.on && M.build && !M.layers) { cbx.textContent='…'; try{ M.layers = await ensureBuilt(M.build);}finally{} }
+        if (M.on && M.build && !M.layers) {
+          cbx.innerHTML = spinnerHTML(); cbx.style.background='transparent';
+          try{ M.layers = await ensureBuilt(M.build);}finally{}
+        }
         if (M.on && M.id !== 'clima' && isBrusqueCover(M.id)) uncheckClima();
         if (M.onToggle) await M.onToggle(M.on);
         // Clima/Limites/Bairros: ao ligar, a base volta pra mapa escuro sem rótulos
@@ -3560,6 +3790,186 @@ map.on('load', async () => {
     if (hovered !== null) map.setFeatureState({source:'brusque', id:hovered}, {hover:false});
     hovered = null; hideAllHints();
   });
+
+  // ── Animação do clima no mapa (sol/nuvens/chuva/raios) ─────────────────────
+  // Canvas em cima do mapa, restrito ao polígono de Brusque. Só aparece quando
+  // o clima está marcado e NENHUMA outra camada cobre Brusque (selo grande no
+  // centro). O tipo de animação vem do weather_code do Open-Meteo (_wx.code).
+  const wxfx = document.getElementById('wxfx');
+  // DESATIVADO por enquanto (Marcos: remover animações até retomar amanhã).
+  // Para religar: pôr WXFX_ENABLED = true (e reativar o display do #wxfx no CSS).
+  const WXFX_ENABLED = false;
+  let wxFxCtx = null, wxFxOn = false, wxFxType = 'sun', wxFxRain = [];
+  let wxFxBolt = 0, wxFxNextBolt = 0, wxFxT = 0, wxFxRAF = 0;
+  const wxFxWeather = (code, isDay) => {
+    if (code == null) return isDay ? 'sun' : 'night';     // sem dado: sol (dia) / lua (noite)
+    if (code === 0) return isDay ? 'sun' : 'night';       // céu limpo
+    if (code <= 2) return isDay ? 'sun' : 'night';        // parcialmente nublado → sol/lua
+    if (code <= 57) return 'rain';                        // garoa / chuva leve
+    if (code <= 67) return 'rain';                        // chuva
+    if (code <= 77) return 'snow';                        // neve
+    if (code <= 82) return 'rain';                        // pancadas de chuva
+    if (code <= 86) return 'snow';                        // neve forte
+    return 'storm';                                       // 95+ trovoada (chuva + raios)
+  };
+  const wxFxPoly = () => {   // anel do polígono de Brusque em px (recorte)
+    const g = (muni.features[0] && muni.features[0].geometry) || null;
+    if (!g) return null;
+    // suporta Polygon e MultiPolygon (usa o anel externo do 1º polígono)
+    const ring = g.type === 'MultiPolygon' ? g.coordinates[0][0] : g.coordinates[0];
+    if (!ring || ring.length < 3) return null;
+    const P = ring.map(([lo, la]) => map.project([lo, la]));
+    const p = new Path2D();
+    p.moveTo(P[0].x, P[0].y);
+    for (let i = 1; i < P.length; i++) p.lineTo(P[i].x, P[i].y);
+    p.closePath();
+    return p;
+  };
+  const wxFxResize = () => {
+    if (!wxfx || wxfx.width === innerWidth && wxfx.height === innerHeight) return;
+    wxfx.width = innerWidth; wxfx.height = innerHeight;
+    wxFxCtx = wxfx.getContext('2d');
+  };
+  const wxFxSpawn = (n) => {   // gotas distribuídas pela bbox do município
+    const p = [];
+    for (let i = 0; i < n; i++) {
+      const x = Math.random(), y = Math.random();
+      p.push({ x, y, s: 0.5 + Math.random(), sp: 0.5 + Math.random() * 1.1 });
+    }
+    return p;
+  };
+  const wxFxTick = (t) => {
+    if (!WXFX_ENABLED) return;
+    wxFxRAF = requestAnimationFrame(wxFxTick);
+    if (!wxFxOn) return;
+    try {
+      wxFxResize();
+      if (!wxFxCtx) return;
+      const c = wxFxCtx, W = wxfx.width, H = wxfx.height;
+      const poly = wxFxPoly(); if (!poly) return;
+      c.clearRect(0, 0, W, H);
+      c.save();
+      c.clip(poly);
+      const dt = Math.min(0.05, (t - wxFxT) / 1000); wxFxT = t;
+      const b = _wxB;
+      const nw = map.project([b.getWest(), b.getNorth()]);
+      const se = map.project([b.getEast(), b.getSouth()]);
+      const x0 = nw.x, y0 = nw.y;
+      const w = Math.max(2, se.x - x0), h = Math.max(2, se.y - y0);
+      const P = (px, py) => [x0 + px * w, y0 + py * h];
+
+    if (wxFxType === 'night') {
+      // estrelas piscando + lua no canto superior direito do município
+      const [sx, sy] = P(0.72, 0.24);
+      const R = Math.max(10, H * 0.06);
+      // estrelas
+      for (let i = 0; i < 14; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random();
+        const [ex, ey] = P(0.1 + r * 0.8, 0.08 + r * 0.4);
+        const tw = 0.5 + 0.5 * Math.sin(t / 400 + i * 1.7);
+        c.fillStyle = 'rgba(220,230,255,' + (0.35 + 0.5 * tw) + ')';
+        c.beginPath(); c.arc(ex, ey, Math.max(1, w / 600), 0, 7); c.fill();
+      }
+      // lua (crescente): círculo claro + mordida escura
+      c.fillStyle = '#F5F0D6';
+      c.beginPath(); c.arc(sx, sy, R, 0, 7); c.fill();
+      c.fillStyle = 'rgba(5,10,18,1)';
+      c.beginPath(); c.arc(sx - R * 0.32, sy - R * 0.14, R * 0.86, 0, 7); c.fill();
+      // brilho suave ao redor
+      const rad = c.createRadialGradient(sx, sy, 0, sx, sy, R * 3);
+      rad.addColorStop(0, 'rgba(245,240,214,0.16)');
+      rad.addColorStop(1, 'rgba(245,240,214,0)');
+      c.fillStyle = rad; c.fillRect(x0 - w, y0 - h, w * 3, h * 3);
+    }
+    if (wxFxType === 'sun') {
+      // sol no canto superior direito do município + brilho amarelo suave
+      const [sx, sy] = P(0.72, 0.24);
+      const R = Math.max(10, H * 0.07);
+      const rad = c.createRadialGradient(sx, sy, 0, sx, sy, R * 4);
+      rad.addColorStop(0, 'rgba(255,220,90,0.55)');
+      rad.addColorStop(1, 'rgba(255,220,90,0)');
+      c.fillStyle = rad; c.fillRect(x0 - w, y0 - h, w * 3, h * 3);
+      // sol
+      c.fillStyle = '#FFD54F';
+      c.beginPath(); c.arc(sx, sy, R, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,240,170,0.9)';
+      c.beginPath(); c.arc(sx, sy, R * 0.62, 0, 7); c.fill();
+      // raios girando
+      c.strokeStyle = 'rgba(255,213,79,0.8)'; c.lineWidth = Math.max(1.5, R * 0.14);
+      for (let i = 0; i < 8; i++) {
+        const a = (t / 5000) + i * Math.PI / 4;
+        c.beginPath();
+        c.moveTo(sx + Math.cos(a) * R * 1.15, sy + Math.sin(a) * R * 1.15);
+        c.lineTo(sx + Math.cos(a) * R * 1.55, sy + Math.sin(a) * R * 1.55);
+        c.stroke();
+      }
+    }
+    if (wxFxType === 'rain' || wxFxType === 'storm') {
+      if (!wxFxRain.length) wxFxRain = wxFxSpawn(110) || [];
+      c.strokeStyle = 'rgba(155,200,255,0.55)';
+      c.lineWidth = Math.max(1.5, H / 650);
+      for (const d of wxFxRain) {
+        d.y += d.sp * dt;
+        if (d.y > 1.06) { d.y = -0.06; d.x = Math.random(); }
+        const [rx, ry] = P(d.x, d.y);
+        const L = H * 0.022;
+        c.beginPath(); c.moveTo(rx, ry); c.lineTo(rx - L * 0.18, ry + L); c.stroke();
+      }
+    }
+    if (wxFxType === 'snow') {
+      if (!wxFxRain.length) wxFxRain = wxFxSpawn(80) || [];
+      c.fillStyle = 'rgba(255,255,255,0.85)';
+      const R = H * 0.0022;
+      for (const d of wxFxRain) {
+        d.y += d.sp * dt * 0.35;
+        d.x += Math.sin(t / 600 + d.s * 9) * 0.0015;
+        if (d.y > 1.06) { d.y = -0.06; d.x = Math.random(); }
+        const [rx, ry] = P(d.x, d.y);
+        c.beginPath(); c.arc(rx, ry, Math.max(1.2, R), 0, 7); c.fill();
+      }
+    }
+    if (wxFxType === 'storm') {
+      // raios — flashes esporádicos em zigue-zague
+      if (t > wxFxNextBolt) {
+        wxFxBolt = t; wxFxNextBolt = t + 1200 + Math.random() * 2500;
+      }
+      if (t - wxFxBolt < 260) {
+        const [bx, by] = P(0.5, 0.15);
+        c.strokeStyle = 'rgba(255,235,140,' + (t - wxFxBolt < 80 ? 0.95 : 0.6) + ')';
+        c.lineWidth = Math.max(1.5, H / 420);
+        c.beginPath(); c.moveTo(bx, by);
+        let cx = bx, cy = by;
+        const segs = 5 + (Math.random() * 4 | 0);
+        for (let i = 0; i < segs; i++) {
+          cx += (Math.random() - 0.5) * w * 0.14;
+          cy += h * 0.14;
+          c.lineTo(cx, cy);
+        }
+        c.stroke();
+      }
+    }
+    c.restore();
+    } catch(err) { /* um frame com erro não derruba a animação */ }
+  };
+  const wxFxSync = () => {
+    if (!WXFX_ENABLED) { if (wxfx) wxfx.style.opacity = '0'; wxFxOn = false; return; }
+    wxFxResize();
+    const should = !!(_wx && climaI.on && !anyLayerOn() && !focused);
+    if (should !== wxFxOn) {
+      wxFxOn = should;
+      if (wxfx) wxfx.style.opacity = should ? '1' : '0';
+    }
+    if (should) {
+      wxFxType = wxFxWeather(_wx.code, _wx.isDay);
+      wxFxRain = [];
+    }
+  };
+  window.addEventListener('resize', wxFxSync);
+  setInterval(wxFxSync, 1500);          // acompanha liga/desliga do clima
+  map.on('move', wxFxSync);             // e o foco em Brusque (focused)
+  wxFxSync();
+  wxFxTick(performance.now());
 });
 </script>
 </body>

@@ -138,3 +138,22 @@ sem re-upload pra GPU por frame. Hoje está só com throttle (versão barata).
 
 _(add. 06/08/2026)_
 
+---
+
+## Animações de clima no canvas (SUSPENSO até revisar)
+
+Fiz uma versão de animação de clima no canvas overlay (`#wxfx`) — chuva, neve,
+raios, sol/lua, tudo recortado no polígono de Brusque, com dia/noite via
+`is_day` do Open-Meteo. **Ficou artificial e bugava com zoom; desativei**
+(flag `WXFX_ENABLED = false` no `site/index.html`, código fica no ar pra retomar).
+
+- **Pendências pra retomar:** (1) nuvens ficaram muito artificiais — o Marcos
+  quer **só a chuva** mesmo (nada de nuvens); (2) efeitos devem ser estáveis
+  no zoom (tamanho relativo à tela, não à bbox do município); (3) validar
+  MultiPolygon, dia/noite e o emoji do selo (não mostrar sol à noite).
+- **Link salvo pros efeitos de neve (CSS):**
+  https://freefrontend.com/css-snow-effects/
+- Deploy atual sem animações: `71f3e433` (07/08/2026).
+
+_(add. 07/08/2026)_
+
