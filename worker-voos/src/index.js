@@ -43,6 +43,14 @@ function distKm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// proa (0= norte, sentido horário) do ponto 1 ao ponto 2, em graus
+function bearingKm(lat1, lon1, lat2, lon2) {
+  const f1 = lat1 * Math.PI / 180, f2 = lat2 * Math.PI / 180, dl = (lon2 - lon1) * Math.PI / 180;
+  const y = Math.sin(dl) * Math.cos(f2);
+  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
 async function fetchADSB() {
   const u = `${ADSB}/${CENTRO.lat}/${CENTRO.lon}/${DIST_NM}`;
   const r = await fetch(u, { cf: { cacheTtl: TTL } });
@@ -68,9 +76,13 @@ async function routeFor(callsign, cache, ctx) {
       if (fr) {
         route = {
           origem: fr.origin ? { iata: fr.origin.iata_code || null, icao: fr.origin.icao_code || null,
-                                nome: fr.origin.name || null, municipio: fr.origin.municipality || null } : null,
+                                nome: fr.origin.name || null, municipio: fr.origin.municipality || null,
+                                lat: fr.origin.latitude != null ? num(fr.origin.latitude) : null,
+                                lon: fr.origin.longitude != null ? num(fr.origin.longitude) : null } : null,
           destino: fr.destination ? { iata: fr.destination.iata_code || null, icao: fr.destination.icao_code || null,
-                                      nome: fr.destination.name || null, municipio: fr.destination.municipality || null } : null,
+                                      nome: fr.destination.name || null, municipio: fr.destination.municipality || null,
+                                      lat: fr.destination.latitude != null ? num(fr.destination.latitude) : null,
+                                      lon: fr.destination.longitude != null ? num(fr.destination.longitude) : null } : null,
           cia: fr.airline ? { icao: fr.airline.icao || null, iata: fr.airline.iata || null, nome: fr.airline.name || null } : null,
         };
       }
@@ -137,7 +149,17 @@ async function handle(req, env, ctx) {
     await Promise.all(unicos.map(async cs => { rotas[cs] = await routeFor(cs, cache, ctx); }));
     for (const v of voos) {
       const r = rotas[v.callsign];
-      if (r) { v.origem = r.origem; v.destino = r.destino; v.cia = r.cia; }
+      if (r) {
+        v.origem = r.origem; v.destino = r.destino; v.cia = r.cia;
+        // sanidade do destino: se o rumo do avião aponta LONGE do destino da
+        // escala (>120°), a rota do adsbdb divergiu do voo real (flight number
+        // reutilizado em outra rota no dia) → remove o destino falso
+        if (v.destino && v.destino.lat != null && v.rumo != null) {
+          const b = bearingKm(v.lat, v.lon, v.destino.lat, v.destino.lon);
+          let dd = Math.abs(v.rumo - b) % 360; if (dd > 180) dd = 360 - dd;
+          if (dd > 120) v.destino = null;
+        }
+      }
     }
     // atualiza o histórico de posição de cada voo (só dentro do raio) e anexa
     const seen = new Set();
