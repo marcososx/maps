@@ -1,0 +1,13 @@
+{
+  "name": "brusque-radar",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Worker: radar de precipitação EPAGRI/CIRAM (mosaico SC, prod 4) vetorizado em GeoJSON leve por intensidade, com CORS pro mapa",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

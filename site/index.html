@@ -28,36 +28,56 @@
              font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
   /* Padrão de componentes — toda caixa/box usa estes tokens */
   .wpanel{ pointer-events:auto; background:rgba(21,25,33,.93); border:1px solid var(--border);
+        border-top:2px solid rgba(255,213,79,.5);
         border-radius:var(--radius); padding:var(--box-pad); backdrop-filter:var(--blur);
-        box-shadow:var(--shadow); }
+        box-shadow:var(--shadow), 0 -1px 22px rgba(255,213,79,.05) inset; }
   .p-head{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
   .p-head b{ font:700 12px var(--font-ui); color:var(--hi); letter-spacing:.4px; }
   .p-upd{ font-size:9.5px; color:var(--muted); }
+  /* ═══ Identidade unificada dos cards (estilo legenda de voos) ═══
+     marcador neon âmbar antes de TODO título de caixa + brilho sutil */
+  :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head) > b{
+        display:inline-flex; align-items:center; gap:7px; }
+  :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head) > b::before{
+        content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
+        background:var(--neon); box-shadow:0 0 7px var(--neon); }
   .wbtn{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--txt);
         border-radius:var(--radius-xs); padding:4px 9px; font:600 10.5px var(--font-ui); cursor:pointer;
         transition:background .18s ease, border-color .18s ease; }
   .wbtn:hover{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); }
-  /* Ações de caixa: reduzir (–) · ocultar (▁) · fechar (×) — em TODAS as caixas */
-  .box-acts{ display:flex; align-items:center; gap:3px; margin-left:auto; }
-  .box-act{ width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center;
-        border:1px solid rgba(255,255,255,.12); border-radius:6px; background:rgba(255,255,255,.05);
-        color:var(--muted); font:700 13px var(--font-mono); line-height:1; cursor:pointer;
-        transition:background .15s ease, color .15s ease, border-color .15s ease; }
-  .box-act:hover{ background:rgba(255,255,255,.14); color:var(--hi); border-color:rgba(255,255,255,.25); }
-  .box-act.act-x:hover{ background:rgba(255,61,0,.18); color:var(--crit); border-color:var(--crit); }
-  /* reduzido: só o cabeçalho (corpo escondido) */
+  /* ═══ Ações de caixa — 2 controles neon: recolher (chevron) · fechar (×) ═══ */
+  .box-acts{ display:flex; align-items:center; gap:4px; margin-left:auto; padding-left:8px; }
+  .box-act{ width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center;
+        border:1px solid rgba(255,213,79,.28); border-radius:7px; background:rgba(255,213,79,.07);
+        color:var(--neon); cursor:pointer; padding:0;
+        transition:background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease; }
+  .box-act:hover{ background:rgba(255,213,79,.18); border-color:rgba(255,213,79,.65); }
+  .box-act:active{ transform:scale(.9); }
+  .box-act svg{ width:12px; height:12px; display:block; stroke:currentColor;
+        fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .box-act.act-x{ border-color:rgba(255,90,80,.28); background:rgba(255,90,80,.07); color:#ff7a6e; }
+  .box-act.act-x:hover{ background:rgba(255,90,80,.2); border-color:#ff7a6e; color:#ff9184; }
+  /* chevron de recolher: aponta pra onde a caixa "some". Topo = ▲ (some pra cima);
+     recolhido gira 180°. Caixas de baixo (.box--bottom) começam ▼ e invertem. */
+  .box-act.act-col svg{ transition:transform .28s cubic-bezier(.4,0,.2,1); }
+  .box-min .act-col svg{ transform:rotate(180deg); }
+  .box--bottom .act-col svg{ transform:rotate(180deg); }
+  .box--bottom.box-min .act-col svg{ transform:rotate(0deg); }
+  /* ─── Recolhido: vira um "chip" só com o título ─── */
   .box-min > :not(.p-head):not(.wxp-title):not(.cel-head):not(.rc-head):not(.nc-head):not(.wl-head){ display:none !important; }
-  /* ocultado por completo (a camada continua ligada) */
-  .box-hide{ display:none !important; }
-  .box-min { cursor:pointer; }
+  .box-min{ cursor:pointer; width:max-content !important; max-width:calc(100vw - 28px);
+        padding-top:7px !important; padding-bottom:7px !important; }
   .box-min .p-head, .box-min .wxp-title, .box-min .rc-head, .box-min .nc-head, .box-min .cel-head, .box-min .wl-head{ margin-bottom:0; }
-  /* botão flutuante de restaurar caixa ocultada */
-  .box-restore{ position:fixed; z-index:7; display:flex; align-items:center; gap:6px;
-        padding:6px 10px; border-radius:999px; border:1px solid var(--border-2);
-        background:rgba(21,25,33,.95); backdrop-filter:var(--blur); box-shadow:var(--shadow);
-        font:600 10.5px var(--font-ui); color:var(--hi); cursor:pointer;
-        transition:opacity .2s ease, transform .2s ease; }
-  .box-restore:hover{ border-color:var(--info); }
+  /* título que só aparece quando a caixa está recolhida (ex.: legenda de voos sem título fixo) */
+  .only-min{ display:none; }
+  .box-min .only-min{ display:inline-flex; }
+  /* painéis flutuantes (não-.wpanel) herdam a mesma faixa neon + brilho da identidade */
+  #radarctl, #nuvctl, #celelegend{ border-top:2px solid rgba(255,213,79,.5) !important;
+        box-shadow:0 10px 26px rgba(0,0,0,.45), 0 -1px 22px rgba(255,213,79,.05) inset; }
+  /* caixa sendo arrastada: à frente de tudo + sem transição pra acompanhar o mouse */
+  .box-drag{ z-index:20 !important; transition:none !important; cursor:grabbing; }
+  :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head){ cursor:grab; }
+  .box-min :is(.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head){ cursor:pointer; }
   #map{ position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease .3s; }
   #map.ready{ opacity:1; }
   /* HUD */
@@ -356,25 +376,41 @@
   #voospanel{ width:380px; max-width:calc(100vw - 28px); align-self:flex-start; }
   /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
   #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
-            width:max-content; max-width:calc(100vw - 28px); margin:0; }
+            width:max-content; max-width:calc(100vw - 28px); margin:0; padding-top:6px;
+            border-top:2px solid rgba(255,213,79,.55);
+            box-shadow:var(--shadow), 0 -1px 22px rgba(255,213,79,.06) inset; }
   #voosleg.show{ display:block; }
-  .vl-row{ display:flex; align-items:center; gap:9px; margin:7px 0; }
+  /* cabeçalho vazio: só abriga os botões (–/▁/×), sem título "Legenda" */
+  #voosleg .p-head{ min-height:20px; margin-bottom:4px; }
+  .vl-row{ display:flex; align-items:center; gap:9px; margin:0; }
   .vl-mk{ flex:0 0 22px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
   .vl-ico{ color:#FFD54F; }
   .vl-ico svg{ flex:0 0 auto; display:block; }
   .vl-txt{ display:flex; flex-direction:column; line-height:1.2; }
   .vl-txt b{ font:700 11.5px Inter,system-ui; color:#eaf6ff; }
   .vl-txt small{ font-size:9px; color:#8a97a8; margin-top:1px; }
-  /* duas colunas: infraestrutura (esq.) + status de pista/METAR (dir.) */
-  .vl-cols{ display:flex; gap:20px; align-items:flex-start; }
-  .vl-sub{ font:800 8.5px Inter,system-ui; text-transform:uppercase; letter-spacing:.6px;
-           color:#8a97a8; margin:2px 0 3px; }
+  /* duas colunas: infraestrutura (esq.) + status de aeroportos (dir.).
+     align-items:stretch iguala a altura das duas → a coluna curta (esq., 4 itens)
+     distribui seus itens (space-between) p/ enquadrar na altura da outra (5 itens),
+     sem sobrar espaço morto embaixo de nenhuma. */
+  .vl-cols{ display:flex; gap:18px; align-items:stretch; }
+  .vl-col{ display:flex; flex-direction:column; }
+  .vl-items{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
+  /* subtítulo estilo PizzINT: mono âmbar com glow + marcador neon e régua fina */
+  .vl-sub{ font:700 10px var(--font-mono); text-transform:none; letter-spacing:.4px;
+           color:var(--neon); margin:0 0 9px; padding-bottom:6px;
+           display:flex; align-items:center; gap:7px;
+           border-bottom:1px solid rgba(255,213,79,.22);
+           text-shadow:0 0 8px rgba(255,213,79,.35); }
+  .vl-sub::before{ content:''; flex:0 0 auto; width:6px; height:6px; border-radius:50%;
+           background:var(--neon); box-shadow:0 0 7px var(--neon); }
   .vl-col + .vl-col{ border-left:1px solid rgba(255,255,255,.09); padding-left:18px; }
   .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
   .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
   .vl-note{ font-size:8.5px; color:#8a97a8; margin-top:6px; padding-top:5px;
             border-top:1px solid rgba(255,255,255,.08); }
-  @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; }
+  @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; align-items:stretch; }
+    .vl-items{ gap:9px; }
     .vl-col + .vl-col{ border-left:0; padding-left:0; border-top:1px solid rgba(255,255,255,.09); padding-top:8px; } }
   /* legenda CELESC (UC sem energia) — canto inferior ESQUERDO */
   #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:232px;
@@ -476,6 +512,10 @@
   #radarctl .rc-time{ font:600 11px ui-monospace,Space Mono,monospace; color:#2fbf71; }
   #radarctl .rc-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:4px; gap:6px; }
   #radarctl .rc-note{ font-size:9px; color:#8a97a8; line-height:1.35; }
+  #radarctl .rc-tl{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+  #radarctl .rc-tl input[type=range]{ flex:1; accent-color:#2fbf71; height:4px; cursor:pointer; }
+  #radarctl .rc-frame{ font:600 10px ui-monospace,Space Mono,monospace; color:#8a97a8; white-space:nowrap; }
+  #radarctl .rc-play{ width:26px; height:26px; padding:0; flex:none; font-size:11px; line-height:1; }
   /* legenda de cores do radar — barra inferior, mesma largura dos chips */
   #wlegend{ position:absolute; z-index:4; bottom:14px; left:50%; transform:translateX(-50%);
         width:min(560px, calc(100% - 28px)); padding:10px 16px 12px;
@@ -487,7 +527,8 @@
   #wlegend .wl-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px;
         font-size:10.5px; color:#8a97a8; }
   #wlegend .wl-head b{ color:#eaf6ff; font-weight:700; }
-  #wlegend .wl-bar{ height:14px; border-radius:7px; border:1px solid rgba(255,255,255,.15); }
+  #wlegend .wl-bar{ display:flex; height:14px; border-radius:7px; border:1px solid rgba(255,255,255,.15); overflow:hidden; }
+  #wlegend .wl-seg{ flex:1; height:100%; }
   #wlegend .wl-labels{ display:flex; justify-content:space-between; font-size:9.5px; color:#8a97a8; margin-top:4px; }
   /* controle do satélite (nuvens) */
   #nuvctl{ position:absolute; z-index:4; right:14px; top:64px; width:232px; padding:11px 13px;
@@ -614,31 +655,41 @@
 
   <!-- Legenda da infra aeronáutica (aparece junto com a camada Voos) -->
   <div id="voosleg" class="wpanel" data-chip="voos">
-    <div class="p-head"><b>Legenda</b></div>
+    <div class="p-head"><b class="only-min">Legenda de voos</b></div>
     <div class="vl-cols">
       <div class="vl-col">
         <div class="vl-sub">Infraestrutura</div>
-        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
+        <div class="vl-items">
+        <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 17.2 16.4" width="19" height="19"><path d="M 4.256,15.496 C 3.979,14.340 7.280,13.606 7.280,13.606 V 8.650 l -6,2 c -0.680,0 -1,-0.350 -1,-0.660 C 0.242,9.595 0.496,9.231 0.880,9.130 1.140,9 4.800,7 7.280,5.630 V 3 C 7.280,1.890 7.720,0.290 8.510,0.290 9.300,0.290 9.770,1.840 9.770,3 v 2.630 c 2.450,1.370 6.100,3.370 6.370,3.500 0.390,0.093 0.651,0.461 0.610,0.860 -0.050,0.310 -0.360,0.670 -1.050,0.670 l -5.930,-2 v 4.946 c 0,0 3.300,0.734 3.024,1.890 -0.331,1.384 -2.830,0.378 -4.254,0.378 -1.434,4.520e-4 -3.950,1.016 -4.284,-0.378 z" fill="#ffd54f" stroke="#04121c" stroke-width="0.5" stroke-linejoin="round"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
         <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
         <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
         <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
+        </div>
       </div>
       <div class="vl-col">
-        <div class="vl-sub">Status da pista · METAR</div>
+        <div class="vl-sub">Status de aeroportos</div>
+        <div class="vl-items">
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot" style="color:#00E676;background:#00E676"></span></span><span class="vl-txt"><b>VFR</b><small>Opera normal</small></span></div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#4FC3F7;background:#4FC3F7"></span></span><span class="vl-txt"><b>MVFR</b><small>Marginal</small></span></div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF9500;background:#FF9500"></span></span><span class="vl-txt"><b>IFR</b><small>Restrição · atrasos</small></span></div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF3B30;background:#FF3B30"></span></span><span class="vl-txt"><b>LIFR</b><small>Pista fecha</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#8A97A8;background:#8A97A8"></span></span><span class="vl-txt"><b>Sem dados</b><small>METAR indisponível</small></span></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Tempo Real · radar de precipitação (EPAGRI/Lontras padrão, fallback RainViewer) -->
+<!-- Tempo Real · radar de precipitação (EPAGRI/CIRAM mosaico SC · vetorial) -->
 <div id="radarctl" data-chip="radar">
   <div class="rc-head"><b>Radar de chuva</b><span class="rc-time" id="radar-time">--:--</span></div>
+  <div class="rc-tl">
+    <button class="wbtn rc-play" id="radar-play" title="Animar frames">▶</button>
+    <input type="range" id="radar-tl" min="0" max="0" value="0" step="1" disabled>
+    <span class="rc-frame" id="radar-fr">1/1</span>
+  </div>
   <div class="rc-foot">
-    <span class="rc-note" id="radar-note">radar do estado (EPAGRI/CIRAM) · atualiza a cada 5 min</span>
+    <span class="rc-note" id="radar-note">radar do estado (EPAGRI/CIRAM) · mosaico SC · atualiza a cada 5 min</span>
     <button class="wbtn" id="radar-refresh">Atualizar</button>
   </div>
 </div>
@@ -647,7 +698,7 @@
 <div id="wlegend" data-chip="radar">
   <div class="wl-head"><span id="wl-head-txt"></span><span id="wl-head-time" style="font-family:ui-monospace,Space Mono,monospace"></span></div>
   <div class="wl-bar" id="wl-bar"></div>
-  <div class="wl-labels"><span>fraca</span><span>moderada</span><span>forte</span><span>intensa</span></div>
+  <div class="wl-labels"><span>fraca</span><span>moderada</span><span>forte</span><span>muito forte</span><span>extrema</span></div>
 </div>
 
 <!-- Tempo Real · CELESC — legenda de UC sem energia (canto inferior ESQUERDO) -->
@@ -983,61 +1034,108 @@ map.on('load', async () => {
   }
 
   // ── Radar de precipitação ────────────────────────────────────────────────────
-  // Padrão ÚNICO e fixo: EPAGRI/CIRAM (SC) — radar de Lontras (Vale), CAPPI 2Km,
-  // raio 240 km, cobre Brusque e toda a bacia do Itajaí-Mirim. API pública, CORS
-  // liberado, sem chave. Fallback SILENCIOSO: RainViewer (se a EPAGRI cair).
-  // Renderização: 1 imagem única (ImageSource) sobre as coordenadas — o MapLibre
-  // NÃO repete a imagem em tiles (bug que acontecia com fonte raster + dataURL).
-  //   getUltimasImagens?prod=0&radar=LON → lista de arquivos (frame ~5 min)
-  //   getImagem?prod=0&radar=LON&file={} → PNG do frame
-  const EPAGRI_BASE = 'https://ciram.epagri.sc.gov.br/radar/rest/radar/';
-  const EPAGRI_LON = { ext:[-51.9326542,-29.3957249,-46.9908037,-25.0438317] };   // w,s,e,n
-  // escala dBZ da EPAGRI (cores observadas no PNG; cinza = sem sinal e é descartado)
-  const EPAGRI_COLORS = ['#A5FFFF','#6EC8FF','#3791FF','#005AFF','#AAFF00','#80CE00',
-                         '#559C00','#2B6B00','#003900','#FFFF00','#FFC000'];
-  const EPAGRI_RGB = EPAGRI_COLORS.map(h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]);
-  const inEpa = (r,g,b) => EPAGRI_RGB.some(([pr,pg,pb]) => Math.abs(r-pr)+Math.abs(g-pg)+Math.abs(b-pb) < 48);
+  // Fonte principal: EPAGRI/CIRAM mosaico SC (COMP) VETORIZADO pelo worker
+  // brusque-radar (decodifica o PNG, classifica em 5 intensidades e devolve
+  // GeoJSON leve). Renderização = camadas fill por nível com transparência
+  // (nada de PNG esticado). Linha do tempo: anima os últimos ~7 frames.
+  // Fallback SILENCIOSO: RainViewer (se o worker/EPAGRI cair).
+  const RADAR_URL = 'https://brusque-radar.marcososx.workers.dev';
+  const RADAR_NIVEIS = [
+    { nivel:1, cor:'#4FC3F7', opacidade:0.32, rotulo:'Fraca' },
+    { nivel:2, cor:'#2196F3', opacidade:0.45, rotulo:'Moderada' },
+    { nivel:3, cor:'#4CAF50', opacidade:0.55, rotulo:'Forte' },
+    { nivel:4, cor:'#FFC107', opacidade:0.68, rotulo:'Muito forte' },
+    { nivel:5, cor:'#F44336', opacidade:0.82, rotulo:'Extrema' },
+  ];
   let _radarOn = false;
-  let _radarSourceName = 'epagri';
+  let _radarSourceName = 'radar';          // 'radar' | 'rainviewer'
   let _epagriFail = 0;
+  let _radarFrames = [];                   // [{time, file, data}]
+  let _radarCur = -1;                      // índice do frame exibido
+  let _radarPlay = false;
+  let _radarPlayTimer = null;
 
   const loadImage = (u) => new Promise(res => { const im = new Image();
     im.crossOrigin = 'anonymous';
     im.onload = () => res(im); im.onerror = () => res(null);
     im.src = u; });
-
   const radarCoords = (ext) => [[ext[0],ext[3]],[ext[2],ext[3]],[ext[2],ext[1]],[ext[0],ext[1]]];
-  function setRadarImage(dataURL, coords){
-    if (map.getSource('radar')) { map.removeLayer('radar'); map.removeSource('radar'); }
-    map.addSource('radar', { type:'image', url:dataURL, coordinates:coords });
-    map.addLayer({ id:'radar', type:'raster', source:'radar',
-      layout:{ visibility:_radarOn ? 'visible' : 'none' },
-      paint:{ 'raster-opacity':0.85 } }, 'municipio-linha');
-  }
+
   const setRadarTime = (t) => { const s = fmtH(t);
     const e1=document.getElementById('radar-time'); if (e1) e1.textContent = s;
     const e2=document.getElementById('wl-head-time'); if (e2) e2.textContent = s; };
 
-  // frame EPAGRI mais recente → canvas filtrado (só dBZ) → ImageSource
-  async function buildEpagriOverlay(){
-    let files; try {
-      files = await (await fetch(EPAGRI_BASE+'getUltimasImagens?prod=0&radar=LON', { cache:'no-store' })).json();
-    } catch(e){ files = null; }
-    if (!files || !files.length) return false;
-    const file = files[files.length - 1];
-    const im = await loadImage(EPAGRI_BASE+'getImagem?prod=0&radar=LON&file='+file);
-    if (!im) return false;
-    const cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height;
-    const ctx = cv.getContext('2d'); ctx.drawImage(im, 0, 0);
-    const id = ctx.getImageData(0, 0, cv.width, cv.height), d = id.data;
-    for (let i = 0; i < d.length; i += 4) {
-      if (d[i+3] < 150 || !inEpa(d[i], d[i+1], d[i+2])) d[i+3] = 0;
+  // cria source + 1 camada fill por nível (nível 5 por cima) — idempotente
+  function ensureRadarVecLayers(){
+    if (map.getSource('radar-vec')) return;
+    map.addSource('radar-vec', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
+    for (const cfg of RADAR_NIVEIS) {
+      map.addLayer({ id:'radar-n'+cfg.nivel, type:'fill', source:'radar-vec',
+        filter:['==',['get','nivel'],cfg.nivel],
+        paint:{ 'fill-color':cfg.cor, 'fill-opacity':cfg.opacidade } }, 'municipio-linha');
     }
-    ctx.putImageData(id, 0, 0);
-    setRadarImage(cv.toDataURL('image/png'), radarCoords(EPAGRI_LON.ext));
-    const m = file.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-    if (m) setRadarTime(new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6])));
-    return true;
+  }
+  function setRadarVec(data){
+    if (!map.getSource('radar-vec')) return;
+    const feats = (data.niveis || []).map(n => ({ type:'Feature',
+      properties:{ nivel:n.nivel }, geometry:n.geometry }));
+    map.getSource('radar-vec').setData({ type:'FeatureCollection', features:feats });
+    if (data.time) setRadarTime(new Date(data.time));
+  }
+
+  // busca frames.json e carrega os dados de todos (pré-busca p/ a animação)
+  async function loadRadarFrames(){
+    const meta = await (await fetch(RADAR_URL+'/frames.json', { cache:'no-store' })).json();
+    const frames = meta.frames || [];
+    _radarFrames = frames.map(f => ({ time:f.time, file:f.file, data:null }));
+    // carrega em paralelo, tolerando falha individual
+    await Promise.all(_radarFrames.map(async fr => {
+      try {
+        const r = await fetch(RADAR_URL+'/frame/'+encodeURIComponent(fr.file)+'.json', { cache:'no-store' });
+        if (r.ok) fr.data = await r.json();
+      } catch(e){}
+    }));
+    const tl = document.getElementById('radar-tl');
+    const fr = document.getElementById('radar-fr');
+    if (tl) { tl.max = Math.max(0, _radarFrames.length-1); tl.disabled = _radarFrames.length < 2; }
+    if (fr) fr.textContent = '1/'+Math.max(1,_radarFrames.length);
+    if (_radarFrames.length) _radarShow(Math.min(_radarCur >= 0 ? _radarCur : _radarFrames.length-1, _radarFrames.length-1));
+    return !!_radarFrames.length;
+  }
+  function _radarShow(i){
+    if (!_radarFrames.length) return;
+    _radarCur = ((i % _radarFrames.length) + _radarFrames.length) % _radarFrames.length;
+    const fr = _radarFrames[_radarCur];
+    if (fr && fr.data) setRadarVec(fr.data);
+    const tl = document.getElementById('radar-tl'), frLbl = document.getElementById('radar-fr');
+    if (tl) tl.value = _radarCur;
+    if (frLbl) frLbl.textContent = (_radarCur+1)+'/'+_radarFrames.length;
+  }
+  function _radarPlayStep(){ _radarShow(_radarCur+1); }
+  function radarTogglePlay(){
+    _radarPlay = !_radarPlay;
+    const bt = document.getElementById('radar-play');
+    if (bt) bt.textContent = _radarPlay ? '⏸' : '▶';
+    if (_radarPlay) { _radarPlayStep(); _radarPlayTimer = setInterval(_radarPlayStep, 600); }
+    else { clearInterval(_radarPlayTimer); _radarPlayTimer = null; }
+  }
+  function radarStopPlay(){
+    _radarPlay = false; clearInterval(_radarPlayTimer); _radarPlayTimer = null;
+    const bt = document.getElementById('radar-play'); if (bt) bt.textContent = '▶';
+  }
+
+  async function buildRadarOverlay(){
+    ensureRadarVecLayers();
+    try {
+      const ok = await loadRadarFrames();
+      if (ok) { _radarSourceName = 'radar'; _epagriFail = 0; paintRadarUI(); return true; }
+    } catch(e){ _epagriFail++; }
+    if (_radarSourceName !== 'rainviewer' && _epagriFail % 3 !== 0) return false;
+    // fallback RainViewer (raster leve, só se o vetorial falhar)
+    await refreshRadarFrames();
+    const ok = await buildRadiViewerOverlay();
+    if (ok) { _radarSourceName = 'rainviewer'; paintRadarUI(); return true; }
+    return false;
   }
 
   // RainViewer (fallback silencioso) — 1 PNG leve com filtro Universal Blue.
@@ -1079,34 +1177,32 @@ map.on('load', async () => {
       if (!chuva) d[i+3] = 0;
     }
     ctx.putImageData(id, 0, 0);
-    setRadarImage(cv.toDataURL('image/png'), radarCoords(_REG_BOUNDS));
+    if (map.getSource('radar')) { map.removeLayer('radar'); map.removeSource('radar'); }
+    map.addSource('radar', { type:'image', url:cv.toDataURL('image/png'), coordinates:radarCoords(_REG_BOUNDS) });
+    map.addLayer({ id:'radar', type:'raster', source:'radar',
+      layout:{ visibility:_radarOn ? 'visible' : 'none' },
+      paint:{ 'raster-opacity':0.85 } }, 'municipio-linha');
     setRadarTime(new Date(f.time*1000));
     return true;
   }
 
   // legenda inferior (wlegend) + nota do painel conforme a fonte ativa
   function paintRadarUI(){
-    const isEpa = _radarSourceName === 'epagri';
-    const cols = isEpa ? EPAGRI_COLORS : RV_COLORS;
+    const isVec = _radarSourceName === 'radar';
     const bar = document.getElementById('wl-bar');
-    if (bar) bar.style.background = 'linear-gradient(to right,' + cols.join(',') + ')';
-    const hd = document.getElementById('wl-head-txt');
-    if (hd) hd.textContent = isEpa ? 'Radar EPAGRI/CIRAM · Lontras (Vale) · CAPPI 2Km' : 'Radar RainViewer · composite global';
-    const nt = document.getElementById('radar-note');
-    if (nt) nt.textContent = isEpa ? 'radar do estado (EPAGRI/CIRAM) · atualiza a cada 5 min' : 'fallback: RainViewer (global) · atualiza a cada 5 min';
-  }
-
-  // Tenta EPAGRI; se cair, fallback RainViewer (re-tenta EPAGRI a cada 3 ciclos)
-  async function buildRadarOverlay(){
-    if (_radarSourceName === 'epagri' || _epagriFail % 3 === 0) {
-      const ok = await buildEpagriOverlay();
-      if (ok) { _radarSourceName = 'epagri'; _epagriFail = 0; paintRadarUI(); return true; }
-      _epagriFail++;
+    if (bar) {
+      bar.innerHTML = '';
+      for (const cfg of isVec ? RADAR_NIVEIS : [{cor:RV_COLORS.join(',')}]) {
+        const seg = document.createElement('div');
+        seg.className = 'wl-seg';
+        seg.style.background = isVec ? cfg.cor : 'linear-gradient(to right,'+RV_COLORS.join(',')+')';
+        bar.appendChild(seg);
+      }
     }
-    await refreshRadarFrames();
-    const ok = await buildRadiViewerOverlay();
-    if (ok) { _radarSourceName = 'rainviewer'; paintRadarUI(); return true; }
-    return false;
+    const hd = document.getElementById('wl-head-txt');
+    if (hd) hd.textContent = isVec ? 'Radar EPAGRI/CIRAM · mosaico SC' : 'Radar RainViewer · composite global';
+    const nt = document.getElementById('radar-note');
+    if (nt) nt.textContent = isVec ? 'mosaico do estado (EPAGRI/CIRAM) · frames de 5 min · raio ~750 km a oeste' : 'fallback: RainViewer (global) · atualiza a cada 5 min';
   }
 
   // Timers periódicos das camadas de tempo (parados quando o chip desliga)
@@ -2305,6 +2401,14 @@ map.on('load', async () => {
             + (st.temp_c!=null ? row('Temp / orvalho', st.temp_c+'° / '+st.orvalho_c+'°', 'sub') : '')
             + '<div class="metar-metar">'+(st.metar||'')+(hora?' · '+hora:'')+'</div>'
             + '</div>';
+        } else if (p.tipo === 'aeroporto') {
+          // sem boletim METAR na fonte → cinza + hora da última consulta do worker
+          const ts = window._METAR_TS ? new Date(window._METAR_TS).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+          h += '<div class="metar-box">'
+            + '<span class="metar-badge pisca" style="background:#8A97A8"><span class="dot"></span>Sem dados — METAR indisponível</span>'
+            + '<div class="metar-sit">Sem boletim meteorológico publicado no momento</div>'
+            + '<div class="metar-metar">última consulta'+(ts?' · '+ts:'')+'</div>'
+            + '</div>';
         }
         hv.innerHTML = h;
       };
@@ -2389,8 +2493,8 @@ map.on('load', async () => {
     radar: async () => {
       await refreshRadarFrames();      // prefetch RV (só usado no fallback)
       paintRadarUI();
-      buildRadarOverlay();
-      return ['radar','regiao-linha'];
+      await buildRadarOverlay();
+      return ['radar-n1','radar-n2','radar-n3','radar-n4','radar-n5','radar','regiao-linha'];
     },
     // Indicadores (5+ métricas em tempo real) — Open-Meteo, mesmo endpoint do selo.
     // O clima já roda na abertura e a cada 5 min; aqui só pinta o painel.
@@ -2521,19 +2625,23 @@ map.on('load', async () => {
   })();
   const loadMetar = () => _pre.metar = fetchJson(METAR_URL, { cache:'no-store' })
     .then(d => { window._METAR = _METAR_MOCK || ((d && d.aeroportos) ? d.aeroportos : null);
+                 window._METAR_TS = _METAR_MOCK ? new Date().toISOString() : (d && d.updated) || null;
                  if (typeof applyMetarStatus === 'function') applyMetarStatus();
                  return d; })
-    .catch(() => { window._METAR = _METAR_MOCK; if (typeof applyMetarStatus === 'function') applyMetarStatus(); return null; });
+    .catch(() => { window._METAR = _METAR_MOCK; window._METAR_TS = _METAR_MOCK ? new Date().toISOString() : null;
+                   if (typeof applyMetarStatus === 'function') applyMetarStatus(); return null; });
   // features cruas da infra aeronáutica (guardadas no build da camada 'voos') +
   // helpers que mesclam o status METAR nas props e repintam anel + selo.
   let _infraFeatsRaw = null;
   function _infraFC(){
     const M = window._METAR || {};
+    const _SEM_COR = '#8A97A8';   // aeroporto sem METAR → miolo cinza (semáforo desligado)
     return { type:'FeatureCollection', features:(_infraFeatsRaw||[]).map(f => {
       const props = Object.assign({}, f.properties,
         { code:_AERO_CODE[f.properties.oaci] || f.properties.oaci || '' });
       const st = f.properties.tipo==='aeroporto' && M[f.properties.oaci];
       if (st){ props.st_cor = st.cor; props.st_cat = st.categoria; props.st_pisca = !!st.pisca; }
+      else if (f.properties.tipo==='aeroporto'){ props.st_cor = _SEM_COR; props.st_cat = 'sem'; props.st_pisca = true; }
       return { type:'Feature', geometry:f.geometry, properties:props };
     }) };
   }
@@ -2744,7 +2852,14 @@ map.on('load', async () => {
           showPanel('radarctl'); showPanel('wlegend');
           buildRadarOverlay();
           _radarRefreshTimer = setInterval(buildRadarOverlay, 5*60*1000);
-        } else { hidePanel('radarctl'); hidePanel('wlegend'); clearInterval(_radarRefreshTimer); _radarRefreshTimer = null; }
+        } else {
+          hidePanel('radarctl'); hidePanel('wlegend');
+          clearInterval(_radarRefreshTimer); _radarRefreshTimer = null;
+          radarStopPlay();
+          if (map.getLayer('radar')) { map.removeLayer('radar'); map.removeSource('radar'); }
+          for (const cfg of RADAR_NIVEIS) if (map.getLayer('radar-n'+cfg.nivel)) map.removeLayer('radar-n'+cfg.nivel);
+          if (map.getSource('radar-vec')) map.removeSource('radar-vec');
+        }
       } },
     // Monitoramento = as estações/indicadores que antes eram o chip "Tempo real"
     { id:'monitoramento', label:'Monitoramento', on:false, color:'#00E5FF', build:'tempo_real' },
@@ -3181,63 +3296,82 @@ map.on('load', async () => {
   _fadeReady = true;   // a partir daqui, marcar/desmarcar camadas anima (fade 360 ms)
   updateBadge();   // estado inicial do selo (camadas default ligadas → escondido)
 
-  // ── Ações de caixa: reduzir (–) · ocultar (▁) · fechar (×) em TODAS as caixas ──
-  // injeta os 3 botões no cabeçalho de cada caixa com [data-chip] e liga a lógica.
-  const _boxRestores = {};   // boxId -> botão flutuante de restaurar
-  const makeRestore = (box, chipId) => {
-    const old = _boxRestores[box.id]; if (old) old.remove();
-    const b = document.createElement('button');
-    b.className = 'box-restore';
-    b.innerHTML = '<span style="color:var(--info)">▣</span>' + (box.dataset.title || box.id);
-    b.onclick = () => { box.classList.remove('box-hide'); b.remove(); delete _boxRestores[box.id]; };
-    document.body.appendChild(b);
-    _boxRestores[box.id] = b;
-    const pos = Object.keys(_boxRestores).length;
-    b.style.right = '14px'; b.style.top = (64 + (pos - 1) * 36) + 'px';
-  };
-  const boxOff = (box, chipId) => {   // desliga o chip (fecha caixa + camada)
+  // ── Ações de caixa — 2 controles neon: recolher (chevron) · fechar (×) ──
+  // Recolher = vira um "chip" só com o título (pra cima nas caixas de topo, pra
+  // baixo nas de rodapé). Caixas flutuantes podem ser ARRASTADAS pelo cabeçalho.
+  const HEAD_SEL = '.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head';
+  const DRAGGABLE = new Set(['radarctl','nuvctl','celregpanel','celelegend','voosleg']);
+  const ICON_COL = '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>';
+  const ICON_X   = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  const boxOff = (box, chipId) => {   // fechar → desliga o chip/camada
     const M = (window._chips || {})[chipId];
     if (M && M.on) { M.on = false; if (M.onToggle) M.onToggle(false); if (M.paint) M.paint(); }
   };
+  const makeDraggable = (box, head) => {
+    head.style.touchAction = 'none';
+    let sx, sy, ox, oy, moved = false, dragging = false;
+    head.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('.box-act')) return;
+      const r = box.getBoundingClientRect();
+      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+      moved = false; dragging = true;
+      try { head.setPointerCapture(e.pointerId); } catch(_){}
+    });
+    head.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!moved && Math.hypot(dx, dy) < 4) return;
+      if (!moved) {
+        moved = true;
+        box.classList.add('box-drag');
+        box.style.position = 'fixed';
+        box.style.right = 'auto'; box.style.bottom = 'auto';
+        box.style.transform = 'none'; box.style.margin = '0';
+      }
+      const w = box.offsetWidth, h = box.offsetHeight;
+      box.style.left = Math.max(4, Math.min(ox + dx, innerWidth  - w - 4)) + 'px';
+      box.style.top  = Math.max(4, Math.min(oy + dy, innerHeight - h - 4)) + 'px';
+    });
+    const end = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      box.classList.remove('box-drag');
+      try { head.releasePointerCapture(e.pointerId); } catch(_){}
+      if (!moved && box.classList.contains('box-min')) box.classList.remove('box-min');  // clicar no chip expande
+    };
+    head.addEventListener('pointerup', end);
+    head.addEventListener('pointercancel', end);
+  };
   document.querySelectorAll('[data-chip]').forEach(box => {
-    const head = box.querySelector('.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head');
-    if (!head) return;
-    if (head.querySelector('.box-acts')) return;
+    const head = box.querySelector(HEAD_SEL);
+    if (!head || head.querySelector('.box-acts')) return;
     box.dataset.title = box.querySelector('.p-head b, .wxp-title b, .cel-head b, .rc-head b, .nc-head b')?.textContent || box.id;
+    // caixa ancorada no rodapé? → recolhe pra baixo (chevron invertido)
+    const cs = getComputedStyle(box);
+    if (cs.bottom !== 'auto' && cs.top === 'auto') box.classList.add('box--bottom');
     const acts = document.createElement('span');
     acts.className = 'box-acts';
     acts.innerHTML =
-      '<button class="box-act act-min" data-a="min" title="Reduzir">–</button>'
-      + '<button class="box-act act-hide" data-a="hide" title="Ocultar">▁</button>'
-      + '<button class="box-act act-x" data-a="close" title="Fechar">×</button>';
+      '<button class="box-act act-col" data-a="col" title="Recolher / expandir" aria-label="Recolher">' + ICON_COL + '</button>'
+      + '<button class="box-act act-x" data-a="close" title="Fechar" aria-label="Fechar">' + ICON_X + '</button>';
     head.appendChild(acts);
+    if (DRAGGABLE.has(box.id)) makeDraggable(box, head);
   });
+  // botões: recolher / fechar
   document.addEventListener('click', (e) => {
     const act = e.target.closest('.box-act'); if (!act) return;
     const box = act.closest('[data-chip]'); if (!box) return;
-    const chipId = box.dataset.chip, a = act.dataset.a;
     e.stopPropagation();
-    if (a === 'min') {
-      box.classList.toggle('box-min');
-      act.textContent = box.classList.contains('box-min') ? '▢' : '–';
-    } else if (a === 'hide') {
-      box.classList.add('box-hide');
-      makeRestore(box, chipId);
-    } else if (a === 'close') {
-      box.classList.remove('box-min', 'box-hide');
-      boxOff(box, chipId);
-      const old = _boxRestores[box.id]; if (old) { old.remove(); delete _boxRestores[box.id]; }
-    }
+    if (act.dataset.a === 'col') box.classList.toggle('box-min');
+    else if (act.dataset.a === 'close') { box.classList.remove('box-min'); boxOff(box, box.dataset.chip); }
   });
-  // clicar no cabeçalho de uma caixa reduzida re-expande
+  // clicar no chip recolhido re-expande (caixas arrastáveis já tratam isso no pointerup)
   document.addEventListener('click', (e) => {
+    if (e.target.closest('.box-act')) return;
     const head = e.target.closest('[data-chip] .p-head, [data-chip] .wxp-title, [data-chip] .cel-head, [data-chip] .rc-head, [data-chip] .nc-head, [data-chip] .wl-head');
-    if (!head || e.target.closest('.box-act')) return;
+    if (!head) return;
     const box = head.closest('[data-chip]');
-    if (box.classList.contains('box-min')) {
-      box.classList.remove('box-min');
-      const min = box.querySelector('.act-min'); if (min) min.textContent = '–';
-    }
+    if (!DRAGGABLE.has(box.id) && box.classList.contains('box-min')) box.classList.remove('box-min');
   });
   // slider fixo dos níveis: arrastar navega pelas cotas do rio (sincroniza com o combo)
   document.getElementById('nivelrange').oninput = (e) => selectNivel(e.target.value);
@@ -3266,6 +3400,14 @@ map.on('load', async () => {
   if (radarRefresh) radarRefresh.onclick = async () => {
     const ok = await buildRadarOverlay();
     showToast(ok ? 'Radar atualizado' : 'Radar indisponível no momento');
+  };
+  // player de linha do tempo do radar (play/pause + scrub manual)
+  const radarPlay = document.getElementById('radar-play');
+  if (radarPlay) radarPlay.onclick = () => radarTogglePlay();
+  const radarTl = document.getElementById('radar-tl');
+  if (radarTl) radarTl.oninput = () => {
+    radarStopPlay();
+    _radarShow(parseInt(radarTl.value, 10) || 0);
   };
   const nuvRefresh = document.getElementById('nuv-refresh');
   if (nuvRefresh) nuvRefresh.onclick = async () => {

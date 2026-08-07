@@ -62,30 +62,33 @@ eles é a **região monitorada** (`brusque_regiao.geojson`).
 
 ## 3. Radar de precipitação — EPAGRI/CIRAM (principal) + RainViewer (fallback)
 
-### 3.1 EPAGRI/CIRAM — radar de Lontras (Vale) e mosaico SC  ⭐ principal
+### 3.1 EPAGRI/CIRAM — mosaico SC (COMP) · VETORIAL ⭐ 07/08/2026
 
 - **Tipo:** radar meteorológico real do estado de SC (EPAGRI/CIRAM), API pública REST
 - **Licença:** uso público (governo estadual), **sem chave**, **CORS liberado** (`*`)
 - **Viewer oficial (referência):** `https://ciram.epagri.sc.gov.br/radar/`
 - **API (rest):** `https://ciram.epagri.sc.gov.br/radar/rest/radar/`
   - `getUltimasImagens?prod={0-4}&radar={LON|COMP|CHP|ARA}` → JSON com os últimos ~7 frames
-  - `getImagem?prod={0-4}&radar={LON}&file={arquivo}` → PNG do frame (860×757, transparente fora do disco)
-- **Radares:** `LON` = Lontras (Vale, 240 km — **cobre Brusque e a bacia toda**) · `COMP` = Mosaico SC · `CHP` = Oeste · `ARA` = Sul
-- **Produtos (LON):** `0`=CAPPI 2Km · `1`=CAPPI 3Km · `2`=PPI · (COMP: `4`=C-MAX)
-- **Extents (lon/lat):** LON `[-51.9327,-29.3957,-46.9908,-25.0438]` · COMP `[-58.0651,-33.8163,-46.4999,-24.7654]`
-- **Cadência:** frame novo a cada **~5 min** (nome do arquivo = `AAAAMMDDHHMMSS` UTC); o app re-monta o overlay a cada 5 min + botão "Atualizar".
-- **Escala de cor (dBZ, observada no PNG):** `#A5FFFF #6EC8FF #3791FF #005AFF #AAFF00 #80CE00 #559C00 #2B6B00 #003900 #FFFF00 #FFC000`
-  (ciano→azul→verde→amarelo→laranja; o **cinza `#C8C8C8` = sem sinal e é descartado** no filtro). Legenda qualitativa fraca→intensa.
-- **Como o app usa (padrão único e fixo, sem seletor p/ o usuário):** EPAGRI **Lontras (Vale) · CAPPI 2Km**.
-  Baixa o frame mais recente, desenha num canvas e **filtra as cores** (mantém só a escala dBZ,
-  descarta o cinza e o fundo), e sobrepõe como **ImageSource** (1 imagem única sobre as
-  coordenadas — **sem repetição em tiles**, que era o bug da versão raster). Legenda de cores
-  na **barra inferior** com a origem ("Radar EPAGRI/CIRAM · Lontras (Vale) · CAPPI 2Km").
-- **Fallback:** se a EPAGRI cair/parar de responder, o app **troca sozinho para RainViewer**
-  (composite global) e avisa na legenda ("Radar RainViewer · composite global"); volta a tentar
-  a EPAGRI a cada ~15 min.
-- **Riscos:** é o display "oficial" (aproximação do disco polar num retângulo); refletividade
-  ≠ mm/h exatos; o serviço é governamental e pode cair/parar de atualizar — por isso o fallback.
+  - `getImagem?prod={0-4}&radar={LON}&file={arquivo}` → PNG do frame (920×719 COMP, paleta, transparente)
+- **Radares:** `LON` = Lontras (Vale, ~190–300 km — cobre Brusque e a bacia) · `COMP` = **Mosaico SC (principal)** · `CHP` = Oeste · `ARA` = Sul
+- **Produtos (COMP):** `4` = C-MAX
+- **Extents (lon/lat):** COMP `[-58.0651,-33.8163,-46.4999,-24.7654]` → cobre **~750–900 km a oeste/sul** de Brusque e **~250 km a leste/norte** (leste é oceano, sem dado)
+- **Cadência:** frame novo a cada **~5 min**; o app re-valida frames a cada 5 min + botão "Atualizar".
+- **Escala de cor (dBZ, observada no PNG):** `#A5FFFF #6EC8FF #3791FF #005AFF #AAFF00 #80CE00 #559C00 #2B6B00 #003900 #FFFF00 #FFC000 #FF8000 #FF4000`
+  (ciano→azul→verde→amarelo→laranja→vermelho; cinza `#C8C8C8` = sem sinal e **descartado**)
+- **Como o app usa (VETORIAL, desde 07/08/2026):**
+  - **Worker novo `brusque-radar`** (`worker-radar/`, `https://brusque-radar.marcososx.workers.dev`) baixa o
+    PNG, decodifica **sem canvas** (parser PNG puro + `DecompressionStream`), classifica cada pixel em
+    **5 níveis de intensidade** e gera contornos (`marching squares` binário + simplificação RDP) →
+    devolve **GeoJSON leve por nível** (`/frames.json` lista os ~7 frames; `/frame/{arquivo}.json` um frame).
+  - **Front** renderiza como **camadas `fill` por nível** com transparência (`radar-n1`..`radar-n5`), em vez
+    de PNG esticado. Níveis: Fraca `#4FC3F7` · Moderada `#2196F3` · Forte `#4CAF50` · Muito forte `#FFC107` ·
+    Extrema `#F44336` (opacidade 0.32→0.82). Legenda inferior em **segmentos** com as 5 cores.
+  - **Linha do tempo**: player no painel (play/pause + scrub) animando os ~7 frames (~5 min cada);
+    abre no frame mais recente.
+  - Fallback: se o worker/EPAGRI cair, **RainViewer** (raster, composite global) assume e avisa na legenda.
+- **Riscos:** mosaico junta vários radares (padrão C-MAX); refletividade ≠ mm/h exatos; serviço
+  governamental pode cair — por isso o fallback.
 
 ### 3.2 RainViewer (fallback)
 
