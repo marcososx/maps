@@ -30,7 +30,7 @@ const _trailLast = {};         // icao24 -> ms da última vez visto (p/ não apa
 // (em memória) era zerado a cada reciclagem → aviões ficavam "sem rastro".
 // Aqui salvamos o histórico no KV (a cada ~12 s) e recarregamos ao subir.
 const KV_TRAILS_KEY = 'trails:v1';
-let _kvLoaded = false, _kvDirty = false;
+let _kvLoaded = false, _kvLastSave = 0;
 async function kvLoad(env) {
   if (_kvLoaded || !env.VOOS_KV) return;
   _kvLoaded = true;
@@ -43,16 +43,17 @@ async function kvLoad(env) {
     }
   } catch (e) {}
 }
-function kvScheduleSave(env, ctx) {
-  if (!env.VOOS_KV || _kvDirty) return;
-  _kvDirty = true;
-  ctx.waitUntil(new Promise(res => setTimeout(res, 12000)).then(async () => {
-    _kvDirty = false;
-    try {
-      await env.VOOS_KV.put(KV_TRAILS_KEY,
-        JSON.stringify({ trails: _trails, last: _trailLast }), { expirationTtl: 86400 });
-    } catch (e) {}
-  }));
+// salva o rastro no KV (throttle de ~10 s, AWAIT direto — sem setTimeout que pode
+// não disparar se o isolate for congelado; assim a gravação é garantida)
+async function kvMaybeSave(env) {
+  if (!env.VOOS_KV) return;
+  const now = Date.now();
+  if (now - _kvLastSave < 10000) return;
+  _kvLastSave = now;
+  try {
+    await env.VOOS_KV.put(KV_TRAILS_KEY,
+      JSON.stringify({ trails: _trails, last: _trailLast }), { expirationTtl: 86400 });
+  } catch (e) {}
 }
 const _TRAIL_MAX = 300;        // ≈ 10 min a 2 s de poll
 const _TRAIL_STEP = 0.001;     // mínimo de deslocamento (graus) p/ registrar ponto
@@ -222,7 +223,7 @@ async function handle(req, env, ctx) {
     // limpa trilhas de aviões que sumiram há mais de ~3 min (tolerância a gaps
     // de dados — senão um voo que some por instante perde o rastro completo)
     for (const k in _trails) if (!seen.has(k) && (now - (_trailLast[k]||0)) > 180000) delete _trails[k];
-    kvScheduleSave(env, ctx);   // persiste o rastro (sobrevive a restart de isolate)
+    await kvMaybeSave(env);   // persiste o rastro (sobrevive a restart de isolate)
   } catch (e) {
     return new Response(JSON.stringify({ erro: 'Airplanes.live indisponível', detalhe: String(e.message || e) }),
       { status: 502, headers: { ...CORS, 'Content-Type': 'application/json' } });
