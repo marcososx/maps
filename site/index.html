@@ -341,7 +341,7 @@
   .g-val{ margin-top:6px; font-size:11.5px; color:#eaf6ff; line-height:1.35; }
   .g-val b{ font:700 14px ui-monospace,Space Mono,monospace; }
   /* painel Voos: contagem + lista de aeronaves no raio de 100 km */
-  #voospanel{ max-width:288px; }
+  #voospanel{ max-width:380px; }
   /* legenda da infra aeronáutica — fixa no canto inferior DIREITO */
   #voosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
             width:max-content; max-width:calc(100vw - 28px); margin:0; }
@@ -408,24 +408,24 @@
         transition:background .18s ease, border-color .18s ease; }
   .voo-row:hover{ background:rgba(255,255,255,.09); border-color:rgba(255,213,79,.45); }
   .voo-top{ display:flex; align-items:center; gap:9px; }
-  .voo-tipo{ flex:0 0 auto; min-width:46px; height:32px; padding:0 7px; border-radius:8px; display:flex;
+  .voo-tipo{ flex:0 0 auto; min-width:50px; height:34px; padding:0 8px; border-radius:8px; display:flex;
         align-items:center; justify-content:center; background:rgba(255,213,79,.14);
-        border:1px solid rgba(255,213,79,.4); font:800 10.5px ui-monospace,Space Mono,monospace;
+        border:1px solid rgba(255,213,79,.4); font:800 12px ui-monospace,Space Mono,monospace;
         color:#ffd54f; white-space:nowrap; letter-spacing:.3px; }
   .voo-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; align-items:flex-start; }
-  .voo-logo{ height:16px; max-width:130px; object-fit:contain; }
+  .voo-logo{ height:18px; max-width:150px; object-fit:contain; }
   .voo-rota{ display:flex; align-items:center; gap:7px; width:100%; }
-  .voo-aero{ font:800 12px ui-monospace,Space Mono,monospace; color:#ffd54f; line-height:1.1; text-align:center; }
-  .voo-aero small{ display:block; font:500 8px ui-monospace,Space Mono,monospace; color:#8a97a8;
+  .voo-aero{ font:800 13px ui-monospace,Space Mono,monospace; color:#ffd54f; line-height:1.1; text-align:center; }
+  .voo-aero small{ display:block; font:500 9px ui-monospace,Space Mono,monospace; color:#8a97a8;
         letter-spacing:.2px; }
   .voo-seta{ flex:1; height:2px; min-width:16px;
         background:linear-gradient(90deg,rgba(255,213,79,.9),rgba(255,213,79,.3));
         position:relative; align-self:center; }
   .voo-seta::after{ content:''; position:absolute; right:0; top:-3px; border:3px solid transparent;
         border-left-color:rgba(255,213,79,.9); }
-  .voo-desc{ font-size:9.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  .voo-desc{ font-size:10.5px; color:#8a97a8; min-width:0; overflow:hidden; text-overflow:ellipsis;
         white-space:nowrap; }
-  .voo-rows{ display:grid; grid-template-columns:auto 1fr; gap:1px 10px; font-size:9.5px;
+  .voo-rows{ display:grid; grid-template-columns:auto 1fr; gap:1px 10px; font-size:10.5px;
         border-top:1px solid rgba(255,255,255,.06); padding-top:5px; }
   .voo-lbl{ color:#8a97a8; }
   .voo-val{ color:#eaf6ff; font-weight:600; text-align:right; }
@@ -592,7 +592,7 @@
     <div class="p-head"><b>Legenda</b></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeronave</b></span></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeroporto</b></span></div>
-    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FF9800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
+    <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="vl-txt"><b>Aeródromo</b></span></div>
     <div class="vl-row"><span class="vl-mk vl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg></span><span class="vl-txt"><b>Heliponto</b></span></div>
   </div>
 </div>
@@ -1085,7 +1085,7 @@ map.on('load', async () => {
   };
   const _planeImg  = _makePlane('#ffd54f');   // aeronave em voo (amarelo)
   const _planeImgW = _makePlane('#ffffff');   // aeroporto (branco)
-  const _planeImgO = _makePlane('#FF9800');   // aeródromo (laranja)
+  const _planeImgO = _makePlane('#26C6DA');   // aeródromo (ciano — não bate com branco/amarelo)
   // Ícone genérico de heliponto: círculo escuro com anel azul + "H" (os dados da
   // ANAC que temos aqui não trazem categoria de heliponto, então é genérico).
   const _helipontoCanvas = document.createElement('canvas'); _helipontoCanvas.width=48; _helipontoCanvas.height=48;
@@ -1167,6 +1167,8 @@ map.on('load', async () => {
   // aeroporto — Origem = rastro fixo SÓLIDO; Destino = TRACEJADO.
   const _AIRPORT_PIN = { NVT:[-48.650833,-26.878611], SBNF:[-48.650833,-26.878611],
                          FLN:[-48.5525,-27.670278],   SBFL:[-48.5525,-27.670278] };
+  // código curto exibido no mapa: IATA quando existe (FLN/NVT), senão o OACI
+  const _AERO_CODE = { SBNF:'NVT', SBFL:'FLN' };
   const _bearingOf = (a, b) => {   // proa (0= norte, sentido horário) do ponto a → b
     const f1 = a[1]*Math.PI/180, f2 = b[1]*Math.PI/180, dl = (b[0]-a[0])*Math.PI/180;
     const y = Math.sin(dl)*Math.cos(f2);
@@ -1376,6 +1378,57 @@ map.on('load', async () => {
     if (_sweepRaf) { cancelAnimationFrame(_sweepRaf); _sweepRaf = null; }
     _blips = [];
     _radarClear();
+  };
+  // ── Pulso ao atualizar: anel amarelo que "pisca" na posição de cada avião ──
+  // Sempre que a lista é re-buscada (a cada 2 s), um anel da cor do avião cresce
+  // e apaga ao redor de cada aeronave — realça o movimento/atualização na tela.
+  let _pulseCanvas = null, _pulseCtx = null, _pulses = [], _pulseRaf = null;
+  const _ensurePulseCanvas = () => {
+    if (_pulseCanvas) return;
+    const cv = document.createElement('canvas');
+    cv.id = 'voos-pulse-canvas';
+    cv.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;';
+    map.getContainer().appendChild(cv);
+    _pulseCanvas = cv; _pulseCtx = cv.getContext('2d');
+  };
+  const _pulseDraw = (ts) => {
+    if (!_pulseCtx) { _pulseRaf = null; return; }
+    _pulses = _pulses.filter(p => ts - p.born < 900);
+    if (!_pulses.length) {
+      _pulseCtx.setTransform(1,0,0,1,0,0);
+      _pulseCtx.clearRect(0, 0, _pulseCanvas.width, _pulseCanvas.height);
+      _pulseRaf = null; return;
+    }
+    const cont = map.getContainer();
+    const w = cont.clientWidth, h = cont.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (_pulseCanvas.width !== Math.round(w*dpr) || _pulseCanvas.height !== Math.round(h*dpr)) {
+      _pulseCanvas.width = Math.round(w*dpr); _pulseCanvas.height = Math.round(h*dpr);
+      _pulseCanvas.style.width = w+'px'; _pulseCanvas.style.height = h+'px';
+    }
+    const ctx = _pulseCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    for (const p of _pulses) {
+      const a = (ts - p.born) / 900;                 // 0 → 1
+      const pt = map.project([p.lon, p.lat]);
+      const r = 12 + a * 30;                         // cresce
+      const op = 0.6 * (1 - a);                      // apaga
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, r, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(255,213,79,'+op+')';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(255,213,79,'+(op*0.8)+')';
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    _pulseRaf = requestAnimationFrame(_pulseDraw);
+  };
+  const _pulse = () => {
+    if (!_voosPos.length) return;
+    _ensurePulseCanvas();
+    const now = performance.now();
+    for (const c of _voosPos) _pulses.push({ lon:c[0], lat:c[1], born: now });
+    if (!_pulseRaf) _pulseRaf = requestAnimationFrame(_pulseDraw);
   };
   // painel lateral: lista de aeronaves no raio + propriedades (clique → foca no mapa)
   // Só reconstrói o DOM quando a lista MUDA (novo voo/saiu voo); nos ticks de
@@ -2132,6 +2185,7 @@ map.on('load', async () => {
         map.getSource('voos').setData({ type:'FeatureCollection', features:voosFeats(data) });
         map.getSource('voos-trail').setData({ type:'FeatureCollection', features:trailFeatures(data) });
         renderVoosList(data);
+        _pulse();
       };
       setVoos(d);
       // checa a cada 2 s (o worker cacheia 2 s — 1 s só dobra o trabalho)
@@ -2159,7 +2213,7 @@ map.on('load', async () => {
         const ic = p.tipo==='aeroporto'
           ? '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
           : p.tipo==='aerodromo'
-          ? '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#FF9800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
+          ? '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#26C6DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>'
           : '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="9.5" fill="#0B0E14" stroke="#42A5F5" stroke-width="2"/><text x="12" y="15.5" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">H</text></svg>';
         let h='<div class="hv-logo">'+ic+'<span class="hv-callsign">'+tipo+'</span></div>';
         if(p.nome) h+=row('Nome', p.nome);
@@ -2172,21 +2226,31 @@ map.on('load', async () => {
       if (!map.getSource('voos-infra')) {
         const infra = await (_pre.infra || pre('infra', fetchJson('./brusque_aerodromos.geojson')));
         if (!infra) return ['voos-pt','voos-label','voos-trail','voos-tails','voos-tails-dest','voos-circulo','voos-radar-line','voos-radar-fill','voos-blip','voos-blip-halo'];
-        map.addSource('voos-infra', { data:infra, type:'geojson' });
+        map.addSource('voos-infra', { data:{ type:'FeatureCollection', features:(infra.features||[]).map(f =>
+          ({ type:'Feature', geometry:f.geometry, properties:Object.assign({}, f.properties,
+            { code:_AERO_CODE[f.properties.oaci] || f.properties.oaci || '' }) })) }, type:'geojson' });
         // guarda as posições da infra p/ a varredura pingar em branco (eco fixo)
         _infraPos = (infra.features || [])
           .filter(f => f.geometry && f.geometry.type === 'Point')
           .map(f => f.geometry.coordinates);
-        // aeroportos públicos — avião BRANCO (ícone da legenda, 3x)
+        // aeroportos públicos — avião BRANCO (3x) + código do aeroporto (FLN/NVT…)
         map.addLayer({ id:'voos-infra-aeroporto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aeroporto'],
           layout:{ 'icon-image':'aviao-branco', 'icon-size':['interpolate',['linear'],['zoom'],9,1.26,14,1.86],
-                    'icon-allow-overlap':true, 'icon-ignore-placement':true } });
-        // aeródromos privados — avião LARANJA (ícone da legenda, 3x)
+                    'text-field':['get','code'], 'text-font':['Open Sans Regular'], 'text-size':11,
+                    'text-offset':[0,1.15], 'text-anchor':'top', 'text-optional':true,
+                    'text-allow-overlap':true, 'text-ignore-placement':true,
+                    'icon-allow-overlap':true, 'icon-ignore-placement':true },
+          paint:{ 'text-color':'#ffffff','text-halo-color':'#04121c','text-halo-width':1.5 } });
+        // aeródromos privados — avião CIANO (3x) + código OACI
         map.addLayer({ id:'voos-infra-aerodromo', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'aerodromo'],
           layout:{ 'icon-image':'aviao-laranja', 'icon-size':['interpolate',['linear'],['zoom'],9,1.05,14,1.56],
-                    'icon-allow-overlap':true, 'icon-ignore-placement':true } });
+                    'text-field':['get','code'], 'text-font':['Open Sans Regular'], 'text-size':10,
+                    'text-offset':[0,1.15], 'text-anchor':'top', 'text-optional':true,
+                    'text-allow-overlap':true, 'text-ignore-placement':true,
+                    'icon-allow-overlap':true, 'icon-ignore-placement':true },
+          paint:{ 'text-color':'#eaf6ff','text-halo-color':'#04121c','text-halo-width':1.4 } });
         // helipontos — ícone genérico de heliponto (círculo + "H"), menor
         map.addLayer({ id:'voos-infra-heliponto', type:'symbol', source:'voos-infra',
           filter:['==',['get','tipo'],'heliponto'],
