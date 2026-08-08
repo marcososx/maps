@@ -1787,6 +1787,7 @@ map.on('load', async () => {
   // Só reconstrói o DOM quando a lista MUDA (novo voo/saiu voo); nos ticks de
   // refresh sem mudança mantém o DOM (evita reconstruir ~dezenas de nodes a cada 2 s).
   let _voosListSig = null;
+  let _focoVooId = null; // voo atualmente focado (clique de novo = zoom out)
   const renderVoosList = (d) => {
     const count = document.getElementById('voos-count');
     const list = document.getElementById('voos-list');
@@ -1849,9 +1850,13 @@ map.on('load', async () => {
         +(model && model!=='—' ? '<div class="voo-model">'+model+'</div>' : '')
         +(stats.length ? '<div class="voo-stats">'+stats.join('')+'</div>' : '');
       row.onclick = () => {
-        // clicar na lista: só foca o avião no mapa (sem popup/hint — o hint
-        // aparece ao passar o mouse sobre o avião na camada)
+        // clicar na lista: foca o avião no mapa (sem popup/hint — o hint
+        // aparece ao passar o mouse sobre o avião na camada). Clicar de novo
+        // no MESMO voo volta ao zoom padrão da abertura.
         hideAllHints();
+        const id = v.icao24 || v.callsign || (v.lon+','+v.lat);
+        if (_focoVooId === id) { _focoVooId = null; goHome(); return; }
+        _focoVooId = id;
         map.easeTo({ center:[v.lon, v.lat], zoom: Math.max(map.getZoom(), 10) });
       };
       return row;
