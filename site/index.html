@@ -290,6 +290,18 @@
   #hint-rio .ic-big .u{ font-size:8.5px; color:#8a97a8; text-transform:uppercase; letter-spacing:.6px; margin-top:2px; }
   /* selo de nível sem telemetria */
   #hint-rio .ic-nodata{ margin-left:auto; font-size:10px; color:#8a97a8; text-align:right; max-width:120px; }
+  /* rodapé do hint: fonte + tipo da estação (padrão da CELESC) */
+  #hint-rio .rio-foot{ margin-top:7px; padding-top:6px; border-top:1px solid rgba(255,255,255,.09);
+        display:flex; justify-content:space-between; gap:8px; font-size:9px; color:#8a97a8; line-height:1.4; }
+  #hint-rio .rio-foot b{ color:#00B0FF; font-weight:700; }
+  #hint-rio .rio-foot .rf-tipo{ color:#8fd3ff; font-weight:600; }
+  #hint-rio .rio-foot .rf-tipo.rgua{ color:#FF9800; }
+  /* selo de status no cabeçalho (telemetria / régua) */
+  #hint-rio .rio-tag{ align-self:center; margin-left:6px; flex:0 0 auto; font:700 8px var(--font-mono);
+        letter-spacing:.5px; padding:2px 6px; border-radius:8px; border:1px solid currentColor;
+        text-transform:uppercase; }
+  #hint-rio .rio-tag.dig{ color:#00B0FF; }
+  #hint-rio .rio-tag.rg{ color:#FF9800; }
   /* símbolo de status do abrigo (verde = aberto, vermelho = fechado) */
   #hint-abrigo .hp-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; }
   #hint-abrigo .hp-dot.aberto{ background:#00E676; box-shadow:0 0 8px rgba(0,230,118,.9); }
@@ -490,6 +502,13 @@
             border-top:2px solid rgba(255,213,79,.55);
             box-shadow:var(--shadow), 0 -1px 22px rgba(255,213,79,.06) inset; }
   #voosleg.show{ display:block; }
+  /* legenda do nível do rio — canto inferior DIREITO (estilo da de voos) */
+  #riosleg{ position:fixed; right:14px; bottom:14px; left:auto; top:auto; z-index:5;
+            width:max-content; max-width:calc(100vw - 28px); margin:0; padding-top:6px;
+            border-top:2px solid rgba(0,176,255,.55);
+            box-shadow:var(--shadow), 0 -1px 22px rgba(0,176,255,.06) inset; }
+  #riosleg.show{ display:block; }
+  #riosleg .p-head{ min-height:20px; margin-bottom:4px; }
   /* cabeçalho vazio: só abriga os botões (–/▁/×), sem título "Legenda" */
   #voosleg .p-head{ min-height:20px; margin-bottom:4px; }
   .vl-row{ display:flex; align-items:center; gap:9px; margin:0; }
@@ -518,11 +537,13 @@
   .vl-col + .vl-col{ border-top:1px solid rgba(255,255,255,.09); padding-top:10px; }
   .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
   .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
+  .vl-mk.pisca svg{ animation:metarPulse 1.05s ease-in-out infinite; }
   .vl-note{ font-size:10px; color:#8a97a8; margin-top:6px; padding-top:5px;
             border-top:1px solid rgba(255,255,255,.08); }
   @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; align-items:stretch; }
     .vl-items{ gap:9px; }
     .vl-col + .vl-col{ border-left:0; padding-left:0; border-top:1px solid rgba(255,255,255,.09); padding-top:8px; } }
+  @media (max-width:760px){ #riosleg{ right:10px; bottom:10px; left:10px; width:auto; max-width:none; } }
   /* legenda CELESC (UC sem energia) — canto inferior ESQUERDO */
   #celelegend{ position:absolute; z-index:4; left:14px; bottom:14px; top:auto; right:auto; width:236px;
         background:rgba(21,25,33,.93); border:1px solid var(--border); border-radius:12px; padding:11px 13px;
@@ -832,6 +853,30 @@
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#FF3B30;background:#FF3B30"></span></span><span class="vl-txt"><b>LIFR</b><small>Pista fecha</small></span></div>
         <div class="vl-row"><span class="vl-mk"><span class="vl-dot pisca" style="color:#8A97A8;background:#8A97A8"></span></span><span class="vl-txt"><b>Sem dados</b><small>METAR indisponível</small></span></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legenda do nível do rio (aparece junto com a camada Nível do rio) -->
+  <div id="riosleg" class="wpanel" data-chip="rios">
+    <div class="p-head"><b class="only-min">Nível do rio</b></div>
+    <div class="vl-cols">
+      <div class="vl-col">
+        <div class="vl-sub">Estações digitais</div>
+        <div class="vl-items">
+        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atualizado</b><small>leitura recente (pulsa azul)</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Operando</b><small>dado atual</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#FF5252" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atrasado</b><small>telemetria parada</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#8A97A8" opacity=".6"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Offline</b><small>sem resposta</small></span></div>
+        </div>
+      </div>
+      <div class="vl-col">
+        <div class="vl-sub">Réguas (analógicas)</div>
+        <div class="vl-items">
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#FF9800" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Régua</b><small>atualização manual</small></span></div>
+        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atualizada</b><small>leitura em até 6 h (pulsa azul)</small></span></div>
+        </div>
+        <div class="vl-note">Leitura manual informada no site da ANA.</div>
       </div>
     </div>
   </div>
@@ -2037,7 +2082,18 @@ map.on('load', async () => {
                  'text-font':['Open Sans Italic'], 'text-size':13, 'text-letter-spacing':0.04,
                  'text-max-angle':40 },
         paint:{ 'text-color':'#bfe6ff', 'text-halo-color':'#04121c', 'text-halo-width':1.6 } });
-      return ['rios-rede-base','rios-rede-rio','rios-rede-label','rio-banda','rio-borda','rio-linha','rio-label'];
+      // canal antigo do Itajaí-Mirim em Itajaí: traço + rótulo discretos
+      map.addLayer({ id:'rio-antigo-linha', type:'line', source:'rio', filter:['==',['get','tipo'],'canal_antigo'],
+        layout:{ 'line-join':'round','line-cap':'round' },
+        paint:{ 'line-color':'#7fb3c9',
+                'line-width':['interpolate',['linear'],['zoom'],10,0.8,13,1.5,16,2.2],
+                'line-dasharray':[4,3], 'line-opacity':0.75 } });
+      map.addLayer({ id:'rio-antigo-label', type:'symbol', source:'rio', filter:['==',['get','tipo'],'canal_antigo'], minzoom:13,
+        layout:{ 'symbol-placement':'line', 'symbol-spacing':420, 'text-field':'Rio Itajaí-Mirim (Canal Antigo)',
+                 'text-font':['Open Sans Italic'], 'text-size':11, 'text-letter-spacing':0.03,
+                 'text-max-angle':40 },
+        paint:{ 'text-color':'#9cc3d6', 'text-halo-color':'#04121c', 'text-halo-width':1.4 } });
+      return ['rios-rede-base','rios-rede-rio','rios-rede-label','rio-banda','rio-borda','rio-linha','rio-antigo-linha','rio-antigo-label','rio-label'];
     },
      // Cidades vizinhas (limites) — contorno tracejado.
      // Cidades no raio de 100 km: contorno sutil + badge de clima (90 cidades)
@@ -2374,32 +2430,71 @@ map.on('load', async () => {
       refreshCelesc();
       return ['celesc-fill','celesc-linha','celesc-raio'];
     },
-    // Nível do rio — Defesa Civil de SC (via worker brusque-rios → GraphQL).
-    // Estações fluviométricas do Itajaí-Mirim (Brusque, Guabiruba, Botuverá).
-    // Toda estação vira marcador; sem dado em tempo real → marcador cinza.
+    // Nível do rio — estações fluviométricas do Itajaí-Mirim (via worker
+    // brusque-rios → GraphQL DC-SC + DC Itajaí + ANA). Digitais (telemétricas)
+    // e réguas analógicas (coleta manual). Cores por status:
+    //   digital: azul piscando = atualização recente · verde = ok · vermelho =
+    //   dado desatualizado · cinza = offline. Régua: laranja (padrão), e verde
+    //   piscando azul quando a última leitura manual tem até 6 h.
     rios: async () => {
-      const d = await (_pre.rios || pre('rios', fetchJson(RIOS_URL, { cache:'no-store' })));
-      if (!d) return [];
-      const feats = (d.rios || []).map(r => ({
-        type: 'Feature',
-        geometry: { type:'Point', coordinates:[r.lon, r.lat] },
-        properties: { codigo:r.codigo, nome:r.nome, rio:r.rio, municipio:r.municipio,
-                      nivel_m:r.nivel_m, variacao_cm:r.variacao_cm, chuva_mm:r.chuva_mm, coleta:r.coleta,
-                      tem_dado:!!r.tem_dado }
-      }));
-      map.addSource('rios', { type:'geojson', data:{ type:'FeatureCollection', features:feats } });
-      map.addLayer({ id:'rios-pt', type:'circle', source:'rios',
-        paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,5,16,8],
-                'circle-color':['case',['get','tem_dado'],'#00B0FF','#8a97a8'],
-                'circle-opacity':['case',['get','tem_dado'],1,0.6],
-                'circle-stroke-color':'#eaf6ff','circle-stroke-width':1.5 } });
+      // 1) geojson estático local → estações na tela INSTANTANEAMENTE (sem esperar o
+      // worker). Os níveis chegam depois via refreshRios() em segundo plano.
+      const geo = await (_pre.riosGeo || pre('riosGeo', fetchJson('./brusque_estacoes_rio.geojson')));
+      if (!geo) return [];
+      map.addSource('rios', { type:'geojson', data:geo });
+      // ícone SVG: bolinha com ondinhas (água) — SDF. createImageBitmap quebra
+      // com SVG data-URL (erro de decode), então desenhamos num canvas e usamos
+      // getImageData (RGBA) → MapLibre aceita como imagem SDF.
+      if (!map.hasImage('rios-drop')) {
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+          + '<circle cx="12" cy="12" r="11" fill="#000"/>'
+          + '<path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".95"'
+          + ' d="M6 10.2c1.2-1.4 2.4-1.4 3.6 0s2.4 1.4 3.6 0 2.4-1.4 3.6 0 2.4 1.4 3.6 0"/>'
+          + '<path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".6"'
+          + ' d="M6 14.6c1.2-1.4 2.4-1.4 3.6 0s2.4 1.4 3.6 0 2.4-1.4 3.6 0 2.4 1.4 3.6 0"/>'
+          + '</svg>';
+        const img = new Image();
+        img.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('svg img load')); });
+        const cv = document.createElement('canvas'); cv.width = 24; cv.height = 24;
+        cv.getContext('2d').drawImage(img, 0, 0, 24, 24);
+        map.addImage('rios-drop', cv.getContext('2d').getImageData(0,0,24,24), { sdf:true });
+      }
+      // halo azul pulsante = atualização recente (digital ≤2h · régua ≤6h)
+      map.addLayer({ id:'rios-halo', type:'circle', source:'rios',
+        filter:['==',['get','pulse'],true],
+        paint:{ 'circle-radius':['interpolate',['linear'],['zoom'],11,12,16,19],
+                'circle-color':'#4FC3F7', 'circle-opacity':0.35,
+                'circle-stroke-color':'#4FC3F7','circle-stroke-width':1.5 } });
+      map.addLayer({ id:'rios-pt', type:'symbol', source:'rios',
+        layout:{ 'icon-image':'rios-drop', 'icon-size':['interpolate',['linear'],['zoom'],11,0.72,16,1.0],
+                 'icon-allow-overlap':true, 'icon-ignore-placement':true },
+        paint:{ 'icon-color':['get','st'],
+                'icon-opacity':['case',['==',['get','tem_dado'],true],1,0.55],
+                'icon-halo-color':'#04121c','icon-halo-width':0.7 } });
       map.addLayer({ id:'rios-label', type:'symbol', source:'rios', minzoom:12,
         layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
-                 'text-offset':[0,1.2], 'text-anchor':'top', 'text-optional':true },
-        paint:{ 'text-color':['case',['get','tem_dado'],'#bfe6ff','#8a97a8'],
+                 'text-offset':[0,1.35], 'text-anchor':'top', 'text-optional':true },
+        paint:{ 'text-color':['case',['==',['get','tem_dado'],true],'#bfe6ff','#8a97a8'],
                 'text-halo-color':'#04121c','text-halo-width':1.3 } });
-      // hover → hint estilizado do nível do rio (substitui o popup branco no clique)
-      const _dropIcon='<svg viewBox="0 0 24 24" width="24" height="26" fill="#00B0FF" style="filter:drop-shadow(0 0 5px rgba(0,176,255,.5))"><path d="M12 2.5c4 5.2 6.5 8.4 6.5 12A6.5 6.5 0 0 1 12 21a6.5 6.5 0 0 1-6.5-6.5c0-3.6 2.5-6.8 6.5-12z"/></svg>';
+      // anima o halo azul (pisca) enquanto a camada estiver visível
+      const _pulseHalo = () => {
+        if (!map.getLayer('rios-halo')) return;
+        let k = 0;
+        if (_riosHaloRAF) cancelAnimationFrame(_riosHaloRAF);
+        const tick = () => {
+          if (!map.getLayer('rios-halo') || map.getLayoutProperty('rios-halo','visibility') === 'none') { _riosHaloRAF = 0; return; }
+          k = (k + 0.12) % (2 * Math.PI);
+          map.setPaintProperty('rios-halo','circle-opacity', 0.18 + 0.35 * Math.abs(Math.sin(k)));
+          _riosHaloRAF = requestAnimationFrame(tick);
+        };
+        _riosHaloRAF = requestAnimationFrame(tick);
+      };
+      _pulseHalo();
+      // hover → hint estilizado do nível do rio (padrão da CELESC: cabeçalho +
+      // destaque grande + linhas + rodapé com a fonte e a hora da última leitura)
+      const _rioIcon='<svg viewBox="0 0 24 24" width="26" height="28"><circle cx="12" cy="12" r="11" fill="#00B0FF" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" opacity=".95" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" opacity=".6" d="M5.4 14.6c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg>';
+      const FONTE_RIO = { 'DC-SC':'Defesa Civil SC', 'DC Itajaí':'Defesa Civil Itajaí', 'ANA telemetria':'ANA · telemetria', 'ANA régua':'ANA · régua' };
       map.on('mousemove','rios-pt',(e)=>{
         map.getCanvas().style.cursor='pointer';
         const p=e.features[0].properties;
@@ -2409,26 +2504,71 @@ map.on('load', async () => {
         const row=(lbl,val,cls)=>'<div class="hp-row"><span class="hp-lbl">'+lbl+'</span>'
           +'<span class="hp-val'+(cls?' '+cls:'')+'">'+val+'</span></div>';
         const temDado = p.tem_dado===true || p.tem_dado==='true' || p.tem_dado==1;
+        const digital = p.digital===true || p.digital==='true';
         const nivel = (temDado && p.nivel_m!=null && p.nivel_m!=='') ? (+p.nivel_m).toFixed(2).replace('.',',') : null;
-        let h='<div class="ic-head">'+_dropIcon
+        const fonte = FONTE_RIO[(p.fonte||'').split(' ')[0]] || (p.fonte||'—');
+        const tag = digital ? '<span class="rio-tag dig">Telemetria</span>' : '<span class="rio-tag rg">Régua</span>';
+        let h='<div class="ic-head">'+_rioIcon
           +'<div class="ic-title"><b>'+(p.nome||'Estação')+'</b>'
           +'<small>'+[p.rio,p.municipio].filter(Boolean).join(' · ')+'</small></div>'
+          +tag
           +(nivel!=null
               ? '<div class="ic-big"><div class="n">'+nivel+'<small> m</small></div><div class="u">nível do rio</div></div>'
-              : '<div class="ic-nodata">Sem leitura ao vivo<br>telemetria indisponível</div>')
+              : '<div class="ic-nodata">'+(digital?'Sem leitura ao vivo<br>telemetria indisponível':'Sem leitura<br>régua sem dado')+'</div>')
           +'</div>';
         if(temDado){
           if(p.variacao_cm!=null && p.variacao_cm!==''){ const v=+p.variacao_cm;
             h+=row('Variação', (v>0?'▲ +':v<0?'▼ ':'')+Math.abs(v).toFixed(1).replace('.',',')+' cm', 'info'); }
           if(p.chuva_mm!=null && p.chuva_mm!=='') h+=row('Chuva', (+p.chuva_mm).toFixed(1).replace('.',',')+' mm');
-          if(p.codigo) h+=row('Código DC-SC', p.codigo, 'sub');
-          if(p.coleta) h+=row('Medição', p.coleta+' · DC-SC', 'sub');
-        } else if(p.codigo) h+=row('Código DC-SC', p.codigo, 'sub');
+          if(p.coleta) h+=row(digital?'Última medição':'Última leitura', p.coleta, 'sub');
+          if(p.codigo) h+=row('Código', p.codigo, 'sub');
+          if(!digital) h+='<div class="hp-row" style="margin-top:8px"><span style="color:#FF9800;font-size:10px;line-height:1.4">Leitura informada manualmente no site da ANA — pode não refletir o nível atual</span></div>';
+        } else if(p.codigo) h+=row('Código', p.codigo, 'sub');
+        h+='<div class="rio-foot"><span><b>'+fonte+'</b></span>'
+          +'<span class="rf-tipo'+(digital?'':' rgua')+'">'+(digital?'tempo real':'medição manual')+'</span></div>';
         hr.innerHTML=h;
       });
       map.on('mouseenter','rios-pt',()=>map.getCanvas().style.cursor='pointer');
       map.on('mouseleave','rios-pt',()=>{ map.getCanvas().style.cursor=''; hideAllHints(); });
-      return ['rios-pt','rios-label'];
+      // ── busca dos níveis em segundo plano (worker) + atualização instantânea ──
+      // O geojson estático já mostrou as estações; aqui chega o nível real e o
+      // source é atualizado sem recarregar nada (setData).
+      const _riosStatus = (r) => {
+        const digital = !!r.digital;
+        const temDado = !!r.tem_dado;
+        const ts = r.coleta_ts ? +r.coleta_ts : (r.coleta ? Date.parse(r.coleta.replace(' ','T')) : NaN);
+        const horas = (Date.now() - ts) / 36e5;
+        let st, pulse = false;
+        if (!temDado) st = '#8a97a8';
+        else if (!digital) { if (isFinite(horas) && horas <= 6) { st = '#00E676'; pulse = true; } else st = '#FF9800'; }
+        else if (isFinite(horas) && horas <= 2) { st = '#00E676'; pulse = true; }
+        else if (isFinite(horas) && horas > 24) st = '#FF5252';
+        else st = '#00E676';
+        return { st, pulse, temDado, ts };
+      };
+      const _mergeRios = (d) => {
+        if (!map.getSource('rios')) return;
+        const byCode = {}; (d.rios || []).forEach(r => byCode[r.codigo] = r);
+        const fc = (geo.features || []).map(f => {
+          const r = byCode[f.properties.codigo];
+          if (!r) return f;
+          const s = _riosStatus(r);
+          return { ...f, properties: { ...f.properties,
+            nivel_m:r.nivel_m, variacao_cm:r.variacao_cm, chuva_mm:r.chuva_mm,
+            coleta:r.coleta, coleta_ts:s.ts, fonte:r.fonte, tem_dado:s.temDado, st:s.st, pulse:s.pulse } };
+        });
+        map.getSource('rios').setData({ type:'FeatureCollection', features:fc });
+      };
+      const refreshRios = async () => {
+        try {
+          const d = await (await fetch(RIOS_URL, { cache:'no-store' })).json();
+          _mergeRios(d);
+          return true;
+        } catch(_) { return false; }
+      };
+      window._riosRefresh = refreshRios;
+      refreshRios();   // dispara agora (sem bloquear a renderização inicial)
+      return ['rios-halo','rios-pt','rios-label'];
     },
     // Voos em tempo real — Airplanes.live (ADS-B) via worker brusque-voos.
     // Círculo estático de 100 km ao redor de Brusque + aeronaves no ar dentro
@@ -2860,9 +3000,9 @@ map.on('load', async () => {
     pre('setores',  fetchJson('./brusque_setores_risco.geojson'));
     pre('estacoes', fetchJson('./brusque_estacoes.geojson'));
     pre('infra',    fetchJson('./brusque_aerodromos.geojson'));
+    pre('riosGeo',  fetchJson('./brusque_estacoes_rio.geojson'));   // estações do nível do rio (instantâneo)
     // dados vivos (workers/APIs) — revalidados a cada 5 min
     pre('abrigos',  fetchJson(ABRIGOS_URL, { cache:'no-store' }));
-    pre('rios',     fetchJson(RIOS_URL, { cache:'no-store' }));
     pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
     pre('chuvaacum', fetchJson('https://archive-api.open-meteo.com/v1/archive?latitude=-27.1&longitude=-48.9&daily=precipitation_sum&start_date='+f30(new Date(Date.now()-30*864e5))+'&end_date='+f30(new Date())));
     pre('soloum',   fetchJson('https://api.open-meteo.com/v1/forecast?latitude=-27.1&longitude=-48.9&current=soil_moisture_0_to_1cm,soil_moisture_7_to_28cm'));
@@ -2912,6 +3052,8 @@ map.on('load', async () => {
   }
   // pulso do miolo dos aeroportos ≠ VFR (icon-opacity em senoide, período ~1,05s).
   let _metarBlinkRAF = 0;
+  let _riosHaloRAF = 0;
+  let _riosTimer = null;
   function _metarBlinkStart(){
     if (_metarBlinkRAF) return;
     const tick = (t) => {
@@ -2928,7 +3070,6 @@ map.on('load', async () => {
   // revalida os dados vivos a cada 5 min (sempre prontos pra mostrar em tela)
   setInterval(() => {
     pre('abrigos',  fetchJson(ABRIGOS_URL, { cache:'no-store' }));
-    pre('rios',     fetchJson(RIOS_URL, { cache:'no-store' }));
     pre('enso',     fetchJson(ENSO_URL, { cache:'no-store' }));
     loadMetar();
   }, 5*60*1000);
@@ -3281,7 +3422,14 @@ map.on('load', async () => {
     // Guabiruba, Botuverá). Só mostra estação com cota em tempo real.
     { id:'rios', label:'Nível do rio', on:false, color:'#00B0FF', build:'rios',
       hint:'Fonte: Defesa Civil SC · rede estadual',
-      onToggle: (on) => { if (on) fitRio(); else voltaSeVazio(); } },
+      onToggle: (on) => {
+        clearInterval(_riosTimer); _riosTimer = null;
+        if (on) {
+          showPanel('riosleg'); fitRio();
+          if (window._riosRefresh) window._riosRefresh();
+          _riosTimer = setInterval(() => { if (window._riosRefresh) window._riosRefresh(); }, 5*60*1000);
+        } else { hidePanel('riosleg'); voltaSeVazio(); }
+      } },
     // Níveis de alagamento: combo — UMA cota por vez (marca uma, desmarca a outra)
     // toggle: ao marcar, aparece o slider fixo na interface p/ navegar pelas cotas do rio
     { id:'niveis', label:'Níveis de alagamento', on:false, color:'#46a6d6',
@@ -3513,7 +3661,10 @@ map.on('load', async () => {
         }
         if (M.on && M.build && !M.layers) {
           cbx.innerHTML = spinnerHTML(); cbx.style.background='transparent';
-          try{ M.layers = await ensureBuilt(M.build);}finally{}
+          try{ M.layers = await ensureBuilt(M.build); }
+          catch(e){ console.error('build "'+M.build+'" falhou:', e); M.on = false; }
+          finally{}
+          paintCbx(cbx, M.on, M.color);
         }
         if (M.on && M.id !== 'clima' && isBrusqueCover(M.id)) uncheckClima();
         if (M.onToggle) await M.onToggle(M.on);
@@ -3651,7 +3802,7 @@ map.on('load', async () => {
   // Recolher = vira um "chip" só com o título (pra cima nas caixas de topo, pra
   // baixo nas de rodapé). Caixas flutuantes podem ser ARRASTADAS pelo cabeçalho.
   const HEAD_SEL = '.p-head, .wxp-title, .cel-head, .rc-head, .nc-head, .wl-head';
-  const DRAGGABLE = new Set(['radarctl','nuvctl','celelegend','voosleg']);
+  const DRAGGABLE = new Set(['radarctl','nuvctl','celelegend','voosleg','riosleg']);
   const ICON_COL = '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>';
   const ICON_X   = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   const boxOff = (box, chipId) => {   // fechar → desliga o chip/camada
