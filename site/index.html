@@ -328,18 +328,19 @@
   #nivelbar .nb-atual .nb-val{ font:700 14.5px Inter,system-ui; color:#fff;
         font-variant-numeric:tabular-nums; white-space:nowrap; }
   #nivelbar .nb-atual .nb-val.off{ color:#8a97a8; font-weight:400; }
-  /* range horizontal — track com o GRADIENTE da escala (7 aqua → 15 vermelho) */
-  #nivelrange{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
-        -webkit-appearance:none; background:transparent; }
-  #nivelrange::-webkit-slider-runnable-track{ height:8px; border-radius:4px;
-        background:linear-gradient(90deg,
-          #a7d8f1 0%, #63d0ee 12.5%, #2f69ee 25%, #2c2ce8 37.5%, #763adf 50%,
-          #b43ad9 62.5%, #e232be 75%, #ee2b72 87.5%, #f91010 100%);
-        box-shadow:inset 0 1px 2px rgba(0,0,0,.4); }
-  #nivelrange::-moz-range-track{ height:8px; border-radius:4px;
-        background:linear-gradient(90deg,
-          #a7d8f1 0%, #63d0ee 12.5%, #2f69ee 25%, #2c2ce8 37.5%, #763adf 50%,
-          #b43ad9 62.5%, #e232be 75%, #ee2b72 87.5%, #f91010 100%); }
+   /* range horizontal — track com o GRADIENTE da escala (7 m já é grave:
+      começa num verde-oliva suave puxado pro amarelo → amarelo → laranja → vermelho) */
+   #nivelrange{ flex:1; height:8px; min-width:0; cursor:pointer; appearance:none;
+         -webkit-appearance:none; background:transparent; }
+   #nivelrange::-webkit-slider-runnable-track{ height:8px; border-radius:4px;
+         background:linear-gradient(90deg,
+           #a9bb3f 0%, #b9c43b 12.5%, #cdd238 25%, #e3d32f 37.5%, #f2c222 50%,
+           #f5ab1c 62.5%, #f08a1d 75%, #e85c2a 87.5%, #f20a0a 100%);
+         box-shadow:inset 0 1px 2px rgba(0,0,0,.4); }
+   #nivelrange::-moz-range-track{ height:8px; border-radius:4px;
+         background:linear-gradient(90deg,
+           #a9bb3f 0%, #b9c43b 12.5%, #cdd238 25%, #e3d32f 37.5%, #f2c222 50%,
+           #f5ab1c 62.5%, #f08a1d 75%, #e85c2a 87.5%, #f20a0a 100%); }
   #nivelrange::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px;
         border-radius:50%; background:#fff; border:3px solid #2c2ce8;
         margin-top:-5px; box-shadow:0 2px 6px rgba(0,0,0,.5); }
@@ -2156,10 +2157,11 @@ map.on('load', async () => {
       const d = await (_pre.niveis || pre('niveis', fetchJson('./brusque_niveis_alagamento.geojson')));
       if (!d) return [];
       map.addSource('niveis', { data:d, type:'geojson' });
-      // 7m água (ciano) → 15m crítico (vermelho): azul → índigo → roxo → magenta → vermelho
+      // 7m já é grave (verde-oliva suave puxado pro amarelo) → amarelo →
+      // laranja → 15m crítico (vermelho). Escala igual ao slider da barra.
       const escala = ['interpolate',['linear'],['get','nivel'],
-        7,'#a7d8f1', 8,'#63d0ee', 9,'#2f69ee', 10,'#2c2ce8', 11,'#763adf',
-        12,'#b43ad9', 13,'#e232be', 14,'#ee2b72', 15,'#f91010'];
+        7,'#a9bb3f', 8,'#b9c43b', 9,'#cdd238', 10,'#e3d32f', 11,'#f2c222',
+        12,'#f5ab1c', 13,'#f08a1d', 14,'#e85c2a', 15,'#f20a0a'];
       map.addLayer({ id:'niveis-fill', type:'fill', source:'niveis',
         filter:['==',['get','nivel'],-1],   // começa sem cota selecionada
         paint:{ 'fill-opacity':0.5, 'fill-color':escala } }, 'municipio-linha');
