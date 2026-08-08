@@ -881,7 +881,7 @@
 
 <!-- Tempo Real · satélite / nuvens (NASA GIBS GOES-East) -->
 <div id="nuvctl" data-chip="nuvens">
-  <div class="nc-head"><b>Nuvens · GOES-East</b><span class="nc-time" id="nuv-time">--:--Z</span></div>
+  <div class="nc-head"><b>Nuvens · GOES-East</b><span class="nc-time" id="nuv-time">--:--</span></div>
   <div style="display:flex;justify-content:flex-end">
     <button class="wbtn" id="nuv-refresh">Atualizar</button>
   </div>
@@ -1156,10 +1156,18 @@ map.on('load', async () => {
   const _built = {};
 
   // ── Clima avançado: infra das camadas de tempo (satélite/radar/vento) ───────
-  const fmtH  = (d) => { const h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0'); return h+':'+m; };
-  // ISO UTC → "05/08 19:41" (horário local pt-BR); null se inválido
-  const fmtDt = (iso) => { if(!iso) return null; const d=new Date(iso); if(isNaN(d)) return null;
-    const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+  // ── Horário: SEMPRE convertido p/ o fuso local de Brusque (America/Sao_Paulo),
+  //    24h, independente do fuso de quem abre. As fontes chegam em UTC/Zulu ou
+  //    epoch; aqui é só EXIBIÇÃO. A montagem de URL de API continua em UTC
+  //    (ver iso()/floor15()/f30()/probe do GIBS — NÃO mexer nesses).
+  const BR_TZ = 'America/Sao_Paulo';
+  const fmtH = (v) => { const d = v instanceof Date ? v : new Date(v); if(isNaN(d)) return '--:--';
+    return d.toLocaleTimeString('pt-BR', { timeZone:BR_TZ, hour:'2-digit', minute:'2-digit', hourCycle:'h23' }); };
+  const fmtD = (v) => { const d = v instanceof Date ? v : new Date(v); if(isNaN(d)) return null;
+    return d.toLocaleDateString('pt-BR', { timeZone:BR_TZ, day:'2-digit', month:'2-digit', year:'numeric' }); };
+  // ISO/Zulu/UTC/epoch → "DD/MM/AAAA HH:MM" no horário local de Brusque; null se inválido
+  const fmtDt = (iso) => { if(iso==null||iso==='') return null; const d=new Date(iso); if(isNaN(d)) return null;
+    return fmtD(d) + ' ' + fmtH(d); };
   const showPanel = (id) => { const el=document.getElementById(id); if(el) el.classList.add('show'); };
   const hidePanel = (id) => { const el=document.getElementById(id); if(el) el.classList.remove('show'); };
   const dir8 = (deg) => { const d=((deg%360)+360)%360; return ['N','NE','L','SE','S','SO','O','NO'][Math.round(d/45)%8]; };
@@ -2637,7 +2645,7 @@ map.on('load', async () => {
           +'</div>';
         // status por escrito (METAR), depois os outros dados do aeroporto
         if (st) {
-          const hora = st.hora ? new Date(st.hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+          const hora = st.hora ? fmtH(st.hora) : '';
           h += '<div class="metar-box">'
             + '<span class="metar-badge'+(st.pisca?' pisca':'')+'" style="background:'+st.cor+'">'
             +   '<span class="dot"></span>'+st.rotulo+' — pista '+(st.categoria==='VFR'?'operando':'sob restrição')+'</span>'
@@ -2651,7 +2659,7 @@ map.on('load', async () => {
             + '</div>';
         } else if (p.tipo === 'aeroporto') {
           // sem boletim METAR na fonte → cinza + hora da última consulta do worker
-          const ts = window._METAR_TS ? new Date(window._METAR_TS).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+          const ts = window._METAR_TS ? fmtDt(window._METAR_TS) : '';
           h += '<div class="metar-box">'
             + '<span class="metar-badge pisca" style="background:#8A97A8"><span class="dot"></span>Sem dados — METAR indisponível</span>'
             + '<div class="metar-sit">Sem boletim meteorológico publicado no momento</div>'
@@ -2731,7 +2739,7 @@ map.on('load', async () => {
     // sinótico ~2 km/px por baixo dos vetores; limites = região monitorada.
     nuvens: async () => {
       const t = await gibsTime(false);
-      const e1 = document.getElementById('nuv-time'); if (e1) e1.textContent = t.slice(11,16)+'Z';
+      const e1 = document.getElementById('nuv-time'); if (e1) e1.textContent = fmtH(t);
       if (map.getSource('nuvens')) return ['nuvens','regiao-linha'];
       map.addSource('nuvens', { type:'raster', tileSize:256, minzoom:0, maxzoom:6,
         bounds:_REG_BOUNDS,
@@ -3113,7 +3121,7 @@ map.on('load', async () => {
             if (!map.getSource('nuvens')) return;
             const t = await gibsTime(true);
             map.getSource('nuvens').setTiles([gibsTile(GIBS_LAYER, t, '{z}', '{y}', '{x}')]);
-            const e1=document.getElementById('nuv-time'); if (e1) e1.textContent = t.slice(11,16)+'Z';
+            const e1=document.getElementById('nuv-time'); if (e1) e1.textContent = fmtH(t);
           }, 15*60*1000);
         } else { hidePanel('nuvctl'); clearInterval(_nuvTimer); _nuvTimer = null; selectBase('mapa'); voltaSeVazio(); }
       } },
@@ -3759,8 +3767,8 @@ map.on('load', async () => {
   if (nuvRefresh) nuvRefresh.onclick = async () => {
     const t = await gibsTime(true);
     if (map.getSource('nuvens')) map.getSource('nuvens').setTiles([gibsTile(GIBS_LAYER, t, '{z}', '{y}', '{x}')]);
-    const e1 = document.getElementById('nuv-time'); if (e1) e1.textContent = t.slice(11,16)+'Z';
-    showToast('Imagem de satélite atualizada ('+t.slice(11,16)+'Z)');
+    const e1 = document.getElementById('nuv-time'); if (e1) e1.textContent = fmtH(t);
+    showToast('Imagem de satélite atualizada ('+fmtH(t)+')');
   };
   const wxpRefresh = document.getElementById('wxp-refresh');
   if (wxpRefresh) wxpRefresh.onclick = () => { loadWx(true); showToast('Indicadores atualizados'); };
