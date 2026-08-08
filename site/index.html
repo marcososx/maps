@@ -538,6 +538,14 @@
   .vl-dot{ width:14px; height:14px; border-radius:50%; box-shadow:0 0 7px currentColor; }
   .vl-dot.pisca{ animation:metarPulse 1.05s ease-in-out infinite; }
   .vl-mk.pisca svg{ animation:metarPulse 1.05s ease-in-out infinite; }
+  /* Legenda do rio: o "ao vivo" replica o mapa — ícone SÓLIDO + halo AZUL
+     pulsando (igual à camada rios-halo), no lugar do piscar verde. */
+  #riosleg .vl-mk.pisca{ position:relative; }
+  #riosleg .vl-mk.pisca svg{ animation:none; }
+  #riosleg .vl-mk.pisca::after{ content:''; position:absolute; left:50%; top:50%;
+    width:20px; height:20px; transform:translate(-50%,-50%); border-radius:50%;
+    box-shadow:0 0 0 0 rgba(79,195,247,.7); animation:rioHalo 1.4s ease-out infinite; pointer-events:none; }
+  @keyframes rioHalo{ 0%{ box-shadow:0 0 0 0 rgba(79,195,247,.6); } 70%{ box-shadow:0 0 0 8px rgba(79,195,247,0); } 100%{ box-shadow:0 0 0 0 rgba(79,195,247,0); } }
   .vl-note{ font-size:10px; color:#8a97a8; margin-top:6px; padding-top:5px;
             border-top:1px solid rgba(255,255,255,.08); }
   @media (max-width:560px){ .vl-cols{ flex-direction:column; gap:10px; align-items:stretch; }
@@ -862,23 +870,21 @@
     <div class="p-head"><b class="only-min">Nível do rio</b></div>
     <div class="vl-cols">
       <div class="vl-col">
-        <div class="vl-sub">Estações digitais</div>
+        <div class="vl-sub">Telemetria (digital)</div>
         <div class="vl-items">
-        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atualizado</b><small>leitura recente (pulsa azul)</small></span></div>
-        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Operando</b><small>dado atual</small></span></div>
-        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#FF5252" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atrasado</b><small>telemetria parada</small></span></div>
-        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#8A97A8" opacity=".6"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Offline</b><small>sem resposta</small></span></div>
+        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10" fill="#00E676"/></svg></span><span class="vl-txt"><b>Ao vivo</b><small>leitura ≤ 2h · pulsa azul</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10" fill="#8A97A8"/></svg></span><span class="vl-txt"><b>Sem dado</b><small>offline ou &gt; 24h</small></span></div>
         </div>
       </div>
       <div class="vl-col">
-        <div class="vl-sub">Réguas (analógicas)</div>
+        <div class="vl-sub">Régua (manual)</div>
         <div class="vl-items">
-        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#FF9800" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Régua</b><small>atualização manual</small></span></div>
-        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#00E676" opacity=".9"/><path fill="none" stroke="#eaf6ff" stroke-width="1.8" stroke-linecap="round" d="M5.4 10.2c1.1-1.3 2.2-1.3 3.3 0s2.2 1.3 3.3 0 2.2-1.3 3.3 0 2.2 1.3 3.3 0"/></svg></span><span class="vl-txt"><b>Atualizada</b><small>leitura em até 6 h (pulsa azul)</small></span></div>
+        <div class="vl-row"><span class="vl-mk pisca"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="none" stroke="#00E676" stroke-width="4"/></svg></span><span class="vl-txt"><b>Ao vivo</b><small>leitura ≤ 6h · pulsa azul</small></span></div>
+        <div class="vl-row"><span class="vl-mk"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="none" stroke="#8A97A8" stroke-width="4"/></svg></span><span class="vl-txt"><b>Sem dado</b><small>sem leitura recente</small></span></div>
         </div>
-        <div class="vl-note">Leitura manual informada no site da ANA.</div>
       </div>
     </div>
+    <div class="vl-note">Cor = quão recente é a leitura · formato = tipo (<b>cheio</b>: telemetria · <b>vazado</b>: régua). A régua é lida à mão no site da ANA, em cadência irregular.</div>
   </div>
 </div>
 
@@ -2460,6 +2466,19 @@ map.on('load', async () => {
         cv.getContext('2d').drawImage(img, 0, 0, 24, 24);
         map.addImage('rios-drop', cv.getContext('2d').getImageData(0,0,24,24), { sdf:true });
       }
+      // ícone da RÉGUA (manual): mesmo diâmetro, porém VAZADO (anel) —
+      // "cheio = telemetria · vazado = régua". Como o SDF perde o detalhe
+      // interno, o TIPO é dado pela silhueta (disco cheio × anel).
+      if (!map.hasImage('rios-regua')) {
+        const svg2 = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+          + '<circle cx="12" cy="12" r="8.6" fill="none" stroke="#000" stroke-width="5"/></svg>';
+        const img2 = new Image();
+        img2.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg2);
+        await new Promise((res, rej) => { img2.onload = res; img2.onerror = () => rej(new Error('svg regua load')); });
+        const cv2 = document.createElement('canvas'); cv2.width = 24; cv2.height = 24;
+        cv2.getContext('2d').drawImage(img2, 0, 0, 24, 24);
+        map.addImage('rios-regua', cv2.getContext('2d').getImageData(0,0,24,24), { sdf:true });
+      }
       // halo azul pulsante = atualização recente (digital ≤2h · régua ≤6h)
       map.addLayer({ id:'rios-halo', type:'circle', source:'rios',
         filter:['==',['get','pulse'],true],
@@ -2467,10 +2486,11 @@ map.on('load', async () => {
                 'circle-color':'#4FC3F7', 'circle-opacity':0.35,
                 'circle-stroke-color':'#4FC3F7','circle-stroke-width':1.5 } });
       map.addLayer({ id:'rios-pt', type:'symbol', source:'rios',
-        layout:{ 'icon-image':'rios-drop', 'icon-size':['interpolate',['linear'],['zoom'],11,0.72,16,1.0],
+        layout:{ 'icon-image':['case',['any',['==',['get','digital'],true],['==',['get','digital'],'true']],'rios-drop','rios-regua'],
+                 'icon-size':['interpolate',['linear'],['zoom'],11,0.72,16,1.0],
                  'icon-allow-overlap':true, 'icon-ignore-placement':true },
         paint:{ 'icon-color':['get','st'],
-                'icon-opacity':['case',['==',['get','tem_dado'],true],1,0.55],
+                'icon-opacity':1,   // sólido também sem dado (a cinza a .55 sumia sob o rio)
                 'icon-halo-color':'#04121c','icon-halo-width':0.7 } });
       map.addLayer({ id:'rios-label', type:'symbol', source:'rios', minzoom:12,
         layout:{ 'text-field':['get','nome'], 'text-font':['Open Sans Regular'], 'text-size':10,
@@ -2520,7 +2540,9 @@ map.on('load', async () => {
           if(p.variacao_cm!=null && p.variacao_cm!==''){ const v=+p.variacao_cm;
             h+=row('Variação', (v>0?'▲ +':v<0?'▼ ':'')+Math.abs(v).toFixed(1).replace('.',',')+' cm', 'info'); }
           if(p.chuva_mm!=null && p.chuva_mm!=='') h+=row('Chuva', (+p.chuva_mm).toFixed(1).replace('.',',')+' mm');
-          if(p.coleta) h+=row(digital?'Última medição':'Última leitura', p.coleta, 'sub');
+          if(p.coleta || p.coleta_ts){
+            const quando = fmtDt(p.coleta_ts ? +p.coleta_ts : String(p.coleta).replace(' ','T')) || p.coleta;
+            h+=row(digital?'Última medição':'Última leitura', quando, 'sub'); }
           if(p.codigo) h+=row('Código', p.codigo, 'sub');
           if(!digital) h+='<div class="hp-row" style="margin-top:8px"><span style="color:#FF9800;font-size:10px;line-height:1.4">Leitura informada manualmente no site da ANA — pode não refletir o nível atual</span></div>';
         } else if(p.codigo) h+=row('Código', p.codigo, 'sub');
@@ -2533,18 +2555,22 @@ map.on('load', async () => {
       // ── busca dos níveis em segundo plano (worker) + atualização instantânea ──
       // O geojson estático já mostrou as estações; aqui chega o nível real e o
       // source é atualizado sem recarregar nada (setData).
+      // Status em 2 estados (cor = frescor, igual p/ os dois tipos):
+      //   VERDE + pulso azul = "ao vivo" (dentro da janela do tipo)
+      //   CINZA sólido        = "sem dado / desatualizado" (fora da janela / offline)
+      // A janela do "ao vivo" muda por tipo: telemetria ≤2h; régua (manual,
+      // informada na ANA) ≤6h. O TIPO é mostrado pelo formato do ícone
+      // (cheio = telemetria · vazado = régua), não pela cor.
+      const RIO_JANELA_H = { digital: 2, regua: 6 };
       const _riosStatus = (r) => {
         const digital = !!r.digital;
         const temDado = !!r.tem_dado;
-        const ts = r.coleta_ts ? +r.coleta_ts : (r.coleta ? Date.parse(r.coleta.replace(' ','T')) : NaN);
+        const ts = r.coleta_ts ? +r.coleta_ts : (r.coleta ? Date.parse(String(r.coleta).replace(' ','T')) : NaN);
         const horas = (Date.now() - ts) / 36e5;
-        let st, pulse = false;
-        if (!temDado) st = '#8a97a8';
-        else if (!digital) { if (isFinite(horas) && horas <= 6) { st = '#00E676'; pulse = true; } else st = '#FF9800'; }
-        else if (isFinite(horas) && horas <= 2) { st = '#00E676'; pulse = true; }
-        else if (isFinite(horas) && horas > 24) st = '#FF5252';
-        else st = '#00E676';
-        return { st, pulse, temDado, ts };
+        const janela = digital ? RIO_JANELA_H.digital : RIO_JANELA_H.regua;
+        const aoVivo = temDado && isFinite(horas) && horas <= janela;
+        const st = aoVivo ? '#00E676' : '#8a97a8';   // verde ao vivo · cinza sem dado/desatualizado
+        return { st, pulse: aoVivo, temDado, ts };
       };
       const _mergeRios = (d) => {
         if (!map.getSource('rios')) return;
@@ -3216,6 +3242,18 @@ map.on('load', async () => {
     const O = (window._chips || {})[id];
     if (O && O.on) { O.on = false; if (O.onToggle) O.onToggle(false); if (O.paint) O.paint(); }
   }
+  // Simétrico do _forceOff: LIGA uma camada por id (build sob demanda +
+  // visibilidade + repinta o checkbox no dropdown dela). Usado p/ acoplar
+  // camadas (ex.: "Nível do rio" também liga o traçado "Rio Itajaí Mirim").
+  async function _forceOn(id){
+    const O = (window._chips || {})[id];
+    if (O && !O.on) {
+      O.on = true;
+      if (O.build && !O.layers) { try { O.layers = await ensureBuilt(O.build); } catch(e){} }
+      if (O.onToggle) await O.onToggle(true);
+      if (O.paint) O.paint();
+    }
+  }
   // Mapa = dropdown PRIMEIRO da barra; agrupa base do mapa (Limites, Bairros) +
   // Satélite/Estradas/Trânsito — libera espaço p/ camadas futuras.
   const MAPA = [
@@ -3422,9 +3460,10 @@ map.on('load', async () => {
     // Guabiruba, Botuverá). Só mostra estação com cota em tempo real.
     { id:'rios', label:'Nível do rio', on:false, color:'#00B0FF', build:'rios',
       hint:'Fonte: Defesa Civil SC · rede estadual',
-      onToggle: (on) => {
+      onToggle: async (on) => {
         clearInterval(_riosTimer); _riosTimer = null;
         if (on) {
+          await _forceOn('rio');   // liga junto o traçado "Rio Itajaí Mirim"
           showPanel('riosleg'); fitRio();
           if (window._riosRefresh) window._riosRefresh();
           _riosTimer = setInterval(() => { if (window._riosRefresh) window._riosRefresh(); }, 5*60*1000);
